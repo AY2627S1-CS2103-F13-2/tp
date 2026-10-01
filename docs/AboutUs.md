@@ -9,6 +9,12 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
+### Yuxiang Liu
+
+<img src="images/yx0905.png" width="200px">
+
+[[github](https://github.com/Yx0905)]
+
 ### John Doe
 
 <img src="images/johndoe.png" width="200px">
