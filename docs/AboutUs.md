@@ -23,12 +23,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/Yx0905)]
 
-### Jane Doe
+* Role: Developer
+* Responsibilities: Dev Ops + Threading
 
-<img src="images/johndoe.png" width="200px">
+### Kafka
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+<img src="images/Kafka03.png" width="200px">
+
+[[github](http://github.com/Kafka03)]
 
 * Role: Team Lead
 * Responsibilities: UI
@@ -42,15 +44,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Logic
 
-### Jean Doe
-
-<img src="images/johndoe.png" width="200px">
-
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Developer
-* Responsibilities: Dev Ops + Threading
 
 ### Kee Yen Cheng
 
