@@ -1,0 +1,20 @@
+Oct 01, 2026 3:59:30 PM seedu.address.Main main
+WARNING: The warnings about a 'restricted method in java.lang.System' and 'enabling native access' appearing below (if any) can be ignored.
+Oct 01, 2026 3:59:48 PM seedu.address.Main main
+WARNING: The warnings about a 'restricted method in java.lang.System' and 'enabling native access' appearing below (if any) can be ignored.
+Oct 01, 2026 3:59:50 PM seedu.address.MainApp init
+INFO: =============================[ Initializing AddressBook ]===========================
+Oct 01, 2026 3:59:50 PM seedu.address.MainApp initPrefs
+INFO: Using preference file : preferences.json
+Oct 01, 2026 3:59:50 PM seedu.address.MainApp initPrefs
+INFO: Creating new preference file preferences.json
+Oct 01, 2026 3:59:50 PM seedu.address.MainApp initModelManager
+INFO: Using data file : data\addressbook.json
+Oct 01, 2026 3:59:50 PM seedu.address.MainApp initModelManager
+INFO: Creating a new data file data\addressbook.json populated with a sample AddressBook.
+Oct 01, 2026 3:59:50 PM seedu.address.MainApp start
+INFO: Starting AddressBook V0.5.1
+Oct 01, 2026 3:59:50 PM seedu.address.ui.UiManager start
+INFO: Starting UI...
+Oct 01, 2026 3:59:51 PM seedu.address.MainApp stop
+INFO: ============================ [ Stopping AddressBook ] =============================
