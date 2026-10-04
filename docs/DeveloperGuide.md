@@ -259,17 +259,6 @@ _{Explain here how the data archiving feature will be implemented}_
 
 ### Product scope
 
-**Target user profile**:
-
-* has a need to manage a significant number of contacts
-* prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
-* is reasonably comfortable using CLI apps
-
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
-
-
 ### User stories
 
 | `* * *`  | user                                     | retrieve my contacts after closing and reopening the app            | keep what I have recorded                                         |
@@ -317,11 +306,9 @@ _{Explain here how the data archiving feature will be implemented}_
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-
-*{More to be added}*
+5. Should store data locally in a human-readable _JSON Lines_ file, without needing a database management system.
+6. Changes from a successful command should survive closing and reopening the app. A crash during a save should leave either the complete old file or the complete new file, never a partially written one.
+7. Should never silently discard data from a _corrupted contact file_: the original file is backed up before anything is replaced.
 
 ### Glossary
 
