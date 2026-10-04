@@ -280,32 +280,40 @@ _{Explain here how the data archiving feature will be implemented}_
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
-
-**Use case: Delete a person**
+**Use case: UC06 - Start Astra and restore saved contacts**
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. User launches Astra.
+2. Astra reads the contact file and loads every contact in stored order.
+3. Astra shows how many contacts were loaded and from which file, then waits for a command.
 
-    Use case ends.
+   Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 2a. The contact file does not exist (first launch).
+    * 2a1. Astra creates the storage folder and an empty contact file.
+    * 2a2. Astra shows the new file's location and that 0 contacts were loaded.
 
-  Use case ends.
+      Use case ends.
 
-* 3a. The given index is invalid.
+* 2b. The contact file contains invalid or conflicting records.
+    * 2b1. Astra copies the original file, unchanged, to a new backup file.
+    * 2b2. Astra writes the valid records to a new active contact file.
+    * 2b3. Astra shows the backup location and the numbers of recovered and skipped records.
 
-    * 3a1. AddressBook shows an error message.
+      Use case ends.
 
-      Use case resumes at step 2.
+* 2c. The contact file cannot be created, read or recovered.
+    * 2c1. Astra shows the relevant error, keeps the original data and stops.
 
-*{More to be added}*
+      Use case ends.
+
+* 2d. Another Astra instance is already using the contact file.
+    * 2d1. Astra shows that the storage is in use and the second instance stops.
+
+      Use case ends.
 
 ### Non-Functional Requirements
 
