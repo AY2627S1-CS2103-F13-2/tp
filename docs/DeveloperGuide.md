@@ -267,8 +267,7 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
-
+**Value proposition**: Networking events generate more contacts than anyone can remember and more context than a phone contacts app can hold. Astra lets a fast typist capture each new person (role, company, LinkedIn, who introduced them, and what was discussed) in the seconds between conversations, and search any of it back up instantly, so no one you met becomes "that person from the fair".
 
 ### User stories
 
@@ -280,14 +279,26 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | user                                       | add a new person               |                                                                        |
 | `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
+| `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
 | `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
 | `* * *`  | user                                       | clear all contacts after confirming | start over when I no longer need the list                              |
-| `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data                            |
+| `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data   
+| `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
+| `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
+| `* * *`  | user                                       | list all contacts                                                   | browse my contact list                                            |
+| `* *`    | user who struggles with names              | find someone without typing the exact spelling of their name        | look them up even when I misremember their name                   |
+| `* *`    | user                                       | filter contacts by categories or custom tags                        | narrow down a large list quickly                                  |
+| `* *`    | frequent user                              | star important contacts                                             | revisit them quickly                                              |
 | `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
 | `* *`    | user                                       | record follow-up actions for a contact | remember what I need to do after meeting them                          |
 | `* *`    | user                                       | mark a follow-up action as completed | tell pending tasks apart from finished ones                            |
 | `* *`    | user                                       | see when I last interacted with someone | know how long it has been since we last met                            |
+| `* *`    | careless user                            | undo an accidental deletion or edit                                 | avoid losing important information                                |
 | `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+| `*`      | user                                     | see which contact entries are incomplete                            | remember to fill in missing details later                         |
+| `*`      | frequent user                            | reorder the information shown for a contact                         | see the details I care about first                                |
+| `*`      | expert user                              | define shortcuts for commands                                       | add contacts faster than typing commands in full                  |
+| `*`      | frequent user                            | reuse templates of common fields when adding contacts               | enter repetitive data faster                                      |
 
 *{More to be added}*
 
@@ -367,6 +378,107 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+**Use case: UC03 - Find and view a contact**
+
+**MSS**
+
+1. User enters a find command with a name, a contact number or an email.
+2. Astra finds exactly one matching contact and shows all of its stored information.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The contact list is empty.
+    * 1a1. Astra shows that there are no contacts to view.
+
+      Use case ends.
+
+* 1b. The search value is missing, or the contact number or email is malformed.
+    * 1b1. Astra shows the relevant error message.
+
+      Use case ends.
+
+* 2a. No contact matches.
+    * 2a1. Astra shows that the contact was not found.
+
+      Use case ends.
+
+* 2b. Several contacts match.
+    * 2b1. Astra shows the number of matches and a ranked, numbered list with names, companies and emails.
+    * 2b2. User selects a contact by index.
+    * 2b3. Astra shows all stored information of the selected contact.
+
+      Use case ends.
+
+    * 2b2a. User enters an invalid index.
+        * 2b2a1. Astra shows an error message.
+
+          Use case resumes at step 2b2.
+
+    * 2b2b. User enters cancel.
+
+      Use case ends.
+
+**Use case: UC04 - Edit a contact**
+
+**MSS**
+
+1. User enters an edit command with a contact's name and the new values of one or more fields.
+2. Astra finds the contact and validates the new values.
+3. Astra updates the contact, saves the contact list and lists every updated field.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No field to change is given.
+    * 1a1. Astra shows that at least one field must be provided.
+
+      Use case ends.
+
+* 1b. A prefix is unsupported or repeated, a required value is empty, or a value is malformed.
+    * 1b1. Astra shows the relevant error message and the edit command format.
+
+      Use case ends.
+
+* 2a. No contact matches the name.
+    * 2a1. Astra shows that the contact was not found.
+
+      Use case ends.
+
+* 2b. Several contacts match the name.
+    * 2b1. Astra shows a ranked, numbered list of matching contacts.
+    * 2b2. User selects a contact by index.
+
+      Use case resumes at step 2.
+
+* 2c. The new contact number or email already belongs to another contact.
+    * 2c1. Astra rejects the whole edit and changes nothing.
+
+      Use case ends.
+
+* 2d. The new name or LinkedIn URL matches another contact.
+    * 2d1. Astra warns the user and asks for confirmation.
+    * 2d2. User confirms.
+
+      Use case resumes at step 3.
+
+* 2e. Every new value is identical to the current one.
+    * 2e1. Astra shows that there are no changes to apply and does not save.
+
+      Use case ends.
+
+* 3a. Saving fails.
+    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+
+      Use case ends.
+
+* *a. At any prompt, the user enters cancel or n.
+    * *a1. Astra shows that the edit was cancelled.
+
+      Use case ends.
+
 **Use case: UC05 - Clear all contacts**
 
 **MSS**
@@ -410,9 +522,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Non-Functional Requirements
 
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
+2.  Should hold up to 1000 contacts and respond to any command within 1 second on a typical laptop, so that the user can keep up while meeting people in quick succession.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+4.  Should work without an internet connection, and should never send contact data over the network.
 8.  Should allow only one running instance to use the contact file at a time.
+10. Every error message should state what was wrong and, where relevant, the accepted format.
+11. Should be packaged as a single JAR file that runs without an installer.
 
 *{More to be added}*
 
@@ -420,9 +535,16 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Normalisation**: Trimming outer spaces and collapsing repeated spaces before a value is stored or compared
+* **Display value**: The normalised spelling that Astra stores and shows to the user
+* **Unique key**: A contact number or email. No two contacts may share one
 * **Duplicate contact**: An incoming contact whose contact number or email already belongs to an existing contact
 * **Merge**: Combining the distinct values of an existing and an incoming contact into one record, keeping the existing values first
 * **MSS (Main Success Scenario)**: The most common path through a use case, where everything goes as expected
+* **CLI (Command Line Interface)**: A text-based interface where the user types commands instead of clicking
+* **Comparison value**: The form of a value used for matching, such as the lowercase name or the digits-only contact number
+* **Name-match ranking**: The eight-level order (exact full name, first, last, middle; then partial first, last, middle, full) used to sort contacts that match a name
+* **Candidate list**: The numbered list of matching contacts shown when a name matches several contacts. Indices start at 1
 
 --------------------------------------------------------------------------------------------------------------------
 
