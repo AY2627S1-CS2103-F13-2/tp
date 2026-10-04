@@ -288,6 +288,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
 | `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
 | `* * *`  | user                                       | list all contacts                                                   | browse my contact list                                            |
+| `* * *`  | user                                     | retrieve my contacts after closing and reopening the app            | keep what I have recorded                                         |
+| `* * *`  | new user                                 | view help for the available commands                                | learn the commands without memorising them                        |
 |`* * `| user                                          | record where I met the contact and what we discussed       | have context for the next conversation                         |
 |`* * `| user                                          | record who introduced me to a contact                     | remember how I am connected to them |
 | `* *`    | user who struggles with names              | find someone without typing the exact spelling of their name        | look them up even when I misremember their name                   |
@@ -298,11 +300,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`    | user                                       | mark a follow-up action as completed | tell pending tasks apart from finished ones                            |
 | `* *`    | user                                       | see when I last interacted with someone | know how long it has been since we last met                            |
 | `* *`    | careless user                            | undo an accidental deletion or edit                                 | avoid losing important information                                |
+| `* *`    | potential user exploring the app         | see the app populated with sample data                              | get a feel for how the app looks in use                           |
 | `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
 | `*`      | user                                     | see which contact entries are incomplete                            | remember to fill in missing details later                         |
 | `*`      | frequent user                            | reorder the information shown for a contact                         | see the details I care about first                                |
 | `*`      | expert user                              | define shortcuts for commands                                       | add contacts faster than typing commands in full                  |
 | `*`      | frequent user                            | reuse templates of common fields when adding contacts               | enter repetitive data faster                                      |
+| `*`      | first-time user                          | follow a tutorial of the main features                              | start using the app confidently                                   |
+| `*`      | user                                     | protect my contact data with a password                             | stop other people using my device from viewing it                 |
 
 *{More to be added}*
 
@@ -318,14 +323,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2. Astra validates and normalises the details.
 3. Astra adds the contact, saves the contact list and shows the saved details. 
 
-    Use case ends.
+   Use case ends.
 
 **Extensions**
 
 * 1a. A required field is missing, a prefix is unsupported or repeated, or a value is invalid.
     * 1a1. Astra shows the relevant error message and accepted format.
 
-  Use case ends.
+      Use case ends.
 
 * 2a. The name matches the full name or first name of an existing contact.
     * 2a1. Astra shows the matching contacts and asks whether to add a separate contact.
@@ -485,7 +490,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 2b1. Astra shows a ranked, numbered list of matching contacts.
     * 2b2. User selects a contact by index.
 
-      Use case resumes at step 2.
+   Use case resumes at step 2.
+
+* 2d. Another Astra instance is already using the contact file.
+    * 2d1. Astra shows that the storage is in use and the second instance stops.
 
 * 2c. The new contact number or email already belongs to another contact.
     * 2c1. Astra rejects the whole edit and changes nothing.
@@ -551,6 +559,41 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+**Use case: UC06 - Start Astra and restore saved contacts**
+
+**MSS**
+
+1. User launches Astra.
+2. Astra reads the contact file and loads every contact in stored order.
+3. Astra shows how many contacts were loaded and from which file, then waits for a command.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The contact file does not exist (first launch).
+    * 2a1. Astra creates the storage folder and an empty contact file.
+    * 2a2. Astra shows the new file's location and that 0 contacts were loaded.
+
+      Use case ends.
+
+* 2b. The contact file contains invalid or conflicting records.
+    * 2b1. Astra copies the original file, unchanged, to a new backup file.
+    * 2b2. Astra writes the valid records to a new active contact file.
+    * 2b3. Astra shows the backup location and the numbers of recovered and skipped records.
+
+      Use case ends.
+
+* 2c. The contact file cannot be created, read or recovered.
+    * 2c1. Astra shows the relevant error, keeps the original data and stops.
+
+      Use case ends.
+
+* 2d. Another Astra instance is already using the contact file.
+    * 2d1. Astra shows that the storage is in use and the second instance stops.
+
+      Use case ends.
+
 *{More to be added}*
 
 ### Non-Functional Requirements
@@ -559,6 +602,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2.  Should hold up to 1000 contacts and respond to any command within 1 second on a typical laptop, so that the user can keep up while meeting people in quick succession.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 4.  Should work without an internet connection, and should never send contact data over the network.
+5. Should store data locally in a human-readable _JSON Lines_ file, without needing a database management system.
+6. Changes from a successful command should survive closing and reopening the app. A crash during a save should leave either the complete old file or the complete new file, never a partially written one.
+7. Should never silently discard data from a _corrupted contact file_: the original file is backed up before anything is replaced.
 8.  Should allow only one running instance to use the contact file at a time.
 9.  Should accept names containing non-English (Unicode) letters
 10. Every error message should state what was wrong and, where relevant, the accepted format.
@@ -584,6 +630,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Comparison value**: The form of a value used for matching, such as the lowercase name or the digits-only contact number
 * **Name-match ranking**: The eight-level order (exact full name, first, last, middle; then partial first, last, middle, full) used to sort contacts that match a name
 * **Candidate list**: The numbered list of matching contacts shown when a name matches several contacts. Indices start at 1
+* **Contact file**: The file that stores all contacts, at `<user-home>/.contacts-cli/contacts.jsonl`
+* **JSON Lines (JSONL)**: A text format with one JSON object per line
+* **Corrupted contact file**: A contact file with records that are malformed, have missing fields or invalid values, or conflict with earlier records
+* **Backup file**: An unchanged copy of a corrupted contact file, saved as `contacts-corrupted-<timestamp>.jsonl`
 
 --------------------------------------------------------------------------------------------------------------------
 
