@@ -18,8 +18,9 @@
   * Detects duplicate phone numbers and emails, and lets you keep, replace or merge the records
   * Saves automatically after every change, and recovers what it can from a corrupted data file
 
+* **Getting started:** see the [User Guide](https://ay2627s1-cs2103-f13-2.github.io/tp/UserGuide.html).
+* **For developers:** see the [Developer Guide](https://ay2627s1-cs2103-f13-2.github.io/tp/DeveloperGuide.html).
+
 ## Acknowledgements
 
 * This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education)
-
-
