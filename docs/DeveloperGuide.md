@@ -261,10 +261,11 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
+* attends networking events, career fairs or conferences regularly
+* meets many new people in a short span and struggles to recall who was who afterwards
+* wants to capture contact details (company, role phone number, email, LinkedIn) and context in seconds, mid-conversation or right after
 * prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
+* can type fast and prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
 **Value proposition**: Networking events generate more contacts than anyone can remember and more context than a phone contacts app can hold. Astra lets a fast typist capture each new person (role, company, LinkedIn, who introduced them, and what was discussed) in the seconds between conversations, and search any of it back up instantly, so no one you met becomes "that person from the fair".
@@ -275,8 +276,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 | Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
 | -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
+| `* * *`  | user                                       | add a new contact with their name, company, role and contact details               | remember and reach out to people  meet                                                                        |
+| `* * *` | user                                        | view all the information stored about a contact in one place   | refresh my memory before meeting them again                      |
+|`* * *`| user                                | record a contact's LinkedInprofile                   |
 | `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
 | `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
@@ -286,6 +288,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
 | `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
 | `* * *`  | user                                       | list all contacts                                                   | browse my contact list                                            |
+|`* * `| user                                          | record where I met the contact and what we discussed       | have context for the next conversation                         |
+|`* * `| user                                          | record who introduced me to a contact                     | remember how I am connected to them |
 | `* *`    | user who struggles with names              | find someone without typing the exact spelling of their name        | look them up even when I misremember their name                   |
 | `* *`    | user                                       | filter contacts by categories or custom tags                        | narrow down a large list quickly                                  |
 | `* *`    | frequent user                              | star important contacts                                             | revisit them quickly                                              |
@@ -304,30 +308,60 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `Astra` and the **Actor** is the `user`, unless specified otherwise)
 
-**Use case: Delete a person**
+**Use case: UC01 - Add a contact**
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. User enters an add command with the contact's name, company, role, contact number and email, and optionally a LinkedIn URL.
+2. Astra validates and normalises the details.
+3. Astra adds the contact, saves the contact list and shows the saved details. 
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. A required field is missing, a prefix is unsupported or repeated, or a value is invalid.
+    * 1a1. Astra shows the relevant error message and accepted format.
 
   Use case ends.
 
-* 3a. The given index is invalid.
+* 2a. The name matches the full name or first name of an existing contact.
+    * 2a1. Astra shows the matching contacts and asks whether to add a separate contact.
+    * 2a2. User confirms.
+      
+      Use case resumes at step 3.
 
-    * 3a1. AddressBook shows an error message.
+* 2b. The contact number or email belongs to exactly one existing contact.
+    * 2b1. Astra shows the existing and incoming details and offers keep, replace, merge or cancel.
+    * 2b2. User chooses replace or merge (choosing a name if the two names differ).
+    * 2b3. Astra shows a preview of the resulting contact and asks for confirmation.
+    * 2b4. User confirms.
+    * 2b5. Astra updates the existing contact in its original position and saves the contact list.
 
-      Use case resumes at step 2.
+      Use case ends.
+
+* 2c. The contact number and email belong to two different existing contacts.
+    * 2c1. Astra rejects the command and identifies the conflicting contacts.
+      
+      Use case ends.
+
+* 2d. All normalised fields already match one existing contact.
+    * 2d1. Astra shows that the contact already exists and makes no changes.
+
+      Use case ends.
+
+* 3a. Saving fails.
+    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+      
+      Use case ends.
+
+* *a. At any prompt, the user chooses keep, cancel or n.
+    * *a1. Astra leaves the contact list unchanged.
+
+      Use case ends.
+
 
 **Use case: UC02 - Delete contacts**
 
@@ -526,6 +560,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 4.  Should work without an internet connection, and should never send contact data over the network.
 8.  Should allow only one running instance to use the contact file at a time.
+9.  Should accept names containing non-English (Unicode) letters
 10. Every error message should state what was wrong and, where relevant, the accepted format.
 11. Should be packaged as a single JAR file that runs without an installer.
 
@@ -534,6 +569,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
+* **Contact number**: A phone number made up of digits and optional balanced parentheses, with at least three digits
+* **Prefix**: A field marker in a command, such as `/company` or `/email`. Prefixes are case-insensitive
+* **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Normalisation**: Trimming outer spaces and collapsing repeated spaces before a value is stored or compared
 * **Display value**: The normalised spelling that Astra stores and shows to the user
