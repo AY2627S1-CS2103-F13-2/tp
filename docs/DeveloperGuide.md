@@ -312,8 +312,10 @@ _{Explain here how the data archiving feature will be implemented}_
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Contact file**: The file that stores all contacts, at `<user-home>/.contacts-cli/contacts.jsonl`
+* **JSON Lines (JSONL)**: A text format with one JSON object per line
+* **Corrupted contact file**: A contact file with records that are malformed, have missing fields or invalid values, or conflict with earlier records
+* **Backup file**: An unchanged copy of a corrupted contact file, saved as `contacts-corrupted-<timestamp>.jsonl`
 
 --------------------------------------------------------------------------------------------------------------------
 
