@@ -261,10 +261,11 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
+* attends networking events, career fairs or conferences regularly
+* meets many new people in a short span and struggles to recall who was who afterwards
+* wants to capture contact details (company, role phone number, email, LinkedIn) and context in seconds, mid-conversation or right after
 * prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
+* can type fast and prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
 **Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
