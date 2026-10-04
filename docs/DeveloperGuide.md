@@ -564,7 +564,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 10. Every error message should state what was wrong and, where relevant, the accepted format.
 11. Should be packaged as a single JAR file that runs without an installer.
 
->>>>>>> upstream/master
 *{More to be added}*
 
 ### Glossary
