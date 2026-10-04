@@ -478,6 +478,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 8.  Should allow only one running instance to use the contact file at a time.
+10. Every error message should state what was wrong and, where relevant, the accepted format.
+11. Should be packaged as a single JAR file that runs without an installer.
 
 *{More to be added}*
 
