@@ -26,7 +26,15 @@ public class RemarkCommandParser implements Parser<RemarkCommand> {
                     RemarkCommand.MESSAGE_USAGE), pe);
         }
 
-        Remark remark = new Remark(argMultimap.getValue(PREFIX_REMARK).orElse(""));
+        if (argMultimap.getValue(PREFIX_REMARK).isEmpty()) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, RemarkCommand.MESSAGE_USAGE));
+        }
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_REMARK);
+        String value = argMultimap.getValue(PREFIX_REMARK).get();
+        if (!Remark.isValidRemark(value)) {
+            throw new ParseException(Remark.MESSAGE_CONSTRAINTS);
+        }
+        Remark remark = new Remark(value);
 
         return new RemarkCommand(index, remark);
     }
