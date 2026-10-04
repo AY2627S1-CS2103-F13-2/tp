@@ -50,6 +50,21 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_personWithRemark_preservesRemark() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person person = new PersonBuilder(original).withRemark("Enjoys hiking").build();
+        model.setPerson(original, person);
+        Person editedPerson = new PersonBuilder(person).withPhone(VALID_PHONE_BOB).build();
+        EditCommand command = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build());
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(person, editedPerson);
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_someFieldsSpecifiedUnfilteredList_success() {
         Index indexLastPerson = Index.fromOneBased(model.getFilteredPersonList().size());
         Person lastPerson = model.getFilteredPersonList().get(indexLastPerson.getZeroBased());

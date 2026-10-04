@@ -85,15 +85,37 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // different remark -> returns false
+        editedAlice = new PersonBuilder(ALICE).withRemark("Enjoys hiking").build();
+        assertFalse(ALICE.equals(editedAlice));
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
         // different tags -> returns false
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
     }
 
     @Test
+    public void remark_blankAndCopy_preserved() {
+        assertEquals(new Remark(""), new PersonBuilder().build().getRemark());
+        Person person = new PersonBuilder().withRemark("Enjoys hiking").build();
+        Person copy = new PersonBuilder(person).build();
+        assertEquals(new Remark("Enjoys hiking"), copy.getRemark());
+        assertEquals(person, copy);
+        assertEquals(person.hashCode(), copy.hashCode());
+    }
+
+    @Test
+    public void constructor_nullRemark_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new Person(ALICE.getName(), ALICE.getPhone(),
+                ALICE.getEmail(), ALICE.getAddress(), null, ALICE.getTags()));
+    }
+
+    @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags() + "}";
+                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", remark=" + ALICE.getRemark()
+                + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }

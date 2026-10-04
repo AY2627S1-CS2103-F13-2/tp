@@ -4,12 +4,12 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
 /**
- * Represents a Person's remark in the remark book.
+ * Represents a Person's remark in the address book.
  * Guarantees: immutable; is valid as declared in {@link #isValidRemark(String)}
  */
 public class Remark {
 
-    public static final String MESSAGE_CONSTRAINTS = "Remarkes can take any values, and should not be blank";
+    public static final String MESSAGE_CONSTRAINTS = "Remarks may be empty or start with a non-whitespace character";
 
     /*
      * The first character of the remark must not be a whitespace,
@@ -34,7 +34,7 @@ public class Remark {
      * Returns true if a given string is a valid remark.
      */
     public static boolean isValidRemark(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return test.isEmpty() || test.matches(VALIDATION_REGEX);
     }
 
     @Override
