@@ -29,3 +29,7 @@ CLAUDE.md
 
 # Temp files
 _temp/
+
+.vscode
+
+bin
