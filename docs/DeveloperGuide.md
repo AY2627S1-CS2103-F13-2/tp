@@ -278,12 +278,16 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
 | -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
 | `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
+| `* * *`  | user                                       | add a new contact with their name, company, role and contact details               | remember and reach out to people  meet                                                                        |
+| `* * *` | user                                        | view all the information stored about a contact in one place   | refresh my memory before meeting them again                      |
+|`* * *`| user                                | record a contact's LinkedInprofile                   |
 | `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
 | `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
 | `* * *`  | user                                       | clear all contacts after confirming | start over when I no longer need the list                              |
 | `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data                            |
+|`* * `| user                                          | record where I met the contact and what we discussed       | have context for the next conversation                         |
+|`* * `| user                                          | record who introduced me to a contact                     | remember how I am connected to them |
 | `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
 | `* *`    | user                                       | record follow-up actions for a contact | remember what I need to do after meeting them                          |
 | `* *`    | user                                       | mark a follow-up action as completed | tell pending tasks apart from finished ones                            |
@@ -294,30 +298,60 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `Astra` and the **Actor** is the `user`, unless specified otherwise)
 
-**Use case: Delete a person**
+**Use case: UC01 - Add a contact**
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. User enters an add command with the contact's name, company, role, contact number and email, and optionally a LinkedIn URL.
+2. Astra validates and normalises the details.
+3. Astra adds the contact, saves the contact list and shows the saved details. 
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. A required field is missing, a prefix is unsupported or repeated, or a value is invalid.
+    * 1a1. Astra shows the relevant error message and accepted format.
 
   Use case ends.
 
-* 3a. The given index is invalid.
+* 2a. The name matches the full name or first name of an existing contact.
+    * 2a1. Astra shows the matching contacts and asks whether to add a separate contact.
+    * 2a2. User confirms.
+      
+      Use case resumes at step 3.
 
-    * 3a1. AddressBook shows an error message.
+* 2b. The contact number or email belongs to exactly one existing contact.
+    * 2b1. Astra shows the existing and incoming details and offers keep, replace, merge or cancel.
+    * 2b2. User chooses replace or merge (choosing a name if the two names differ).
+    * 2b3. Astra shows a preview of the resulting contact and asks for confirmation.
+    * 2b4. User confirms.
+    * 2b5. Astra updates the existing contact in its original position and saves the contact list.
 
-      Use case resumes at step 2.
+      Use case ends.
+
+* 2c. The contact number and email belong to two different existing contacts.
+    * 2c1. Astra rejects the command and identifies the conflicting contacts.
+      
+      Use case ends.
+
+* 2d. All normalised fields already match one existing contact.
+    * 2d1. Astra shows that the contact already exists and makes no changes.
+
+      Use case ends.
+
+* 3a. Saving fails.
+    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+      
+      Use case ends.
+
+* *a. At any prompt, the user chooses keep, cancel or n.
+    * *a1. Astra leaves the contact list unchanged.
+
+      Use case ends.
+
 
 **Use case: UC02 - Delete contacts**
 
@@ -412,14 +446,18 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+3.  A user with above-average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse
 8.  Should allow only one running instance to use the contact file at a time.
-
+9.  Should accept names containing non-English (Unicode) letters
 *{More to be added}*
 
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
+* **Contact number**: A phone number made up of digits and optional balanced parentheses, with at least three digits
+* **Prefix**: A field marker in a command, such as `/company` or `/email`. Prefixes are case-insensitive
+* **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Duplicate contact**: An incoming contact whose contact number or email already belongs to an existing contact
 * **Merge**: Combining the distinct values of an existing and an incoming contact into one record, keeping the existing values first
