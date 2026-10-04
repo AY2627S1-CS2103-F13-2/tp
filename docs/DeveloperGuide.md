@@ -259,15 +259,305 @@ _{Explain here how the data archiving feature will be implemented}_
 
 ### Product scope
 
+**Target user profile**:
+
+* attends networking events, career fairs or conferences regularly
+* meets many new people in a short span and struggles to recall who was who afterwards
+* wants to capture contact details (company, role phone number, email, LinkedIn) and context in seconds, mid-conversation or right after
+* prefers desktop apps over other types of applications
+* can type fast and prefers typing to mouse interactions
+* is reasonably comfortable using CLI apps
+
+**Value proposition**: Networking events generate more contacts than anyone can remember and more context than a phone contacts app can hold. Astra lets a fast typist capture each new person (role, company, LinkedIn, who introduced them, and what was discussed) in the seconds between conversations, and search any of it back up instantly, so no one you met becomes "that person from the fair".
+
 ### User stories
 
+Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
+
+| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
+| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
+| `* * *`  | user                                       | add a new contact with their name, company, role and contact details               | remember and reach out to people  meet                                                                        |
+| `* * *` | user                                        | view all the information stored about a contact in one place   | refresh my memory before meeting them again                      |
+|`* * *`| user                                | record a contact's LinkedInprofile                   |
+| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
+| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
+| `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
+| `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
+| `* * *`  | user                                       | clear all contacts after confirming | start over when I no longer need the list                              |
+| `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data   
+| `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
+| `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
+| `* * *`  | user                                       | list all contacts                                                   | browse my contact list                                            |
 | `* * *`  | user                                     | retrieve my contacts after closing and reopening the app            | keep what I have recorded                                         |
 | `* * *`  | new user                                 | view help for the available commands                                | learn the commands without memorising them                        |
+|`* * `| user                                          | record where I met the contact and what we discussed       | have context for the next conversation                         |
+|`* * `| user                                          | record who introduced me to a contact                     | remember how I am connected to them |
+| `* *`    | user who struggles with names              | find someone without typing the exact spelling of their name        | look them up even when I misremember their name                   |
+| `* *`    | user                                       | filter contacts by categories or custom tags                        | narrow down a large list quickly                                  |
+| `* *`    | frequent user                              | star important contacts                                             | revisit them quickly                                              |
+| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
+| `* *`    | user                                       | record follow-up actions for a contact | remember what I need to do after meeting them                          |
+| `* *`    | user                                       | mark a follow-up action as completed | tell pending tasks apart from finished ones                            |
+| `* *`    | user                                       | see when I last interacted with someone | know how long it has been since we last met                            |
+| `* *`    | careless user                            | undo an accidental deletion or edit                                 | avoid losing important information                                |
 | `* *`    | potential user exploring the app         | see the app populated with sample data                              | get a feel for how the app looks in use                           |
+| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+| `*`      | user                                     | see which contact entries are incomplete                            | remember to fill in missing details later                         |
+| `*`      | frequent user                            | reorder the information shown for a contact                         | see the details I care about first                                |
+| `*`      | expert user                              | define shortcuts for commands                                       | add contacts faster than typing commands in full                  |
+| `*`      | frequent user                            | reuse templates of common fields when adding contacts               | enter repetitive data faster                                      |
 | `*`      | first-time user                          | follow a tutorial of the main features                              | start using the app confidently                                   |
 | `*`      | user                                     | protect my contact data with a password                             | stop other people using my device from viewing it                 |
 
+*{More to be added}*
+
 ### Use cases
+
+(For all use cases below, the **System** is `Astra` and the **Actor** is the `user`, unless specified otherwise)
+
+**Use case: UC01 - Add a contact**
+
+**MSS**
+
+1. User enters an add command with the contact's name, company, role, contact number and email, and optionally a LinkedIn URL.
+2. Astra validates and normalises the details.
+3. Astra adds the contact, saves the contact list and shows the saved details. 
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. A required field is missing, a prefix is unsupported or repeated, or a value is invalid.
+    * 1a1. Astra shows the relevant error message and accepted format.
+
+      Use case ends.
+
+* 2a. The name matches the full name or first name of an existing contact.
+    * 2a1. Astra shows the matching contacts and asks whether to add a separate contact.
+    * 2a2. User confirms.
+      
+      Use case resumes at step 3.
+
+* 2b. The contact number or email belongs to exactly one existing contact.
+    * 2b1. Astra shows the existing and incoming details and offers keep, replace, merge or cancel.
+    * 2b2. User chooses replace or merge (choosing a name if the two names differ).
+    * 2b3. Astra shows a preview of the resulting contact and asks for confirmation.
+    * 2b4. User confirms.
+    * 2b5. Astra updates the existing contact in its original position and saves the contact list.
+
+      Use case ends.
+
+* 2c. The contact number and email belong to two different existing contacts.
+    * 2c1. Astra rejects the command and identifies the conflicting contacts.
+      
+      Use case ends.
+
+* 2d. All normalised fields already match one existing contact.
+    * 2d1. Astra shows that the contact already exists and makes no changes.
+
+      Use case ends.
+
+* 3a. Saving fails.
+    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+      
+      Use case ends.
+
+* *a. At any prompt, the user chooses keep, cancel or n.
+    * *a1. Astra leaves the contact list unchanged.
+
+      Use case ends.
+
+
+**Use case: UC02 - Delete contacts**
+
+**MSS**
+
+1. User enters a delete command with one or more emails, one contact number, or one name.
+2. Astra shows the selected contacts and asks for confirmation.
+3. User confirms.
+4. Astra deletes the contacts, saves the contact list and shows the number of contacts remaining.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The contact list is empty.
+    * 1a1. Astra shows that there are no contacts to delete.
+
+      Use case ends.
+
+* 1b. The input is empty, mixes selector types, or contains a malformed email.
+    * 1b1. Astra shows the relevant error message.
+
+      Use case ends.
+
+* 1c. A requested email, contact number or name does not match any contact.
+    * 1c1. Astra identifies the missing target and deletes nothing.
+
+      Use case ends.
+
+* 1d. Several contacts match the given name.
+    * 1d1. Astra shows a ranked, numbered list of matching contacts with their names, companies and emails.
+    * 1d2. User selects a contact by index.
+
+      Use case resumes at step 2.
+
+    * 1d2a. User enters an invalid index.
+        * 1d2a1. Astra shows an error message.
+
+          Use case resumes at step 1d2.
+
+* 3a. User answers n or cancel.
+    * 3a1. Astra shows that the deletion was cancelled.
+
+      Use case ends.
+
+* 4a. Saving fails.
+    * 4a1. Astra shows a save error. The contact list and file are unchanged.
+
+      Use case ends.
+
+**Use case: UC03 - Find and view a contact**
+
+**MSS**
+
+1. User enters a find command with a name, a contact number or an email.
+2. Astra finds exactly one matching contact and shows all of its stored information.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The contact list is empty.
+    * 1a1. Astra shows that there are no contacts to view.
+
+      Use case ends.
+
+* 1b. The search value is missing, or the contact number or email is malformed.
+    * 1b1. Astra shows the relevant error message.
+
+      Use case ends.
+
+* 2a. No contact matches.
+    * 2a1. Astra shows that the contact was not found.
+
+      Use case ends.
+
+* 2b. Several contacts match.
+    * 2b1. Astra shows the number of matches and a ranked, numbered list with names, companies and emails.
+    * 2b2. User selects a contact by index.
+    * 2b3. Astra shows all stored information of the selected contact.
+
+      Use case ends.
+
+    * 2b2a. User enters an invalid index.
+        * 2b2a1. Astra shows an error message.
+
+          Use case resumes at step 2b2.
+
+    * 2b2b. User enters cancel.
+
+      Use case ends.
+
+**Use case: UC04 - Edit a contact**
+
+**MSS**
+
+1. User enters an edit command with a contact's name and the new values of one or more fields.
+2. Astra finds the contact and validates the new values.
+3. Astra updates the contact, saves the contact list and lists every updated field.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No field to change is given.
+    * 1a1. Astra shows that at least one field must be provided.
+
+      Use case ends.
+
+* 1b. A prefix is unsupported or repeated, a required value is empty, or a value is malformed.
+    * 1b1. Astra shows the relevant error message and the edit command format.
+
+      Use case ends.
+
+* 2a. No contact matches the name.
+    * 2a1. Astra shows that the contact was not found.
+
+      Use case ends.
+
+* 2b. Several contacts match the name.
+    * 2b1. Astra shows a ranked, numbered list of matching contacts.
+    * 2b2. User selects a contact by index.
+
+   Use case resumes at step 2.
+
+* 2d. Another Astra instance is already using the contact file.
+    * 2d1. Astra shows that the storage is in use and the second instance stops.
+
+* 2c. The new contact number or email already belongs to another contact.
+    * 2c1. Astra rejects the whole edit and changes nothing.
+
+      Use case ends.
+
+* 2d. The new name or LinkedIn URL matches another contact.
+    * 2d1. Astra warns the user and asks for confirmation.
+    * 2d2. User confirms.
+
+      Use case resumes at step 3.
+
+* 2e. Every new value is identical to the current one.
+    * 2e1. Astra shows that there are no changes to apply and does not save.
+
+      Use case ends.
+
+* 3a. Saving fails.
+    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+
+      Use case ends.
+
+* *a. At any prompt, the user enters cancel or n.
+    * *a1. Astra shows that the edit was cancelled.
+
+      Use case ends.
+
+**Use case: UC05 - Clear all contacts**
+
+**MSS**
+
+1. User requests to clear all contacts.
+2. Astra shows the total number of contacts and asks for confirmation.
+3. User confirms.
+4. Astra saves an empty contact list and shows that 0 contacts remain.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The contact list is empty.
+    * 1a1. Astra shows that there are no contacts to clear.
+
+      Use case ends.
+
+* 1b. The command has extra arguments.
+    * 1b1. Astra shows the command usage.
+
+      Use case ends.
+
+* 3a. User answers n or cancel.
+    * 3a1. Astra shows that the clear was cancelled and how many contacts remain.
+
+      Use case ends.
+
+* 3b. User enters a response other than y or n.
+    * 3b1. Astra asks the user to enter y or n.
+
+      Use case resumes at step 3.
+
+* 4a. Saving fails.
+    * 4a1. Astra shows a save error. The contact list and file are unchanged.
+
+      Use case ends.
 
 **Use case: UC06 - Start Astra and restore saved contacts**
 
@@ -304,14 +594,42 @@ _{Explain here how the data archiving feature will be implemented}_
 
       Use case ends.
 
+*{More to be added}*
+
 ### Non-Functional Requirements
 
+1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
+2.  Should hold up to 1000 contacts and respond to any command within 1 second on a typical laptop, so that the user can keep up while meeting people in quick succession.
+3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+4.  Should work without an internet connection, and should never send contact data over the network.
 5. Should store data locally in a human-readable _JSON Lines_ file, without needing a database management system.
 6. Changes from a successful command should survive closing and reopening the app. A crash during a save should leave either the complete old file or the complete new file, never a partially written one.
 7. Should never silently discard data from a _corrupted contact file_: the original file is backed up before anything is replaced.
+8.  Should allow only one running instance to use the contact file at a time.
+9.  Should accept names containing non-English (Unicode) letters
+10. Every error message should state what was wrong and, where relevant, the accepted format.
+11. Should be packaged as a single JAR file that runs without an installer.
+
+*{More to be added}*
 
 ### Glossary
 
+* **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
+* **Contact number**: A phone number made up of digits and optional balanced parentheses, with at least three digits
+* **Prefix**: A field marker in a command, such as `/company` or `/email`. Prefixes are case-insensitive
+* **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field
+* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Normalisation**: Trimming outer spaces and collapsing repeated spaces before a value is stored or compared
+* **Display value**: The normalised spelling that Astra stores and shows to the user
+* **Unique key**: A contact number or email. No two contacts may share one
+* **Duplicate contact**: An incoming contact whose contact number or email already belongs to an existing contact
+* **Merge**: Combining the distinct values of an existing and an incoming contact into one record, keeping the existing values first
+* **MSS (Main Success Scenario)**: The most common path through a use case, where everything goes as expected
+* **CLI (Command Line Interface)**: A text-based interface where the user types commands instead of clicking
+* **Comparison value**: The form of a value used for matching, such as the lowercase name or the digits-only contact number
+* **Name-match ranking**: The eight-level order (exact full name, first, last, middle; then partial first, last, middle, full) used to sort contacts that match a name
+* **Candidate list**: The numbered list of matching contacts shown when a name matches several contacts. Indices start at 1
 * **Contact file**: The file that stores all contacts, at `<user-home>/.contacts-cli/contacts.jsonl`
 * **JSON Lines (JSONL)**: A text format with one JSON object per line
 * **Corrupted contact file**: A contact file with records that are malformed, have missing fields or invalid values, or conflict with earlier records
