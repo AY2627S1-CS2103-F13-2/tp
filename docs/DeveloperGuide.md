@@ -487,6 +487,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Normalisation**: Trimming outer spaces and collapsing repeated spaces before a value is stored or compared
+* **Display value**: The normalised spelling that Astra stores and shows to the user
+* **Unique key**: A contact number or email. No two contacts may share one
 * **Duplicate contact**: An incoming contact whose contact number or email already belongs to an existing contact
 * **Merge**: Combining the distinct values of an existing and an incoming contact into one record, keeping the existing values first
 * **MSS (Main Success Scenario)**: The most common path through a use case, where everything goes as expected
