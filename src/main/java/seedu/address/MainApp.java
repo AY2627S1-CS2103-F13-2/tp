@@ -38,11 +38,11 @@ public class MainApp extends Application {
     private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
     private static final Path ADDRESS_BOOK_FILE_PATH = Paths.get("data", "addressbook.json");
 
-    private boolean contactsLoadedFromFile;
     protected Ui ui;
     protected Logic logic;
     protected Storage storage;
     protected Model model;
+    private boolean contactsLoadedFromFile;
 
     @Override
     public void init() throws Exception {

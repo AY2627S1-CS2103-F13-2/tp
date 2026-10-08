@@ -111,12 +111,9 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Fills up all the placeholders of this window.
+     * Fills the window's placeholders and displays feedback for a successful
+     * contact-file load.
      */
-/**
- * Fills the window's placeholders and displays feedback for a successful
- * contact-file load.
- */
     void fillInnerParts(boolean contactsLoadedFromFile) {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
