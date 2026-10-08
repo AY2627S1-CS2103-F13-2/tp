@@ -26,14 +26,16 @@ public class UiManager implements Ui {
     private Logic logic;
     private Path dataFilePath;
     private MainWindow mainWindow;
+    private final boolean contactsLoadedFromFile;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
      * to show in the status bar.
      */
-    public UiManager(Logic logic, Path dataFilePath) {
+    public UiManager(Logic logic, Path dataFilePath, boolean contactsLoadedFromFile) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.contactsLoadedFromFile = contactsLoadedFromFile;
     }
 
     @Override
@@ -46,8 +48,7 @@ public class UiManager implements Ui {
         try {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
-            mainWindow.fillInnerParts();
-
+            mainWindow.fillInnerParts(contactsLoadedFromFile);
         } catch (Throwable e) {
             logger.severe(StringUtil.getDetails(e));
             showFatalErrorDialogAndShutdown("Fatal error during initializing", e);

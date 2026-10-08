@@ -111,9 +111,10 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Fills up all the placeholders of this window.
+     * Fills the window's placeholders and displays feedback for a successful
+     * contact-file load.
      */
-    void fillInnerParts() {
+    void fillInnerParts(boolean contactsLoadedFromFile) {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
@@ -125,6 +126,8 @@ public class MainWindow extends UiPart<Stage> {
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+
+        showStartupFeedback(contactsLoadedFromFile);
     }
 
     /**
@@ -196,5 +199,20 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Shows the loaded contact count and source file after a successful load.
+     */
+    private void showStartupFeedback(boolean contactsLoadedFromFile) {
+        if (!contactsLoadedFromFile) {
+            return;
+        }
+
+        int contactCount = logic.getFilteredPersonList().size();
+        String message = StartupMessageFormatter.formatLoadedContacts(
+                contactCount, dataFilePath);
+
+        resultDisplay.setFeedbackToUser(message);
     }
 }
