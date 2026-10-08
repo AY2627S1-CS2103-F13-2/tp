@@ -205,18 +205,6 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Formats the startup message for contacts loaded from storage.
-     */
-    private String formatStartupFeedback(int contactCount, Path sourceFile) {
-        String contactLabel = contactCount == 1 ? "contact" : "contacts";
-        Path absolutePath = sourceFile.toAbsolutePath().normalize();
-
-        return String.format(
-                "Loaded %d %s from %s.",
-                contactCount, contactLabel, absolutePath);
-    }
-
-    /**
      * Shows the loaded contact count and source file after a successful load.
      */
     private void showStartupFeedback(boolean contactsLoadedFromFile) {
@@ -225,7 +213,9 @@ public class MainWindow extends UiPart<Stage> {
         }
 
         int contactCount = logic.getFilteredPersonList().size();
-        resultDisplay.setFeedbackToUser(
-                formatStartupFeedback(contactCount, dataFilePath));
+        String message = StartupMessageFormatter.formatLoadedContacts(
+                contactCount, dataFilePath);
+
+        resultDisplay.setFeedbackToUser(message);
     }
 }
