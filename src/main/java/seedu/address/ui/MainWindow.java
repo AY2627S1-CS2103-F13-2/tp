@@ -113,7 +113,11 @@ public class MainWindow extends UiPart<Stage> {
     /**
      * Fills up all the placeholders of this window.
      */
-    void fillInnerParts() {
+/**
+ * Fills the window's placeholders and displays feedback for a successful
+ * contact-file load.
+ */
+    void fillInnerParts(boolean contactsLoadedFromFile) {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
@@ -125,6 +129,8 @@ public class MainWindow extends UiPart<Stage> {
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+
+        showStartupFeedback(contactsLoadedFromFile);
     }
 
     /**
@@ -196,5 +202,30 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Formats the startup message for contacts loaded from storage.
+     */
+    private String formatStartupFeedback(int contactCount, Path sourceFile) {
+        String contactLabel = contactCount == 1 ? "contact" : "contacts";
+        Path absolutePath = sourceFile.toAbsolutePath().normalize();
+
+        return String.format(
+                "Loaded %d %s from %s.",
+                contactCount, contactLabel, absolutePath);
+    }
+
+    /**
+     * Shows the loaded contact count and source file after a successful load.
+     */
+    private void showStartupFeedback(boolean contactsLoadedFromFile) {
+        if (!contactsLoadedFromFile) {
+            return;
+        }
+
+        int contactCount = logic.getFilteredPersonList().size();
+        resultDisplay.setFeedbackToUser(
+                formatStartupFeedback(contactCount, dataFilePath));
     }
 }

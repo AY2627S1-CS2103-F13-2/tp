@@ -41,7 +41,7 @@ public class MainApp extends Application {
     protected Ui ui;
     protected Logic logic;
     protected Storage storage;
-    private String startupFeedback = "";
+    private boolean contactsLoadedFromFile;
     protected Model model;
 
     @Override
@@ -58,7 +58,7 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getAddressBookFilePath(), startupFeedback);
+        ui = new UiManager(logic, storage.getAddressBookFilePath(), contactsLoadedFromFile);
     }
 
     /**
@@ -73,18 +73,7 @@ public class MainApp extends Application {
         ReadOnlyAddressBook initialData;
         try {
             addressBookOptional = storage.readAddressBook();
-            if (addressBookOptional.isPresent()) {
-                int count = addressBookOptional.get().getPersonList().size();
-                Path loadedFile = storage.getAddressBookFilePath()
-                        .toAbsolutePath()
-                        .normalize();
-
-                startupFeedback = String.format(
-                        "Loaded %d %s from %s.",
-                        count,
-                        count == 1 ? "contact" : "contacts",
-                        loadedFile);
-            }   
+            contactsLoadedFromFile = addressBookOptional.isPresent();
             if (addressBookOptional.isEmpty()) {
                 logger.info("Creating a new data file " + storage.getAddressBookFilePath()
                         + " populated with a sample AddressBook.");
