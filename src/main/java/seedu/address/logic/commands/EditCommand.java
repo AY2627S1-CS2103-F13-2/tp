@@ -267,7 +267,8 @@ public class EditCommand extends Command {
     }
 
     /**
-     * Returns the given persons as numbered lines, e.g. "1. John Lim \u2014 john.lim@example.com".
+     * Returns the given persons as numbered lines of their name, company and email, skipping absent details,
+     * e.g. "1. John Lim \u2014 Google \u2014 john.lim@example.com".
      */
     private static String formatNumberedList(List<Person> persons) {
         StringBuilder list = new StringBuilder();
@@ -276,8 +277,9 @@ public class EditCommand extends Command {
             if (i > 0) {
                 list.append("\n");
             }
-            list.append(i + 1).append(". ").append(person.getName())
-                    .append(" \u2014 ").append(person.getEmail());
+            list.append(i + 1).append(". ").append(person.getName());
+            person.getCompany().ifPresent(company -> list.append(" \u2014 ").append(company));
+            person.getEmail().ifPresent(email -> list.append(" \u2014 ").append(email));
         }
         return list.toString();
     }

@@ -50,8 +50,8 @@ public class EditCommandByNameTest {
         EditCommand editCommand = new EditCommand("Meier", phoneBob);
 
         String expectedMessage = "2 contacts found:\n"
-                + "1. Benson Meier — johnd@example.com\n"
-                + "2. Daniel Meier — cornelia@example.com\n"
+                + "1. Benson Meier \u2014 GovTech \u2014 johnd@example.com\n"
+                + "2. Daniel Meier \u2014 DBS \u2014 cornelia@example.com\n"
                 + "To edit one of them, enter the command again with its index in place of the name.";
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Meier")));
