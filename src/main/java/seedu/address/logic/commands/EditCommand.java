@@ -146,9 +146,11 @@ public class EditCommand extends Command {
         String name = original.getName().toString();
         List<String> lines = new ArrayList<>();
         addLineIfChanged(lines, name, "name", original.getName(), edited.getName());
+        addLineIfChanged(lines, name, "company", original.getCompany(), edited.getCompany());
+        addLineIfChanged(lines, name, "role", original.getRole(), edited.getRole());
         addLineIfChanged(lines, name, "phone", original.getPhone(), edited.getPhone());
         addLineIfChanged(lines, name, "email", original.getEmail(), edited.getEmail());
-        addLineIfChanged(lines, name, "address", original.getAddress(), edited.getAddress());
+        addLineIfChanged(lines, name, "LinkedIn", original.getLinkedin(), edited.getLinkedin());
         if (!original.getTags().equals(edited.getTags())) {
             lines.add(String.format(MESSAGE_FIELD_UPDATED, name, "tags", formatTags(edited.getTags())));
         }
@@ -162,8 +164,18 @@ public class EditCommand extends Command {
     private static void addLineIfChanged(List<String> lines, String name, String fieldName,
             Object originalValue, Object editedValue) {
         if (!originalValue.equals(editedValue)) {
-            lines.add(String.format(MESSAGE_FIELD_UPDATED, name, fieldName, editedValue));
+            lines.add(String.format(MESSAGE_FIELD_UPDATED, name, fieldName, formatValue(editedValue)));
         }
+    }
+
+    /**
+     * Returns the value as shown to the user, unwrapping an {@code Optional} and showing an absent value as "none".
+     */
+    private static String formatValue(Object value) {
+        if (value instanceof Optional<?> optionalValue) {
+            return optionalValue.map(Object::toString).orElse("none");
+        }
+        return value.toString();
     }
 
     /**
