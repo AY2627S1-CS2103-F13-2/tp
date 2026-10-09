@@ -14,7 +14,7 @@ import seedu.address.model.person.Person;
  * @param contacts the contacts available to the application
  * @param sourceFile the active contact file location
  * @param source how the contacts were obtained
- * @param recoveryArchive the archive created by successful recovery
+ * @param recoveryArchive the original backup and report created for recovery or a user-requested reset
  * @param skippedCount the number of skipped records
  */
 public record StartupLoadResult(
@@ -30,7 +30,8 @@ public record StartupLoadResult(
     public enum Source {
         STORED,
         SAMPLE,
-        RECOVERED
+        RECOVERED,
+        RESET
     }
 
     /**
@@ -46,9 +47,13 @@ public record StartupLoadResult(
             if (recoveryArchive.isEmpty() || skippedCount < 1 || contacts.isEmpty()) {
                 throw new IllegalArgumentException("Invalid recovered startup result.");
             }
+        } else if (source == Source.RESET) {
+            if (recoveryArchive.isEmpty() || !contacts.isEmpty() || skippedCount != 0) {
+                throw new IllegalArgumentException("Invalid reset startup result.");
+            }
         } else if (recoveryArchive.isPresent() || skippedCount != 0) {
             throw new IllegalArgumentException(
-                    "Only recovered results can contain recovery details.");
+                    "Only recovered or reset results can contain recovery details.");
         }
     }
 }

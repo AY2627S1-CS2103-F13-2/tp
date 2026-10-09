@@ -43,7 +43,27 @@ public final class StartupMessageFormatter {
                     result.contacts().size(), result.sourceFile());
             case SAMPLE -> formatSampleContacts();
             case RECOVERED -> formatRecoveredContacts(result);
+            case RESET -> formatResetContacts(result);
         };
+    }
+
+    /**
+     * Explains the reset choice and where the original contact file was preserved.
+     */
+    public static String formatStartupResetOffer(Exception error, RecoveryArchive archive) {
+        return error.getMessage()
+                + "\n\nYour original contacts file has been preserved unchanged under reports."
+                + "\nOriginal backup: " + archive.backupFile()
+                + "\nReport: " + archive.reportFile()
+                + "\n\nChoose Start anew to clear the active address book and open Astra with an empty contact list."
+                + " Choose Exit to keep the active file.";
+    }
+
+    private static String formatResetContacts(StartupLoadResult result) {
+        RecoveryArchive archive = result.recoveryArchive().orElseThrow();
+        return "Started anew with an empty contact list. Your original contacts file is preserved under reports."
+                + "\nOriginal backup: " + archive.backupFile()
+                + "\nReport: " + archive.reportFile();
     }
 
     private static String formatRecoveredContacts(StartupLoadResult result) {

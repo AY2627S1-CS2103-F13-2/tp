@@ -6,6 +6,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -65,6 +66,50 @@ final class ContactStartupLoader {
         }
 
         return recover(source, originalBytes, result);
+    }
+
+    /**
+     * Preserves the failed contact file before offering the user a reset.
+     */
+    public StartupResetPlan prepareStartupReset(Path sourceFile, IOException failure) throws IOException {
+        Path source = sourceFile.toAbsolutePath().normalize();
+        byte[] originalBytes = Files.readAllBytes(source);
+        boolean invalidDocument;
+        try {
+            invalidDocument = parser.parse(originalBytes).getSkippedCount() != 0;
+        } catch (IOException e) {
+            invalidDocument = true;
+        }
+        if (!invalidDocument) {
+            throw new IOException("The contact file is now valid. Restart Astra to load it instead of clearing it.");
+        }
+        RecoveryArchive archive = new RecoveryArchiveWriter().writeStartupFailure(
+                source, originalBytes, failure.getMessage());
+        verifyOriginalUnchanged(source, originalBytes);
+        return new StartupResetPlan(source, archive, originalBytes);
+    }
+
+    /**
+     * Installs an empty address book after the user chooses to start anew.
+     * The archived original and current active file must still match the preserved snapshot.
+     */
+    public StartupLoadResult resetForStartup(Path sourceFile, StartupResetPlan plan) throws IOException {
+        Path source = sourceFile.toAbsolutePath().normalize();
+        if (!source.equals(plan.sourceFile())) {
+            throw new IOException("The reset belongs to a different contact file.");
+        }
+        try {
+            if (!Arrays.equals(plan.originalBytes(), Files.readAllBytes(plan.archive().backupFile()))
+                    || Files.readString(plan.archive().reportFile()).isBlank()) {
+                throw new IOException("The preserved contact backup or report failed verification.");
+            }
+            replaceActiveFile(source, plan.originalBytes(), new ContactRecoveryResult(List.of(), List.of()));
+        } catch (IOException e) {
+            throw new IOException("Could not start anew: " + e.getMessage() + "\n"
+                    + describeArchive(plan.archive()), e);
+        }
+        return new StartupLoadResult(List.of(), source,
+                StartupLoadResult.Source.RESET, Optional.of(plan.archive()), 0);
     }
 
     private StartupLoadResult recover(Path source, byte[] originalBytes,

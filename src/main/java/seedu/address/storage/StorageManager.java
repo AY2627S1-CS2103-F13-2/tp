@@ -69,4 +69,14 @@ public class StorageManager implements Storage {
     public StartupLoadResult loadForStartup() throws IOException {
         return addressBookStorage.loadForStartup();
     }
+
+    @Override
+    public StartupResetPlan prepareStartupReset(IOException failure) throws IOException {
+        return addressBookStorage.prepareStartupReset(failure);
+    }
+
+    @Override
+    public StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException {
+        return addressBookStorage.resetForStartup(plan);
+    }
 }

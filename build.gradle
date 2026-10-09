@@ -26,6 +26,10 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    // Exercise real JavaFX controls without requiring a desktop display in CI.
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
     finalizedBy jacocoTestReport
 }
 
@@ -69,6 +73,7 @@ dependencies {
 
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jUnitVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
+    testRuntimeOnly 'org.testfx:openjfx-monocle:17.0.10'
 }
 
 shadowJar {

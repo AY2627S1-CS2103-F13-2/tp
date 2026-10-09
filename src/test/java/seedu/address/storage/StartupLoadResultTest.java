@@ -67,4 +67,19 @@ class StartupLoadResultTest {
         assertThrows(NullPointerException.class, () -> new StartupLoadResult(List.of(), SOURCE,
                 StartupLoadResult.Source.STORED, null, 0));
     }
+
+    @Test
+    void constructor_reset_requiresEmptyContactsAndArchive() {
+        StartupLoadResult result = new StartupLoadResult(List.of(), SOURCE,
+                StartupLoadResult.Source.RESET, Optional.of(ARCHIVE), 0);
+        assertEquals(ARCHIVE, result.recoveryArchive().orElseThrow());
+        assertThrows(IllegalArgumentException.class, () -> new StartupLoadResult(List.of(), SOURCE,
+                StartupLoadResult.Source.RESET, Optional.empty(), 0));
+        assertThrows(IllegalArgumentException.class, () -> new StartupLoadResult(List.of(ALICE), SOURCE,
+                StartupLoadResult.Source.RESET, Optional.of(ARCHIVE), 0));
+        for (int count : List.of(-1, 1)) {
+            assertThrows(IllegalArgumentException.class, () -> new StartupLoadResult(List.of(), SOURCE,
+                    StartupLoadResult.Source.RESET, Optional.of(ARCHIVE), count));
+        }
+    }
 }

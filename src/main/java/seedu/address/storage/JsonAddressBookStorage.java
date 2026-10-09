@@ -95,4 +95,18 @@ public class JsonAddressBookStorage {
         return new ContactStartupLoader().load(filePath);
     }
 
+    /**
+     * Creates an unchanged backup and failure report before offering a fresh start.
+     */
+    public StartupResetPlan prepareStartupReset(IOException failure) throws IOException {
+        return new ContactStartupLoader().prepareStartupReset(filePath, failure);
+    }
+
+    /**
+     * Safely replaces the active file with an empty address book after confirmation.
+     */
+    public StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException {
+        return new ContactStartupLoader().resetForStartup(filePath, plan);
+    }
+
 }

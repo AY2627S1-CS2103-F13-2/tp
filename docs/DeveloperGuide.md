@@ -592,14 +592,27 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     * 2b4a. No valid contacts can be recovered.
         * 2b4a1. Astra leaves the active file unchanged, shows the backup
-          and report locations, and stops.
+          and report locations, and offers the fresh-start choice described in 2c.
 
           Use case ends.
 
 * 2c. The contact file cannot be read or reliably parsed, or recovery cannot
   create its backup/report or safely replace the active file.
-    * 2c1. Astra shows the relevant error and any available recovery locations.
-    * 2c2. Astra stops without opening the command interface.
+    * 2c1. If Astra can read the failed contact file, it preserves its exact bytes
+      in a uniquely named incident folder under `data/reports` and writes a failure report.
+    * 2c2. Astra shows the error, confirms where the original file is preserved,
+      and offers **Start anew** or **Exit**. Exit is the default choice.
+    * 2c3. If the user chooses Start anew, Astra verifies the backup and checks
+      that the active file has not changed, then atomically replaces it with an
+      empty address book and opens the command interface. The original backup remains unchanged.
+    * 2c4. Astra shows an empty contact list and reminds the user of the backup and report locations.
+
+    * 2c2a. The original file cannot be read or safely preserved under reports.
+        * 2c2a1. Astra explains that starting anew is unavailable and stops without clearing the address book.
+    * 2c2b. The user chooses Exit or dismisses the dialog.
+        * 2c2b1. Astra stops without replacing the active file.
+    * 2c3a. Backup verification or atomic replacement fails, or the active file changes.
+        * 2c3a1. Astra shows the failure and available archive locations and stops without opening the command interface.
 
       Use case ends.
       

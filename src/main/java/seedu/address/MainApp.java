@@ -21,6 +21,7 @@ import seedu.address.model.UserPrefs;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StartupLoadResult;
+import seedu.address.storage.StartupResetPlan;
 import seedu.address.storage.Storage;
 import seedu.address.storage.StorageManager;
 import seedu.address.ui.Ui;
@@ -45,6 +46,8 @@ public class MainApp extends Application {
     private final Path userPrefsFilePath;
     private final Path addressBookFilePath;
     private IOException startupFailure;
+    private StartupResetPlan startupResetPlan;
+    private UserPrefs startupPrefs;
 
     public MainApp() {
         this(USER_PREFS_FILE_PATH, ADDRESS_BOOK_FILE_PATH);
@@ -61,20 +64,39 @@ public class MainApp extends Application {
         super.init();
 
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(userPrefsFilePath);
-        UserPrefs userPrefs = initPrefs(userPrefsStorage);
+        startupPrefs = initPrefs(userPrefsStorage);
         JsonAddressBookStorage addressBookStorage =
                 new JsonAddressBookStorage(addressBookFilePath);
         storage = new StorageManager(addressBookStorage, userPrefsStorage);
 
         try {
             StartupLoadResult loadResult = storage.loadForStartup();
-            model = initModelManager(loadResult, userPrefs);
-            logic = new LogicManager(model, storage);
-            ui = new UiManager(logic, loadResult);
+            initializeComponents(loadResult);
         } catch (IOException e) {
             startupFailure = e;
             logger.severe("Contact startup failed: " + StringUtil.getDetails(e));
+            try {
+                startupResetPlan = storage.prepareStartupReset(e);
+            } catch (IOException archiveFailure) {
+                startupFailure = new IOException(e.getMessage()
+                        + "\n\nStarting anew is unavailable because the original contact file could not be "
+                        + "preserved safely under reports: " + archiveFailure.getMessage()
+                        + "\nAstra has not cleared your address book.", e);
+            }
         }
+    }
+
+    private void initializeComponents(StartupLoadResult loadResult) {
+        model = initModelManager(loadResult, startupPrefs);
+        logic = new LogicManager(model, storage);
+        ui = createUi(logic, loadResult);
+    }
+
+    /**
+     * Creates the command interface after contact loading or an explicit reset succeeds.
+     */
+    protected Ui createUi(Logic initializedLogic, StartupLoadResult loadResult) {
+        return new UiManager(initializedLogic, loadResult);
     }
 
     /**
@@ -133,7 +155,29 @@ public class MainApp extends Application {
      * Presents a loading failure without starting the command interface.
      */
     protected void showStartupError(Stage primaryStage, IOException failure) {
-        UiManager.showStartupError(primaryStage, failure);
+        if (startupResetPlan == null) {
+            UiManager.showStartupError(primaryStage, failure);
+        } else {
+            UiManager.showStartupReset(
+                    primaryStage, failure, startupResetPlan.archive(), () -> startAnew(primaryStage));
+        }
+    }
+
+    /**
+     * Opens an empty address book after the user explicitly chooses to start anew.
+     */
+    protected void startAnew(Stage primaryStage) {
+        try {
+            StartupLoadResult reset = storage.resetForStartup(startupResetPlan);
+            startupFailure = null;
+            startupResetPlan = null;
+            initializeComponents(reset);
+            ui.start(primaryStage);
+        } catch (IOException e) {
+            startupResetPlan = null;
+            startupFailure = e;
+            showStartupError(primaryStage, e);
+        }
     }
 
     @Override

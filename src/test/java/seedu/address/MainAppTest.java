@@ -12,17 +12,30 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javafx.application.Platform;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.logic.Logic;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.StartupLoadResult;
+import seedu.address.testutil.FxTestUtil;
+import seedu.address.ui.Ui;
 
 class MainAppTest {
 
@@ -191,11 +204,157 @@ class MainAppTest {
         assertDoesNotThrow(new MainApp()::stop);
     }
 
+    @Test
+    void startAnew_malformedFile_opensEmptyAddressBookAndKeepsPreferencesAndOriginal() throws Exception {
+        Files.writeString(contactsFile, "{bad JSON\r\n");
+        byte[] original = Files.readAllBytes(contactsFile);
+        UserPrefs prefs = new UserPrefs();
+        prefs.setGuiSettings(new GuiSettings(900, 700, 30, 40));
+        new JsonUserPrefsStorage(prefsFile).saveUserPrefs(prefs);
+        ResettingMainApp candidate = new ResettingMainApp(prefsFile, contactsFile);
+        candidate.init();
+        assertNull(candidate.model);
+        assertArrayEquals(original, Files.readAllBytes(contactsFile));
+
+        candidate.startAnew(null);
+
+        assertTrue(candidate.uiStarted);
+        assertEquals(StartupLoadResult.Source.RESET, candidate.uiResult.source());
+        assertTrue(candidate.model.getAddressBook().getPersonList().isEmpty());
+        assertEquals(prefs, candidate.model.getUserPrefs());
+        assertArrayEquals(original,
+                Files.readAllBytes(candidate.uiResult.recoveryArchive().orElseThrow().backupFile()));
+        assertTrue(candidate.storage.loadForStartup().contacts().isEmpty());
+        assertEquals(StartupLoadResult.Source.STORED, candidate.storage.loadForStartup().source());
+    }
+
+    @Test
+    void start_failureWithoutConfirmation_keepsOriginalAndCreatesReportsCopy() throws Exception {
+        Files.writeString(contactsFile, "{");
+        byte[] original = Files.readAllBytes(contactsFile);
+        app.init();
+
+        app.start(null);
+
+        assertNotNull(app.displayedFailure);
+        assertNull(app.model);
+        assertArrayEquals(original, Files.readAllBytes(contactsFile));
+        assertArrayEquals(original, Files.readAllBytes(findReportsBackup()));
+    }
+
+    @Test
+    void start_cannotPreserveOriginal_explainsWhyResetIsUnavailable() throws Exception {
+        Files.writeString(contactsFile, "{");
+        Files.writeString(testFolder.resolve("reports"), "Existing file.");
+        byte[] original = Files.readAllBytes(contactsFile);
+        app.init();
+
+        app.start(null);
+
+        assertTrue(app.displayedFailure.getMessage().contains("Starting anew is unavailable"));
+        assertTrue(app.displayedFailure.getMessage().contains("Astra has not cleared your address book"));
+        assertNull(app.model);
+        assertArrayEquals(original, Files.readAllBytes(contactsFile));
+    }
+
+    @Test
+    void startAnew_fileChangesAfterOffer_showsErrorWithoutOpeningUi() throws Exception {
+        Files.writeString(contactsFile, "{");
+        ResettingMainApp candidate = new ResettingMainApp(prefsFile, contactsFile);
+        candidate.init();
+        Files.writeString(contactsFile, "{\"persons\": [{\"name\": \"Bob\"}]}");
+        byte[] updated = Files.readAllBytes(contactsFile);
+
+        candidate.startAnew(null);
+
+        assertFalse(candidate.uiStarted);
+        assertNull(candidate.model);
+        assertTrue(candidate.displayedFailure.getMessage().contains("changed during recovery"));
+        assertArrayEquals(updated, Files.readAllBytes(contactsFile));
+    }
+
+    @Test
+    void start_userChoosesStartAnew_opensRealEmptyWindowWithReportsReassurance() throws Exception {
+        Files.writeString(contactsFile, "{invalid JSON\r\n");
+        byte[] original = Files.readAllBytes(contactsFile);
+        MainApp candidate = new MainApp(prefsFile, contactsFile);
+        candidate.init();
+        Path backup = findReportsBackup();
+        FxTestUtil.initialize();
+
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            CompletableFuture<Void> inspected = new CompletableFuture<>();
+            Platform.runLater(() -> {
+                Window dialogWindow = Window.getWindows().stream()
+                        .filter(window -> window.getScene().getRoot() instanceof DialogPane).findFirst().orElseThrow();
+                DialogPane pane = (DialogPane) dialogWindow.getScene().getRoot();
+                try {
+                    assertTrue(pane.getContentText().contains("preserved unchanged under reports"));
+                    assertTrue(pane.getContentText().contains(backup.toString()));
+                    assertFalse(stage.isShowing());
+                    inspected.complete(null);
+                } catch (Throwable error) {
+                    inspected.completeExceptionally(error);
+                } finally {
+                    ButtonType reset = pane.getButtonTypes().stream()
+                            .filter(button -> button.getText().equals("Start anew")).findFirst().orElseThrow();
+                    Button resetControl = (Button) pane.lookupButton(reset);
+                    resetControl.fire();
+                }
+            });
+            try {
+                candidate.start(stage);
+
+                assertTrue(inspected.isDone());
+                inspected.join();
+                assertTrue(stage.isShowing());
+                assertTrue(candidate.model.getAddressBook().getPersonList().isEmpty());
+                ListView<?> contacts = (ListView<?>) stage.getScene().lookup("#personListView");
+                assertTrue(contacts.getItems().isEmpty());
+                TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
+                assertTrue(feedback.getText().contains("Started anew with an empty contact list"));
+                assertTrue(feedback.getText().contains(backup.toString()));
+            } finally {
+                List.copyOf(Window.getWindows()).forEach(Window::hide);
+            }
+        });
+
+        assertArrayEquals(original, Files.readAllBytes(backup));
+        assertEquals(StartupLoadResult.Source.STORED, candidate.storage.loadForStartup().source());
+        assertTrue(candidate.storage.loadForStartup().contacts().isEmpty());
+    }
+
+    private Path findReportsBackup() throws IOException {
+        try (Stream<Path> paths = Files.walk(testFolder.resolve("reports"))) {
+            return paths.filter(path -> path.getFileName().toString().equals("addressbook.original.json"))
+                    .findFirst().orElseThrow();
+        }
+    }
+
+    /**
+     * Records fresh-start UI creation without opening a window in storage integration tests.
+     */
+    private static class ResettingMainApp extends RecordingMainApp {
+        private boolean uiStarted;
+        private StartupLoadResult uiResult;
+
+        ResettingMainApp(Path prefsFile, Path contactsFile) {
+            super(prefsFile, contactsFile);
+        }
+
+        @Override
+        protected Ui createUi(Logic initializedLogic, StartupLoadResult result) {
+            uiResult = result;
+            return stage -> uiStarted = true;
+        }
+    }
+
     /**
      * Records failure presentation without starting the JavaFX toolkit or a modal dialog.
      */
     private static class RecordingMainApp extends MainApp {
-        private IOException displayedFailure;
+        protected IOException displayedFailure;
 
         RecordingMainApp(Path prefsFile, Path contactsFile) {
             super(prefsFile, contactsFile);
