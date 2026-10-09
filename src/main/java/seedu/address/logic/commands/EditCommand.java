@@ -51,6 +51,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_DUPLICATE_PHONE = "This phone number already belongs to %1$s.";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "This email already belongs to %1$s.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -83,9 +85,33 @@ public class EditCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
+        checkPhoneAndEmailNotTaken(model, personToEdit, editedPerson);
+
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+    }
+
+    /**
+     * Throws a {@code CommandException} if the new phone number or email in this edit already
+     * belongs to a person other than {@code personToEdit}. Emails are compared case-insensitively.
+     */
+    private void checkPhoneAndEmailNotTaken(Model model, Person personToEdit, Person editedPerson)
+            throws CommandException {
+        boolean isPhoneEdited = editPersonDescriptor.getPhone().isPresent();
+        boolean isEmailEdited = editPersonDescriptor.getEmail().isPresent();
+
+        for (Person otherPerson : model.getAddressBook().getPersonList()) {
+            if (otherPerson.equals(personToEdit)) {
+                continue;
+            }
+            if (isPhoneEdited && otherPerson.getPhone().equals(editedPerson.getPhone())) {
+                throw new CommandException(String.format(MESSAGE_DUPLICATE_PHONE, otherPerson.getName()));
+            }
+            if (isEmailEdited && otherPerson.getEmail().value.equalsIgnoreCase(editedPerson.getEmail().value)) {
+                throw new CommandException(String.format(MESSAGE_DUPLICATE_EMAIL, otherPerson.getName()));
+            }
+        }
     }
 
     /**
