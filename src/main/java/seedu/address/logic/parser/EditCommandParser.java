@@ -19,6 +19,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Name;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -36,12 +37,20 @@ public class EditCommandParser implements Parser<EditCommand> {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_COMPANY, PREFIX_ROLE,
                 PREFIX_PHONE, PREFIX_EMAIL, PREFIX_LINKEDIN, PREFIX_TAG);
 
-        Index index;
+        String preamble = argMultimap.getPreamble().trim();
+        Index index = null;
+        String targetName = null;
 
-        try {
-            index = ParserUtil.parseIndex(argMultimap.getPreamble());
-        } catch (ParseException pe) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE), pe);
+        if (isIndexPreamble(preamble)) {
+            try {
+                index = ParserUtil.parseIndex(preamble);
+            } catch (ParseException pe) {
+                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE), pe);
+            }
+        } else if (Name.isValidName(preamble)) {
+            targetName = preamble;
+        } else {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
         }
 
         argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_COMPANY, PREFIX_ROLE, PREFIX_PHONE,
@@ -73,7 +82,17 @@ public class EditCommandParser implements Parser<EditCommand> {
             throw new ParseException(EditCommand.MESSAGE_NOT_EDITED);
         }
 
-        return new EditCommand(index, editPersonDescriptor);
+        return index != null
+                ? new EditCommand(index, editPersonDescriptor)
+                : new EditCommand(targetName, editPersonDescriptor);
+    }
+
+    /**
+     * Returns true if the first word of {@code preamble} is a number, i.e. the user meant to give an index.
+     */
+    private static boolean isIndexPreamble(String preamble) {
+        String firstWord = preamble.split("\\s+")[0];
+        return firstWord.matches("[+-]?\\d+");
     }
 
     /**
