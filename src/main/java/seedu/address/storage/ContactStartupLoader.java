@@ -23,17 +23,17 @@ final class ContactStartupLoader {
             LogsCenter.getLogger(ContactStartupLoader.class);
 
     private final ContactRecoveryParser parser = new ContactRecoveryParser();
-    private final RecoveryArchiveWriter archiveWriter;
+    private final ArchiveWriter archiveWriter;
     private final AtomicReplacement replacement;
 
     ContactStartupLoader() {
-        this(new RecoveryArchiveWriter(), (temporary, target) ->
+        this(new RecoveryArchiveWriter()::write, (temporary, target) ->
                 Files.move(temporary, target,
                         StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING));
     }
 
-    ContactStartupLoader(RecoveryArchiveWriter archiveWriter,
+    ContactStartupLoader(ArchiveWriter archiveWriter,
                          AtomicReplacement replacement) {
         this.archiveWriter = archiveWriter;
         this.replacement = replacement;
@@ -143,6 +143,14 @@ final class ContactStartupLoader {
     private String describeArchive(RecoveryArchive archive) {
         return "Original backup: " + archive.backupFile()
                 + "\nRecovery report: " + archive.reportFile();
+    }
+
+    /**
+     * Preserves the original bytes and records validation results before replacement.
+     */
+    @FunctionalInterface
+    interface ArchiveWriter {
+        RecoveryArchive write(Path source, byte[] originalBytes, ContactRecoveryResult result) throws IOException;
     }
 
     /**

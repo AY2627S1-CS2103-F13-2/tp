@@ -41,17 +41,29 @@ public class MainApp extends Application {
     protected Logic logic;
     protected Storage storage;
     protected Model model;
+
+    private final Path userPrefsFilePath;
+    private final Path addressBookFilePath;
     private IOException startupFailure;
+
+    public MainApp() {
+        this(USER_PREFS_FILE_PATH, ADDRESS_BOOK_FILE_PATH);
+    }
+
+    MainApp(Path userPrefsFilePath, Path addressBookFilePath) {
+        this.userPrefsFilePath = userPrefsFilePath;
+        this.addressBookFilePath = addressBookFilePath;
+    }
 
     @Override
     public void init() throws Exception {
         logger.info("=============================[ Initializing AddressBook ]===========================");
         super.init();
 
-        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
+        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(userPrefsFilePath);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
         JsonAddressBookStorage addressBookStorage =
-                new JsonAddressBookStorage(ADDRESS_BOOK_FILE_PATH);
+                new JsonAddressBookStorage(addressBookFilePath);
         storage = new StorageManager(addressBookStorage, userPrefsStorage);
 
         try {
@@ -109,12 +121,19 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         if (startupFailure != null) {
-            UiManager.showStartupError(primaryStage, startupFailure);
+            showStartupError(primaryStage, startupFailure);
             return;
         }
 
         logger.info("Starting AddressBook " + MainApp.VERSION);
         ui.start(primaryStage);
+    }
+
+    /**
+     * Presents a loading failure without starting the command interface.
+     */
+    protected void showStartupError(Stage primaryStage, IOException failure) {
+        UiManager.showStartupError(primaryStage, failure);
     }
 
     @Override

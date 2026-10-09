@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -51,6 +52,14 @@ public class JsonAddressBookStorageTest {
     @Test
     public void read_notJsonFormat_exceptionThrown() {
         assertThrows(DataLoadingException.class, () -> readAddressBook("notJsonFormatAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_nullDocument_throwsDataLoadingException() throws IOException {
+        Path source = testFolder.resolve("addressbook.json");
+        Files.writeString(source, "null");
+
+        assertThrows(DataLoadingException.class, () -> new JsonAddressBookStorage(source).readAddressBook());
     }
 
     @Test
