@@ -86,4 +86,13 @@ public class JsonAddressBookStorage {
         JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), filePath);
     }
 
+    /**
+     * Loads contacts for startup, recovering individual invalid records when possible.
+     *
+     * @throws IOException if startup loading or recovery fails
+     */
+    public StartupLoadResult loadForStartup() throws IOException {
+        return new ContactStartupLoader().load(filePath);
+    }
+
 }

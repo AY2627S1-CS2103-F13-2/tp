@@ -65,4 +65,8 @@ public class StorageManager implements Storage {
         addressBookStorage.saveAddressBook(addressBook);
     }
 
+    @Override
+    public StartupLoadResult loadForStartup() throws IOException {
+        return addressBookStorage.loadForStartup();
+    }
 }
