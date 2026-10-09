@@ -54,4 +54,11 @@ public interface Storage {
      */
     void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException;
 
+    /**
+     * Loads startup contacts and returns any completed recovery information.
+     *
+     * @throws IOException if startup loading or recovery fails
+     */
+    StartupLoadResult loadForStartup() throws IOException;
+
 }

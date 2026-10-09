@@ -12,6 +12,7 @@ import seedu.address.MainApp;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.Logic;
+import seedu.address.storage.StartupLoadResult;
 
 /**
  * The manager of the UI component.
@@ -26,19 +27,15 @@ public class UiManager implements Ui {
     private Logic logic;
     private Path dataFilePath;
     private MainWindow mainWindow;
-    private final boolean contactsLoadedFromFile;
-    private final boolean sampleDataLoaded;
+    private final StartupLoadResult startupLoadResult;
 
     /**
-     * Creates a {@code UiManager} with the given {@code Logic} and the data file path
-     * to show in the status bar.
+     * Creates the UI with the completed startup loading result.
      */
-    public UiManager(Logic logic, Path dataFilePath,
-                    boolean contactsLoadedFromFile, boolean sampleDataLoaded) {
+    public UiManager(Logic logic, StartupLoadResult startupLoadResult) {
         this.logic = logic;
-        this.dataFilePath = dataFilePath;
-        this.contactsLoadedFromFile = contactsLoadedFromFile;
-        this.sampleDataLoaded = sampleDataLoaded;
+        this.dataFilePath = startupLoadResult.sourceFile();
+        this.startupLoadResult = startupLoadResult;
     }
 
     @Override
@@ -51,7 +48,8 @@ public class UiManager implements Ui {
         try {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
-            mainWindow.fillInnerParts(contactsLoadedFromFile, sampleDataLoaded);
+            mainWindow.fillInnerParts(
+                StartupMessageFormatter.formatStartup(startupLoadResult));
         } catch (Throwable e) {
             logger.severe(StringUtil.getDetails(e));
             showFatalErrorDialogAndShutdown("Fatal error during initializing", e);
@@ -93,4 +91,17 @@ public class UiManager implements Ui {
         System.exit(1);
     }
 
+    /**
+     * Displays a contact-loading failure before the main window is created.
+     */
+    public static void showStartupError(Stage owner, Exception error) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.initOwner(owner);
+        alert.setTitle("Astra startup failed");
+        alert.setHeaderText("Could not load contacts");
+        alert.setContentText(error.getMessage());
+        alert.showAndWait();
+
+        Platform.exit();
+    }
 }

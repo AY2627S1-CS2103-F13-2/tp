@@ -577,18 +577,32 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 2b. The contact file contains invalid or conflicting records.
-    * 2b1. Astra copies the original file, unchanged, to a new backup file.
-    * 2b2. Astra writes the valid records to a new active contact file.
-    * 2b3. Astra shows the backup location and the numbers of recovered and skipped records.
+* 2b. The contact file can be parsed but contains invalid or conflicting records.
+    * 2b1. Astra validates records in stored order, retaining valid contacts
+      and the first valid occurrence of each conflicting contact.
+    * 2b2. Astra preserves the original file unchanged in a uniquely named,
+      timestamped recovery folder.
+    * 2b3. Astra writes a report listing the original positions and reasons
+      for skipped records.
+    * 2b4. Astra safely replaces the active contact file with the recovered contacts.
+    * 2b5. Astra shows the recovered and skipped counts, backup location,
+      and report location.
 
       Use case ends.
 
-* 2c. The contact file cannot be created, read or recovered.
-    * 2c1. Astra shows the relevant error, keeps the original data and stops.
+    * 2b4a. No valid contacts can be recovered.
+        * 2b4a1. Astra leaves the active file unchanged, shows the backup
+          and report locations, and stops.
+
+          Use case ends.
+
+* 2c. The contact file cannot be read or reliably parsed, or recovery cannot
+  create its backup/report or safely replace the active file.
+    * 2c1. Astra shows the relevant error and any available recovery locations.
+    * 2c2. Astra stops without opening the command interface.
 
       Use case ends.
-
+      
 * 2d. Another Astra instance is already using the contact file.
     * 2d1. Astra shows that the storage is in use and the second instance stops.
 

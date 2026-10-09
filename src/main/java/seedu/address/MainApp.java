@@ -16,12 +16,11 @@ import seedu.address.logic.LogicManager;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
-import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
-import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.StartupLoadResult;
 import seedu.address.storage.Storage;
 import seedu.address.storage.StorageManager;
 import seedu.address.ui.Ui;
@@ -42,8 +41,7 @@ public class MainApp extends Application {
     protected Logic logic;
     protected Storage storage;
     protected Model model;
-    private boolean contactsLoadedFromFile;
-    private boolean sampleDataLoaded;
+    private IOException startupFailure;
 
     @Override
     public void init() throws Exception {
@@ -52,44 +50,28 @@ public class MainApp extends Application {
 
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
-        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(ADDRESS_BOOK_FILE_PATH);
+        JsonAddressBookStorage addressBookStorage =
+                new JsonAddressBookStorage(ADDRESS_BOOK_FILE_PATH);
         storage = new StorageManager(addressBookStorage, userPrefsStorage);
 
-        model = initModelManager(storage, userPrefs);
-
-        logic = new LogicManager(model, storage);
-
-        ui = new UiManager(
-            logic, storage.getAddressBookFilePath(),
-            contactsLoadedFromFile, sampleDataLoaded);
+        try {
+            StartupLoadResult loadResult = storage.loadForStartup();
+            model = initModelManager(loadResult, userPrefs);
+            logic = new LogicManager(model, storage);
+            ui = new UiManager(logic, loadResult);
+        } catch (IOException e) {
+            startupFailure = e;
+            logger.severe("Contact startup failed: " + StringUtil.getDetails(e));
+        }
     }
 
     /**
-     * Returns a {@code ModelManager} with the data from {@code storage}'s address book and {@code userPrefs}. <br>
-     * The data from the sample address book will be used instead if {@code storage}'s address book is not found,
-     * or an empty address book will be used instead if errors occur when reading {@code storage}'s address book.
+     * Creates the model from a completed startup loading result.
      */
-    private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
-        logger.info("Using data file : " + storage.getAddressBookFilePath());
-
-        Optional<ReadOnlyAddressBook> addressBookOptional;
-        ReadOnlyAddressBook initialData;
-        try {
-            addressBookOptional = storage.readAddressBook();
-            contactsLoadedFromFile = addressBookOptional.isPresent();
-            sampleDataLoaded = addressBookOptional.isEmpty();
-            if (addressBookOptional.isEmpty()) {
-                logger.info("Creating a new data file " + storage.getAddressBookFilePath()
-                        + " populated with a sample AddressBook.");
-            }
-            initialData = addressBookOptional.orElseGet(SampleDataUtil::getSampleAddressBook);
-        } catch (DataLoadingException e) {
-            logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
-                    + " Will be starting with an empty AddressBook.");
-            initialData = new AddressBook();
-        }
-
-        return new ModelManager(initialData, userPrefs);
+    private Model initModelManager(StartupLoadResult loadResult, ReadOnlyUserPrefs userPrefs) {
+        AddressBook addressBook = new AddressBook();
+        addressBook.setPersons(loadResult.contacts());
+        return new ModelManager(addressBook, userPrefs);
     }
 
     /**
@@ -126,6 +108,11 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        if (startupFailure != null) {
+            UiManager.showStartupError(primaryStage, startupFailure);
+            return;
+        }
+
         logger.info("Starting AddressBook " + MainApp.VERSION);
         ui.start(primaryStage);
     }
@@ -133,6 +120,11 @@ public class MainApp extends Application {
     @Override
     public void stop() {
         logger.info("============================ [ Stopping AddressBook ] =============================");
+
+        if (model == null) {
+            return;
+        }
+
         try {
             storage.saveUserPrefs(model.getUserPrefs());
         } catch (IOException e) {

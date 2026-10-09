@@ -13,6 +13,13 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
+import seedu.address.model.AddressBook;
+import seedu.address.model.ModelManager;
+import seedu.address.model.UserPrefs;
+import seedu.address.model.util.SampleDataUtil;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -22,14 +29,35 @@ class ContactStartupLoaderTest {
     private Path testFolder;
 
     @Test
-    void load_missingFile_returnsSamplesWithoutCreatingContactFile() throws Exception {
+    void load_missingFile_returnsExpectedSamplesWithoutRecovery() throws Exception {
         Path source = testFolder.resolve("addressbook.json");
 
         StartupLoadResult result = new ContactStartupLoader().load(source);
 
         assertEquals(StartupLoadResult.Source.SAMPLE, result.source());
-        assertFalse(result.contacts().isEmpty());
+        assertEquals(
+                SampleDataUtil.getSampleAddressBook().getPersonList(),
+                result.contacts());
+        assertEquals(source.toAbsolutePath().normalize(), result.sourceFile());
+        assertEquals(0, result.skippedCount());
+        assertTrue(result.recoveryArchive().isEmpty());
+
         assertFalse(Files.exists(source));
+        assertFalse(Files.exists(testFolder.resolve("recovery")));
+    }
+
+    @Test
+    void load_missingStorageFolder_returnsSamples() throws Exception {
+        Path source = testFolder.resolve("data").resolve("addressbook.json");
+
+        StartupLoadResult result = new ContactStartupLoader().load(source);
+
+        assertEquals(StartupLoadResult.Source.SAMPLE, result.source());
+        assertEquals(
+                SampleDataUtil.getSampleAddressBook().getPersonList(),
+                result.contacts());
+        assertTrue(result.recoveryArchive().isEmpty());
+        assertFalse(Files.exists(source.getParent()));
     }
 
     @Test
@@ -158,5 +186,48 @@ class ContactStartupLoaderTest {
                     .findFirst()
                     .orElseThrow();
         }
+    }
+
+    @Test
+    void load_samplesThenClear_restartLoadsEmptySavedFile() throws Exception {
+        Path source = testFolder.resolve("data").resolve("addressbook.json");
+        ContactStartupLoader loader = new ContactStartupLoader();
+
+        StartupLoadResult firstLaunch = loader.load(source);
+        assertEquals(StartupLoadResult.Source.SAMPLE, firstLaunch.source());
+        assertFalse(firstLaunch.contacts().isEmpty());
+
+        AddressBook initialData = new AddressBook();
+        initialData.setPersons(firstLaunch.contacts());
+        ModelManager model = new ModelManager(initialData, new UserPrefs());
+
+        StorageManager storage = new StorageManager(
+                new JsonAddressBookStorage(source),
+                new JsonUserPrefsStorage(testFolder.resolve("preferences.json")));
+        LogicManager logic = new LogicManager(model, storage);
+
+        logic.execute(ClearCommand.COMMAND_WORD);
+
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+        assertTrue(Files.exists(source));
+
+        StartupLoadResult secondLaunch = loader.load(source);
+
+        assertEquals(StartupLoadResult.Source.STORED, secondLaunch.source());
+        assertTrue(secondLaunch.contacts().isEmpty());
+        assertEquals(0, secondLaunch.skippedCount());
+        assertTrue(secondLaunch.recoveryArchive().isEmpty());
+        assertFalse(Files.exists(source.getParent().resolve("recovery")));
+    }
+
+    @Test
+    void load_sourceIsDirectory_throwsInsteadOfUsingSamples() throws Exception {
+        Path source = Files.createDirectory(testFolder.resolve("addressbook.json"));
+
+        assertThrows(IOException.class,
+                () -> new ContactStartupLoader().load(source));
+
+        assertTrue(Files.isDirectory(source));
+        assertFalse(Files.exists(testFolder.resolve("recovery")));
     }
 }
