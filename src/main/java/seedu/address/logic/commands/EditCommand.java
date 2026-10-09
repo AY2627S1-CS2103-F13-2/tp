@@ -24,6 +24,7 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
@@ -36,9 +37,9 @@ public class EditCommand extends Command {
     public static final String COMMAND_WORD = "edit";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of the person identified "
-            + "by the index number used in the displayed person list. "
+            + "by the index number used in the displayed person list, or by name. "
             + "Existing values will be overwritten by the input values.\n"
-            + "Parameters: INDEX (must be a positive integer) "
+            + "Parameters: INDEX (must be a positive integer) or NAME "
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
@@ -46,13 +47,20 @@ public class EditCommand extends Command {
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
-            + PREFIX_EMAIL + "johndoe@example.com";
+            + PREFIX_EMAIL + "johndoe@example.com\n"
+            + "Example: " + COMMAND_WORD + " John Doe "
+            + PREFIX_PHONE + "91234567";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
 
+    public static final String MESSAGE_NAME_NOT_FOUND = "No contact named %1$s found.";
+    public static final String MESSAGE_SEVERAL_NAME_MATCHES = "%1$d contacts found:\n%2$s\n"
+            + "To edit one of them, enter the command again with its index in place of the name.";
+
     private final Index index;
+    private final String targetName;
     private final EditPersonDescriptor editPersonDescriptor;
 
     /**
@@ -64,19 +72,42 @@ public class EditCommand extends Command {
         requireNonNull(editPersonDescriptor);
 
         this.index = index;
+        this.targetName = null;
+        this.editPersonDescriptor = new EditPersonDescriptor(editPersonDescriptor);
+    }
+
+    /**
+     * @param targetName full or partial name of the person to edit, matched case-insensitively
+     * @param editPersonDescriptor details to edit the person with
+     */
+    public EditCommand(String targetName, EditPersonDescriptor editPersonDescriptor) {
+        requireNonNull(targetName);
+        requireNonNull(editPersonDescriptor);
+
+        this.index = null;
+        this.targetName = targetName;
         this.editPersonDescriptor = new EditPersonDescriptor(editPersonDescriptor);
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        Index targetIndex = index;
+        if (targetName != null) {
+            int matchCount = showPersonsMatchingTargetName(model);
+            if (matchCount > 1) {
+                return new CommandResult(String.format(MESSAGE_SEVERAL_NAME_MATCHES,
+                        matchCount, formatNumberedList(model.getFilteredPersonList())));
+            }
+            targetIndex = Index.fromOneBased(1);
+        }
         List<Person> lastShownList = model.getFilteredPersonList();
 
-        if (index.getZeroBased() >= lastShownList.size()) {
+        if (targetIndex.getZeroBased() >= lastShownList.size()) {
             throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         }
 
-        Person personToEdit = lastShownList.get(index.getZeroBased());
+        Person personToEdit = lastShownList.get(targetIndex.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
         if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
@@ -104,6 +135,36 @@ public class EditCommand extends Command {
         return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress, updatedTags);
     }
 
+    /**
+     * Shows only the persons whose names contain {@code targetName}, ignoring case, and returns how many there are.
+     * If there are none, the full list is shown again and a {@code CommandException} is thrown.
+     */
+    private int showPersonsMatchingTargetName(Model model) throws CommandException {
+        model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of(targetName)));
+        int matchCount = model.getFilteredPersonList().size();
+        if (matchCount == 0) {
+            model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+            throw new CommandException(String.format(MESSAGE_NAME_NOT_FOUND, targetName));
+        }
+        return matchCount;
+    }
+
+    /**
+     * Returns the given persons as numbered lines, e.g. "1. John Lim \u2014 john.lim@example.com".
+     */
+    private static String formatNumberedList(List<Person> persons) {
+        StringBuilder list = new StringBuilder();
+        for (int i = 0; i < persons.size(); i++) {
+            Person person = persons.get(i);
+            if (i > 0) {
+                list.append("\n");
+            }
+            list.append(i + 1).append(". ").append(person.getName())
+                    .append(" \u2014 ").append(person.getEmail());
+        }
+        return list.toString();
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -115,7 +176,8 @@ public class EditCommand extends Command {
             return false;
         }
 
-        return index.equals(otherEditCommand.index)
+        return Objects.equals(index, otherEditCommand.index)
+                && Objects.equals(targetName, otherEditCommand.targetName)
                 && editPersonDescriptor.equals(otherEditCommand.editPersonDescriptor);
     }
 
@@ -123,6 +185,7 @@ public class EditCommand extends Command {
     public String toString() {
         return new ToStringBuilder(this)
                 .add("index", index)
+                .add("targetName", targetName)
                 .add("editPersonDescriptor", editPersonDescriptor)
                 .toString();
     }

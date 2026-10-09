@@ -56,8 +56,8 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_missingParts_failure() {
-        // no index specified
-        assertParseFailure(parser, VALID_NAME_AMY, MESSAGE_INVALID_FORMAT);
+        // name instead of index, but no field specified
+        assertParseFailure(parser, VALID_NAME_AMY, EditCommand.MESSAGE_NOT_EDITED);
 
         // no field specified
         assertParseFailure(parser, "1", EditCommand.MESSAGE_NOT_EDITED);
@@ -79,6 +79,18 @@ public class EditCommandParserTest {
 
         // invalid prefix being parsed as preamble
         assertParseFailure(parser, "1 i/ string", MESSAGE_INVALID_FORMAT);
+
+        // preamble that is neither an index nor a valid name
+        assertParseFailure(parser, "Amy*" + PHONE_DESC_BOB, MESSAGE_INVALID_FORMAT);
+    }
+
+    @Test
+    public void parse_nameInsteadOfIndex_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build();
+        EditCommand expectedCommand = new EditCommand(VALID_NAME_AMY, descriptor);
+
+        assertParseSuccess(parser, VALID_NAME_AMY + PHONE_DESC_BOB, expectedCommand);
+        assertParseSuccess(parser, "  " + VALID_NAME_AMY + "  " + PHONE_DESC_BOB, expectedCommand);
     }
 
     @Test
