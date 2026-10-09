@@ -164,18 +164,21 @@ public class EditCommand extends Command {
     private static void addLineIfChanged(List<String> lines, String name, String fieldName,
             Object originalValue, Object editedValue) {
         if (!originalValue.equals(editedValue)) {
-            lines.add(String.format(MESSAGE_FIELD_UPDATED, name, fieldName, formatValue(editedValue)));
+            lines.add(String.format(MESSAGE_FIELD_UPDATED, name, fieldName, editedValue));
         }
     }
 
     /**
-     * Returns the value as shown to the user, unwrapping an {@code Optional} and showing an absent value as "none".
+     * Adds a line for an optional field. The value is unwrapped before it is shown, so that a
+     * changed phone number reads "to 91234567" rather than "to Optional[91234567]".
      */
-    private static String formatValue(Object value) {
-        if (value instanceof Optional<?> optionalValue) {
-            return optionalValue.map(Object::toString).orElse("none");
+    private static void addLineIfChanged(List<String> lines, String name, String fieldName,
+            Optional<?> originalValue, Optional<?> editedValue) {
+        if (originalValue.equals(editedValue)) {
+            return;
         }
-        return value.toString();
+        lines.add(String.format(MESSAGE_FIELD_UPDATED, name, fieldName,
+                editedValue.map(Object::toString).orElse("none")));
     }
 
     /**

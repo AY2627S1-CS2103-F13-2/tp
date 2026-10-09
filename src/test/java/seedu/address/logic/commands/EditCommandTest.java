@@ -211,15 +211,15 @@ public class EditCommandTest {
     }
 
     @Test
-    public void formatUpdatedFields_optionalFieldsChangedAndRemoved_oneLineEach() {
-        Person original = new PersonBuilder().withName("John Lim").withCompany("Google").withRole("Engineer")
+    public void formatUpdatedFields_contactFieldsChanged_oneLineEach() {
+        Person original = new PersonBuilder().withName("John Lim").withCompany("Acme").withRole("Analyst")
                 .withLinkedin("linkedin.com/in/johnlim").build();
-        Person edited = new PersonBuilder(original).withCompany("Apple").withRole(null)
-                .withLinkedin("linkedin.com/in/johnlim2").build();
+        Person edited = new PersonBuilder(original).withCompany("Globex").withRole("Engineer")
+                .withLinkedin("linkedin.com/in/johntan").build();
 
-        String expected = "Updated John Lim's company to Apple.\n"
-                + "Updated John Lim's role to none.\n"
-                + "Updated John Lim's LinkedIn to linkedin.com/in/johnlim2.";
+        String expected = "Updated John Lim's company to Globex.\n"
+                + "Updated John Lim's role to Engineer.\n"
+                + "Updated John Lim's LinkedIn to linkedin.com/in/johntan.";
         assertEquals(expected, EditCommand.formatUpdatedFields(original, edited));
     }
 
