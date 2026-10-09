@@ -53,6 +53,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_NO_CHANGES =
             "The new values are the same as the current ones, so there is nothing to change.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_ALREADY_SAVED_FOR_OTHER =
+            "%1$s is already saved for %2$s. No changes were applied.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -89,9 +91,35 @@ public class EditCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
+        checkPhoneAndEmailNotTaken(model, personToEdit, editedPerson);
+
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+    }
+
+    /**
+     * Throws a {@code CommandException} if the new phone number or email in this edit already
+     * belongs to a person other than {@code personToEdit}. Emails are compared case-insensitively.
+     */
+    private void checkPhoneAndEmailNotTaken(Model model, Person personToEdit, Person editedPerson)
+            throws CommandException {
+        boolean isPhoneEdited = editPersonDescriptor.getPhone().isPresent();
+        boolean isEmailEdited = editPersonDescriptor.getEmail().isPresent();
+
+        for (Person otherPerson : model.getAddressBook().getPersonList()) {
+            if (otherPerson.equals(personToEdit)) {
+                continue;
+            }
+            if (isPhoneEdited && otherPerson.getPhone().equals(editedPerson.getPhone())) {
+                throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        editedPerson.getPhone(), otherPerson.getName()));
+            }
+            if (isEmailEdited && otherPerson.getEmail().value.equalsIgnoreCase(editedPerson.getEmail().value)) {
+                throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        editedPerson.getEmail(), otherPerson.getName()));
+            }
+        }
     }
 
     /**
