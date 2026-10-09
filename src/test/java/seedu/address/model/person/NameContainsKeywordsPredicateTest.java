@@ -66,6 +66,14 @@ public class NameContainsKeywordsPredicateTest {
         // Keyword with leading and trailing spaces
         predicate = new NameContainsKeywordsPredicate(List.of("  tan  "));
         assertTrue(predicate.test(new PersonBuilder().withName("Alicia Tan").build()));
+
+        // Contiguous full-name match
+        predicate = new NameContainsKeywordsPredicate(List.of("alice tan"));
+        assertTrue(predicate.test(new PersonBuilder().withName("Alice Tan").build()));
+
+        // Case-insensitive contiguous full-name match
+        predicate = new NameContainsKeywordsPredicate(List.of("ALICE TAN"));
+        assertTrue(predicate.test(new PersonBuilder().withName("Alice Tan").build()));
     }
 
     @Test
@@ -87,6 +95,10 @@ public class NameContainsKeywordsPredicateTest {
                 .withEmail("alice@email.com")
                 .withCompany("Main Street")
                 .build()));
+
+        // Reversed name order should not match
+        predicate = new NameContainsKeywordsPredicate(List.of("Tan Alice"));
+        assertFalse(predicate.test(new PersonBuilder().withName("Alice Tan").build()));
     }
 
     @Test
