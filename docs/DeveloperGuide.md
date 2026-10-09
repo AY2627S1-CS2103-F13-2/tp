@@ -571,8 +571,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Extensions**
 
 * 2a. The contact file does not exist (first launch).
-    * 2a1. Astra creates the storage folder and an empty contact file.
-    * 2a2. Astra shows the new file's location and that 0 contacts were loaded.
+    * 2a1. Astra loads sample contacts to help the user explore the app.
+    * 2a2. Astra explains that these are sample contacts and that the user
+      can remove them using the `clear` command.
 
       Use case ends.
 
