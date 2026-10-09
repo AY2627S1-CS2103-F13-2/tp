@@ -22,4 +22,12 @@ public final class StartupMessageFormatter {
                 "Loaded %d %s from %s.",
                 contactCount, contactLabel, absolutePath);
     }
+
+    /**
+     * Returns guidance for new users viewing sample contacts.
+     */
+    public static String formatSampleContacts() {
+        return "Welcome to Astra! You're viewing sample contacts to help you explore the app. "
+                + "Type clear to remove all sample contacts and start with an empty contact list.";
+    }
 }

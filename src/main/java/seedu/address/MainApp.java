@@ -43,6 +43,7 @@ public class MainApp extends Application {
     protected Storage storage;
     protected Model model;
     private boolean contactsLoadedFromFile;
+    private boolean sampleDataLoaded;
 
     @Override
     public void init() throws Exception {
@@ -58,7 +59,9 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getAddressBookFilePath(), contactsLoadedFromFile);
+        ui = new UiManager(
+            logic, storage.getAddressBookFilePath(),
+            contactsLoadedFromFile, sampleDataLoaded);
     }
 
     /**
@@ -74,6 +77,7 @@ public class MainApp extends Application {
         try {
             addressBookOptional = storage.readAddressBook();
             contactsLoadedFromFile = addressBookOptional.isPresent();
+            sampleDataLoaded = addressBookOptional.isEmpty();
             if (addressBookOptional.isEmpty()) {
                 logger.info("Creating a new data file " + storage.getAddressBookFilePath()
                         + " populated with a sample AddressBook.");
