@@ -666,7 +666,7 @@ testers are expected to do more *exploratory* testing.
 
 ### Deleting a person
 
-1. Deleting a person while all persons are being shown
+1. Deleting a person by index while all persons are being shown
 
    1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
 
@@ -674,12 +674,43 @@ testers are expected to do more *exploratory* testing.
       Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
 
    1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+      Expected: No person is deleted. The status message shows the accepted command format.
 
    1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
       Expected: Similar to previous.
 
-1. _{ more test cases …​ }_
+1. Deleting a person by name
+
+   1. Prerequisites: List all persons using the `list` command, with a contact named `Alice Pauline` in the list.
+
+   1. Test case: `delete n/Alice Pauline`<br>
+      Expected: `Alice Pauline` is deleted. The status message shows the deleted contact's details.
+
+   1. Test case: `delete n/alice pauline`<br>
+      Expected: Same as previous; name matching ignores case.
+
+   1. Test case: `delete n/Alice`<br>
+      Expected: No person is deleted. The status message says no contact of that name was found, because names must be given in full.
+
+   1. Test case: `delete n/Nobody Here`<br>
+      Expected: Similar to previous.
+
+   1. Test case: `delete 1 n/Alice Pauline`<br>
+      Expected: No person is deleted. The status message shows the accepted command format, as an index and a name cannot be combined.
+
+1. Deleting a person by name while the list is filtered
+
+   1. Prerequisites: Run `find Benson` so that `Alice Pauline` is not among the displayed results.
+
+   1. Test case: `delete n/Alice Pauline`<br>
+      Expected: `Alice Pauline` is deleted even though she was not displayed, because a full name is searched for across the whole address book.
+
+1. Deleting from an empty address book
+
+   1. Prerequisites: Clear all contacts using the `clear` command.
+
+   1. Test case: `delete 1`, then `delete n/Alice Pauline`<br>
+      Expected: In both cases the status message says there are no contacts to delete.
 
 ### Saving data
 

@@ -130,15 +130,31 @@ Examples:
 
 Deletes the specified person from the address book.
 
-Format: `delete INDEX`
+Format: `delete INDEX` or `delete n/NAME`
+
+Deleting by index:
 
 * Deletes the person at the specified `INDEX`.
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, …​
 
+Deleting by name:
+
+* Deletes the person whose name is `NAME`.
+* The name must be given **in full**, but is not case-sensitive: `delete n/alice pauline` deletes `Alice Pauline`, while `delete n/Alice` deletes nobody.
+* The whole address book is searched, so naming someone in full deletes them even while a `find` filter is hiding them.
+* Only one person can have a given name, so naming someone is never ambiguous.
+
+An index and a name cannot be combined; `delete 1 n/Alice Pauline` is rejected rather than guessed at.
+
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in the address book.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `delete n/Alice Pauline` deletes `Alice Pauline`, wherever she is in the list.
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+`delete` cannot be undone. A confirmation prompt is planned for a later version.
+</div>
 
 ### Clearing all entries: `clear`
 
@@ -202,7 +218,7 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
 **Clear** | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete** | `delete INDEX` or `delete n/NAME`<br> e.g., `delete 3`, `delete n/James Ho`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
