@@ -492,10 +492,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 2b1. Astra shows a ranked, numbered list of matching contacts.
     * 2b2. User selects a contact by index.
 
-   Use case resumes at step 2.
-
-* 2d. Another Astra instance is already using the contact file.
-    * 2d1. Astra shows that the storage is in use and the second instance stops.
+      Use case resumes at step 2.
 
 * 2c. The new contact number or email already belongs to another contact.
     * 2c1. Astra rejects the whole edit and changes nothing.
