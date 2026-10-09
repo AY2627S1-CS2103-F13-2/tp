@@ -617,7 +617,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
 * **Contact number**: A phone number made up of digits and optional balanced parentheses, with at least three digits
-* **Prefix**: A field marker in a command, such as `/company` or `/email`. Prefixes are case-insensitive
+* **Prefix**: A field marker in a command, such as `c/` for a company or `e/` for an email. Prefixes are case-sensitive
 * **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Normalisation**: Trimming outer spaces and collapsing repeated spaces before a value is stored or compared
