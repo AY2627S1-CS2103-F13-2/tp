@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +27,6 @@ import seedu.address.model.tag.Tag;
 final class ContactRecoveryParser {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY);
 
     /**
@@ -35,7 +35,7 @@ final class ContactRecoveryParser {
      * @throws IOException if the document cannot be parsed reliably
      */
     public ContactRecoveryResult parse(byte[] originalBytes) throws IOException {
-        JsonNode root = MAPPER.readValue(originalBytes, JsonNode.class);
+        JsonNode root = readDocument(originalBytes);
 
         if (root == null || !root.isObject()
                 || !root.has("persons") || !root.get("persons").isArray()) {
@@ -162,6 +162,22 @@ final class ContactRecoveryParser {
             } else if (!Tag.isValidTagName(tag.textValue())) {
                 errors.add(label + Tag.MESSAGE_CONSTRAINTS);
             }
+        }
+    }
+
+    /**
+     * Reads exactly one JSON document, rejecting trailing content.
+     */
+    private JsonNode readDocument(byte[] originalBytes) throws IOException {
+        try (JsonParser jsonParser = MAPPER.getFactory().createParser(originalBytes)) {
+            JsonNode root = MAPPER.readTree(jsonParser);
+
+            if (jsonParser.nextToken() != null) {
+                throw new IOException(
+                        "The contact file contains extra content after the JSON document.");
+            }
+
+            return root;
         }
     }
 }

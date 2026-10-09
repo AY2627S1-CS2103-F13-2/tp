@@ -27,8 +27,8 @@ final class ContactStartupLoader {
     private final AtomicReplacement replacement;
 
     ContactStartupLoader() {
-        this(new RecoveryArchiveWriter(),
-                (temporary, target) -> Files.move(temporary, target,
+        this(new RecoveryArchiveWriter(), (temporary, target) ->
+                Files.move(temporary, target,
                         StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING));
     }

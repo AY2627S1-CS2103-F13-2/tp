@@ -13,15 +13,15 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.util.SampleDataUtil;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class ContactStartupLoaderTest {
 
@@ -112,8 +112,8 @@ class ContactStartupLoaderTest {
         Path source = writeSource("{\"persons\": [{\"phone\": \"invalid\"}]}");
         byte[] original = Files.readAllBytes(source);
 
-        IOException error = assertThrows(IOException.class,
-                () -> new ContactStartupLoader().load(source));
+        IOException error = assertThrows(
+                IOException.class, () -> new ContactStartupLoader().load(source));
 
         assertTrue(error.getMessage().contains("No valid contacts"));
         assertTrue(error.getMessage().contains("Recovery report:"));
@@ -126,8 +126,7 @@ class ContactStartupLoaderTest {
         Path source = writeSource("{");
         byte[] original = Files.readAllBytes(source);
 
-        assertThrows(IOException.class,
-                () -> new ContactStartupLoader().load(source));
+        assertThrows(IOException.class, () -> new ContactStartupLoader().load(source));
 
         assertArrayEquals(original, Files.readAllBytes(source));
         assertFalse(Files.exists(testFolder.resolve("recovery")));
@@ -142,8 +141,7 @@ class ContactStartupLoaderTest {
 
         Files.writeString(testFolder.resolve("recovery"), "This is a file.");
 
-        assertThrows(IOException.class,
-                () -> new ContactStartupLoader().load(source));
+        assertThrows(IOException.class, () -> new ContactStartupLoader().load(source));
 
         assertArrayEquals(original, Files.readAllBytes(source));
     }
@@ -156,8 +154,7 @@ class ContactStartupLoaderTest {
         byte[] original = Files.readAllBytes(source);
 
         ContactStartupLoader loader = new ContactStartupLoader(
-                new RecoveryArchiveWriter(),
-                (temporary, target) -> {
+                new RecoveryArchiveWriter(), (temporary, target) -> {
                     throw new IOException("Simulated atomic replacement failure.");
                 });
 
@@ -224,8 +221,7 @@ class ContactStartupLoaderTest {
     void load_sourceIsDirectory_throwsInsteadOfUsingSamples() throws Exception {
         Path source = Files.createDirectory(testFolder.resolve("addressbook.json"));
 
-        assertThrows(IOException.class,
-                () -> new ContactStartupLoader().load(source));
+        assertThrows(IOException.class, () -> new ContactStartupLoader().load(source));
 
         assertTrue(Files.isDirectory(source));
         assertFalse(Files.exists(testFolder.resolve("recovery")));

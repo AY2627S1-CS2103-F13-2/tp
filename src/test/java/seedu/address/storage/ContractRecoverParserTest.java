@@ -84,7 +84,7 @@ class ContactRecoveryParserTest {
     }
 
     @Test
-    void parse_invalidDocument_throwsIOException() {
+    void parse_invalidDocument_throwsException() {
         for (String json : List.of(
                 "{",
                 "null",

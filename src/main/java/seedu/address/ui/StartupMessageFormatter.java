@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.nio.file.Path;
+
 import seedu.address.storage.RecoveryArchive;
 import seedu.address.storage.StartupLoadResult;
 
@@ -38,10 +39,10 @@ public final class StartupMessageFormatter {
      */
     public static String formatStartup(StartupLoadResult result) {
         return switch (result.source()) {
-        case STORED -> formatLoadedContacts(
-                result.contacts().size(), result.sourceFile());
-        case SAMPLE -> formatSampleContacts();
-        case RECOVERED -> formatRecoveredContacts(result);
+            case STORED -> formatLoadedContacts(
+                    result.contacts().size(), result.sourceFile());
+            case SAMPLE -> formatSampleContacts();
+            case RECOVERED -> formatRecoveredContacts(result);
         };
     }
 
