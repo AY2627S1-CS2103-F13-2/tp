@@ -61,4 +61,16 @@ public interface Storage {
      */
     StartupLoadResult loadForStartup() throws IOException;
 
+    /**
+     * Preserves the failed contact file under reports before offering to start anew.
+     * @throws IOException if the original file cannot be preserved safely
+     */
+    StartupResetPlan prepareStartupReset(IOException failure) throws IOException;
+
+    /**
+     * Clears the active address book after the user accepts a prepared reset.
+     * @throws IOException if the backup or active file has changed, or safe replacement fails
+     */
+    StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException;
+
 }

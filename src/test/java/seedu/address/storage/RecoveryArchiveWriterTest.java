@@ -1,9 +1,14 @@
 package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.TypicalPersons.ALICE;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +42,7 @@ class RecoveryArchiveWriterTest {
                 testFolder.resolve("addressbook.json"), original, result);
 
         assertArrayEquals(original, Files.readAllBytes(first.backupFile()));
+        assertArrayEquals(original, Files.readAllBytes(second.backupFile()));
         assertNotEquals(first.backupFile(), second.backupFile());
 
         String report = Files.readString(first.reportFile());
@@ -44,5 +50,46 @@ class RecoveryArchiveWriterTest {
         assertTrue(report.contains("Record 1: Missing name."));
         assertTrue(report.contains("Skipped records: 1"));
         assertTrue(report.contains("will not replace the active file"));
+    }
+
+    @Test
+    void write_partialRecoveryReport_containsCountsPathsAndEveryReason() throws Exception {
+        Path source = testFolder.resolve("addressbook.json");
+        byte[] original = {0, 1, 2, (byte) 0xff, 13, 10};
+        Files.write(source, original);
+        ContactRecoveryResult result = new ContactRecoveryResult(List.of(ALICE), List.of(
+                new SkippedContact(2, "phone: invalid; email: invalid"),
+                new SkippedContact(3, "Duplicate contact; conflicts with retained record 1.")));
+
+        RecoveryArchive archive = new RecoveryArchiveWriter().write(source, original, result);
+
+        assertArrayEquals(original, Files.readAllBytes(source));
+        assertArrayEquals(original, Files.readAllBytes(archive.backupFile()));
+        assertEquals(archive.backupFile().getParent(), archive.reportFile().getParent());
+        String report = Files.readString(archive.reportFile());
+        assertTrue(report.contains("Source: " + source.toAbsolutePath().normalize()));
+        assertTrue(report.contains("Original backup: " + archive.backupFile()));
+        assertTrue(report.contains("Records inspected: 3"));
+        assertTrue(report.contains("Valid contacts available for recovery: 1"));
+        assertTrue(report.contains("Skipped records: 2"));
+        assertTrue(report.contains("Record 2: phone: invalid; email: invalid"));
+        assertTrue(report.contains("Record 3: Duplicate contact; conflicts with retained record 1."));
+        assertTrue(report.contains("Recovery is complete only when Astra reports successful recovery."));
+        assertFalse(report.contains("No valid contacts were found"));
+    }
+
+    @Test
+    void write_recoveryLocationIsFile_preservesSourceAndExistingFile() throws Exception {
+        Path source = testFolder.resolve("addressbook.json");
+        byte[] original = "original bytes".getBytes(StandardCharsets.UTF_8);
+        Files.write(source, original);
+        Path recoveryRoot = testFolder.resolve("recovery");
+        Files.writeString(recoveryRoot, "existing file");
+        ContactRecoveryResult result = new ContactRecoveryResult(List.of(), List.of(new SkippedContact(1, "Invalid.")));
+
+        assertThrows(IOException.class, () -> new RecoveryArchiveWriter().write(source, original, result));
+
+        assertArrayEquals(original, Files.readAllBytes(source));
+        assertEquals("existing file", Files.readString(recoveryRoot));
     }
 }

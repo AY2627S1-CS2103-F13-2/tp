@@ -26,7 +26,8 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '25'
-          java-package: jdk+fx
+          # Use Gradle's JavaFX dependencies so the headless backend matches the runtime.
+          java-package: jdk
 
       - name: Build and check with Gradle
         run: ./gradlew check coverage
