@@ -8,12 +8,14 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.CollectionUtil;
@@ -48,7 +50,8 @@ public class EditCommand extends Command {
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
 
-    public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
+    public static final String MESSAGE_FIELD_UPDATED = "Updated %1$s's %2$s to %3$s.";
+    public static final String MESSAGE_NO_FIELDS_UPDATED = "No details of %1$s were changed.";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
 
@@ -85,7 +88,48 @@ public class EditCommand extends Command {
 
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+        return new CommandResult(formatUpdatedFields(personToEdit, editedPerson));
+    }
+
+    /**
+     * Returns one line for each field whose value differs between {@code original} and {@code edited},
+     * in the form "Updated NAME's FIELD to VALUE.", where NAME is the name before the edit.
+     */
+    static String formatUpdatedFields(Person original, Person edited) {
+        String name = original.getName().toString();
+        List<String> lines = new ArrayList<>();
+        addLineIfChanged(lines, name, "name", original.getName(), edited.getName());
+        addLineIfChanged(lines, name, "phone", original.getPhone(), edited.getPhone());
+        addLineIfChanged(lines, name, "email", original.getEmail(), edited.getEmail());
+        addLineIfChanged(lines, name, "address", original.getAddress(), edited.getAddress());
+        if (!original.getTags().equals(edited.getTags())) {
+            lines.add(String.format(MESSAGE_FIELD_UPDATED, name, "tags", formatTags(edited.getTags())));
+        }
+
+        if (lines.isEmpty()) {
+            return String.format(MESSAGE_NO_FIELDS_UPDATED, name);
+        }
+        return String.join("\n", lines);
+    }
+
+    private static void addLineIfChanged(List<String> lines, String name, String fieldName,
+            Object originalValue, Object editedValue) {
+        if (!originalValue.equals(editedValue)) {
+            lines.add(String.format(MESSAGE_FIELD_UPDATED, name, fieldName, editedValue));
+        }
+    }
+
+    /**
+     * Returns the tag names in alphabetical order, separated by commas, or "none" if there are no tags.
+     */
+    private static String formatTags(Set<Tag> tags) {
+        if (tags.isEmpty()) {
+            return "none";
+        }
+        return tags.stream()
+                .map(tag -> tag.tagName)
+                .sorted()
+                .collect(Collectors.joining(", "));
     }
 
     /**
