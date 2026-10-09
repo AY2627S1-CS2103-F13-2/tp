@@ -117,15 +117,33 @@ public class EditCommand extends Command {
             if (otherPerson.equals(personToEdit)) {
                 continue;
             }
-            if (isPhoneEdited && otherPerson.getPhone().equals(editedPerson.getPhone())) {
+            if (isPhoneEdited && hasSamePhone(otherPerson, editedPerson)) {
                 throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
-                        editedPerson.getPhone(), otherPerson.getName()));
+                        editedPerson.getPhone().orElseThrow(), otherPerson.getName()));
             }
-            if (isEmailEdited && otherPerson.getEmail().value.equalsIgnoreCase(editedPerson.getEmail().value)) {
+            if (isEmailEdited && hasSameEmail(otherPerson, editedPerson)) {
                 throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
-                        editedPerson.getEmail(), otherPerson.getName()));
+                        editedPerson.getEmail().orElseThrow(), otherPerson.getName()));
             }
         }
+    }
+
+    /**
+     * Returns true if both persons have a phone number and the two are the same. A person without a
+     * phone number never clashes, since there is no number of theirs to reuse.
+     */
+    private static boolean hasSamePhone(Person first, Person second) {
+        return first.getPhone().isPresent() && second.getPhone().isPresent()
+                && first.getPhone().get().equals(second.getPhone().get());
+    }
+
+    /**
+     * Returns true if both persons have an email and the two are the same, ignoring case.
+     * A person without an email never clashes, since there is no address of theirs to reuse.
+     */
+    private static boolean hasSameEmail(Person first, Person second) {
+        return first.getEmail().isPresent() && second.getEmail().isPresent()
+                && first.getEmail().get().value.equalsIgnoreCase(second.getEmail().get().value);
     }
 
     /**
