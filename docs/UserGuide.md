@@ -58,8 +58,8 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Extraneous parameters for commands that take no parameters, such as `help`, `list`, and `exit`, are ignored.<br>
+  For example, `help 123` is interpreted as `help`. `clear` is the exception: it rejects extra parameters instead of ignoring them.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -145,9 +145,20 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the address book.
+Clears every contact from the address book and reports how many were cleared.
 
 Format: `clear`
+
+* `clear` takes no parameters. Extra parameters are rejected rather than ignored, so `clear 3` is reported as an invalid command instead of silently clearing everything.
+* If the address book is already empty, Astra reports that there are no contacts to clear and changes nothing.
+
+Examples:
+* `clear`, with 12 contacts stored, reports `Cleared 12 contact(s). 0 contact(s) remaining.`
+* `clear 3` is rejected, and the accepted command format is shown.
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+`clear` cannot be undone. A confirmation prompt is planned for a later version.
+</div>
 
 ### Exiting the program: `exit`
 
