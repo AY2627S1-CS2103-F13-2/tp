@@ -1,6 +1,8 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -53,5 +55,14 @@ public class LinkedinTest {
 
         // different values -> returns false
         assertFalse(linkedin.equals(new Linkedin("linkedin.com/in/janedoe")));
+    }
+
+    @Test
+    public void hashCode_equalValues_areEqual() {
+        Linkedin linkedin = new Linkedin("linkedin.com/in/johndoe");
+        assertEquals(linkedin.hashCode(), new Linkedin("linkedin.com/in/johndoe").hashCode());
+
+        // unequal values should not be required to differ, but these ones do
+        assertNotEquals(linkedin.hashCode(), new Linkedin("linkedin.com/in/janedoe").hashCode());
     }
 }

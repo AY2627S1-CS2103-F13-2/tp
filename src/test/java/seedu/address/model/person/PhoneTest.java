@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -75,5 +76,13 @@ public class PhoneTest {
 
         // different values -> returns false
         assertFalse(phone.equals(new Phone("995")));
+    }
+
+    @Test
+    public void hashCode_equalValues_areEqual() {
+        assertEquals(new Phone("999").hashCode(), new Phone("999").hashCode());
+
+        // unequal values should not be required to differ, but these ones do
+        assertNotEquals(new Phone("999").hashCode(), new Phone("995").hashCode());
     }
 }

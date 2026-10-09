@@ -1,6 +1,8 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -52,5 +54,13 @@ public class CompanyTest {
 
         // different values -> returns false
         assertFalse(company.equals(new Company("Other Company")));
+    }
+
+    @Test
+    public void hashCode_equalValues_areEqual() {
+        assertEquals(new Company("Valid Company").hashCode(), new Company("Valid Company").hashCode());
+
+        // unequal values should not be required to differ, but these ones do
+        assertNotEquals(new Company("Valid Company").hashCode(), new Company("Other Company").hashCode());
     }
 }

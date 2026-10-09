@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_COMPANY_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_BOB;
@@ -135,5 +136,13 @@ public class PersonTest {
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
                 + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
+    }
+
+    @Test
+    public void hashCode_equalPersons_areEqual() {
+        assertEquals(ALICE.hashCode(), new PersonBuilder(ALICE).build().hashCode());
+
+        // a person differing only in an absent optional field hashes differently
+        assertNotEquals(ALICE.hashCode(), new PersonBuilder(ALICE).withCompany(null).build().hashCode());
     }
 }
