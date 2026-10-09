@@ -2,45 +2,59 @@
   "_comment": "AddressBook save file which contains the same Person values as in TypicalPersons#getTypicalAddressBook()",
   "persons" : [ {
     "name" : "Alice Pauline",
+    "company" : "Shopee",
+    "role" : "Software Engineer",
     "phone" : "94351253",
     "email" : "alice@example.com",
-    "address" : "123, Jurong West Ave 6, #08-111",
+    "linkedin" : "linkedin.com/in/alicepauline",
     "tags" : [ "friends" ]
   }, {
     "name" : "Benson Meier",
+    "company" : "GovTech",
+    "role" : "Product Manager",
     "phone" : "98765432",
     "email" : "johnd@example.com",
-    "address" : "311, Clementi Ave 2, #02-25",
+    "linkedin" : "linkedin.com/in/bensonmeier",
     "tags" : [ "owesMoney", "friends" ]
   }, {
     "name" : "Carl Kurz",
+    "company" : "Grab",
+    "role" : "Data Analyst",
     "phone" : "95352563",
     "email" : "heinz@example.com",
-    "address" : "wall street",
+    "linkedin" : "linkedin.com/in/carlkurz",
     "tags" : [ ]
   }, {
     "name" : "Daniel Meier",
+    "company" : "DBS",
+    "role" : "Consultant",
     "phone" : "87652533",
     "email" : "cornelia@example.com",
-    "address" : "10th street",
+    "linkedin" : "linkedin.com/in/danielmeier",
     "tags" : [ "friends" ]
   }, {
     "name" : "Elle Meyer",
+    "company" : "Sea",
+    "role" : "Designer",
     "phone" : "9482224",
     "email" : "werner@example.com",
-    "address" : "michegan ave",
+    "linkedin" : "linkedin.com/in/ellemeyer",
     "tags" : [ ]
   }, {
     "name" : "Fiona Kunz",
+    "company" : "Stripe",
+    "role" : "Recruiter",
     "phone" : "9482427",
     "email" : "lydia@example.com",
-    "address" : "little tokyo",
+    "linkedin" : "linkedin.com/in/fionakunz",
     "tags" : [ ]
   }, {
     "name" : "George Best",
+    "company" : "Visa",
+    "role" : "Engineering Manager",
     "phone" : "9482442",
     "email" : "anna@example.com",
-    "address" : "4th street",
+    "linkedin" : "linkedin.com/in/georgebest",
     "tags" : [ ]
   } ]
 }

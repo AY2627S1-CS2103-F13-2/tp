@@ -10,11 +10,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
-import seedu.address.model.person.Address;
+import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Role;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -25,22 +27,27 @@ class JsonAdaptedPerson {
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
 
     private final String name;
+    private final String company;
+    private final String role;
     private final String phone;
     private final String email;
-    private final String address;
+    private final String linkedin;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
      */
     @JsonCreator
-    public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
-            @JsonProperty("email") String email, @JsonProperty("address") String address,
+    public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("company") String company,
+            @JsonProperty("role") String role, @JsonProperty("phone") String phone,
+            @JsonProperty("email") String email, @JsonProperty("linkedin") String linkedin,
             @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         this.name = name;
+        this.company = company;
+        this.role = role;
         this.phone = phone;
         this.email = email;
-        this.address = address;
+        this.linkedin = linkedin;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -51,9 +58,11 @@ class JsonAdaptedPerson {
      */
     public JsonAdaptedPerson(Person source) {
         name = source.getName().fullName;
-        phone = source.getPhone().value;
-        email = source.getEmail().value;
-        address = source.getAddress().value;
+        company = source.getCompany().map(value -> value.value).orElse(null);
+        role = source.getRole().map(value -> value.value).orElse(null);
+        phone = source.getPhone().map(value -> value.value).orElse(null);
+        email = source.getEmail().map(value -> value.value).orElse(null);
+        linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -61,6 +70,8 @@ class JsonAdaptedPerson {
 
     /**
      * Converts this Jackson-friendly adapted person object into the model's {@code Person} object.
+     * Every field other than the name is optional, so a missing value is read back as an absent field
+     * rather than rejected.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
@@ -78,32 +89,53 @@ class JsonAdaptedPerson {
         }
         final Name modelName = new Name(name);
 
+        final Company modelCompany;
+        if (company == null) {
+            modelCompany = null;
+        } else if (!Company.isValidCompany(company)) {
+            throw new IllegalValueException(Company.MESSAGE_CONSTRAINTS);
+        } else {
+            modelCompany = new Company(company);
+        }
+
+        final Role modelRole;
+        if (role == null) {
+            modelRole = null;
+        } else if (!Role.isValidRole(role)) {
+            throw new IllegalValueException(Role.MESSAGE_CONSTRAINTS);
+        } else {
+            modelRole = new Role(role);
+        }
+
+        final Phone modelPhone;
         if (phone == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Phone.class.getSimpleName()));
-        }
-        if (!Phone.isValidPhone(phone)) {
+            modelPhone = null;
+        } else if (!Phone.isValidPhone(phone)) {
             throw new IllegalValueException(Phone.MESSAGE_CONSTRAINTS);
+        } else {
+            modelPhone = new Phone(phone);
         }
-        final Phone modelPhone = new Phone(phone);
 
+        final Email modelEmail;
         if (email == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Email.class.getSimpleName()));
-        }
-        if (!Email.isValidEmail(email)) {
+            modelEmail = null;
+        } else if (!Email.isValidEmail(email)) {
             throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
+        } else {
+            modelEmail = new Email(email);
         }
-        final Email modelEmail = new Email(email);
 
-        if (address == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Address.class.getSimpleName()));
+        final Linkedin modelLinkedin;
+        if (linkedin == null) {
+            modelLinkedin = null;
+        } else if (!Linkedin.isValidLinkedin(linkedin)) {
+            throw new IllegalValueException(Linkedin.MESSAGE_CONSTRAINTS);
+        } else {
+            modelLinkedin = new Linkedin(linkedin);
         }
-        if (!Address.isValidAddress(address)) {
-            throw new IllegalValueException(Address.MESSAGE_CONSTRAINTS);
-        }
-        final Address modelAddress = new Address(address);
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelTags);
+        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin, modelTags);
     }
 
 }

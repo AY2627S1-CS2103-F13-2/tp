@@ -39,6 +39,17 @@ public class StringUtil {
     }
 
     /**
+     * Returns {@code value} with its outer spaces trimmed and every run of whitespace inside it
+     * collapsed to a single space. This is the normalised form that field values are stored and
+     * compared in, so that "John  Doe " and "John Doe" are not kept as two different spellings.
+     * @param value cannot be null
+     */
+    public static String normalise(String value) {
+        requireNonNull(value);
+        return value.trim().replaceAll("\\s+", " ");
+    }
+
+    /**
      * Returns a detailed message of {@code t}, including the stack trace.
      */
     public static String getDetails(Throwable t) {

@@ -128,7 +128,7 @@ public class EditCommandTest {
     public void execute_phoneTakenByOtherPerson_failure() {
         Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
-                .withPhone(secondPerson.getPhone().value).build();
+                .withPhone(secondPerson.getPhone().orElseThrow().value).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         String expectedMessage = "98765432 is already saved for Benson Meier. No changes were applied.";
@@ -139,11 +139,11 @@ public class EditCommandTest {
     public void execute_emailTakenByOtherPersonInDifferentCase_failure() {
         Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
-                .withEmail(secondPerson.getEmail().value.toUpperCase()).build();
+                .withEmail(secondPerson.getEmail().orElseThrow().value.toUpperCase()).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         String expectedMessage = String.format(EditCommand.MESSAGE_ALREADY_SAVED_FOR_OTHER,
-                secondPerson.getEmail().value.toUpperCase(), secondPerson.getName());
+                secondPerson.getEmail().orElseThrow().value.toUpperCase(), secondPerson.getName());
         assertCommandFailure(editCommand, model, expectedMessage);
     }
 
@@ -152,7 +152,8 @@ public class EditCommandTest {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person editedPerson = new PersonBuilder(firstPerson).withName(VALID_NAME_BOB).build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB)
-                .withPhone(firstPerson.getPhone().value).withEmail(firstPerson.getEmail().value).build();
+                .withPhone(firstPerson.getPhone().orElseThrow().value)
+                .withEmail(firstPerson.getEmail().orElseThrow().value).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         String expectedMessage = EditCommand.formatUpdatedFields(firstPerson, editedPerson);

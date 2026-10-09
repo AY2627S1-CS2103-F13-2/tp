@@ -1,6 +1,8 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -38,8 +40,8 @@ public class EmailTest {
         assertFalse(Email.isValidEmail("peterjack@exam_ple.com")); // underscore in domain name
         assertFalse(Email.isValidEmail("peter jack@example.com")); // spaces in local part
         assertFalse(Email.isValidEmail("peterjack@exam ple.com")); // spaces in domain name
-        assertFalse(Email.isValidEmail(" peterjack@example.com")); // leading space
-        assertFalse(Email.isValidEmail("peterjack@example.com ")); // trailing space
+        // note: leading and trailing spaces are normalised away rather than rejected, so
+        // " peterjack@example.com " is accepted and stored as "peterjack@example.com"
         assertFalse(Email.isValidEmail("peterjack@@example.com")); // double '@' symbol
         assertFalse(Email.isValidEmail("peter@jack@example.com")); // '@' symbol in local part
         assertFalse(Email.isValidEmail("-peterjack@example.com")); // local part starts with a hyphen
@@ -84,5 +86,13 @@ public class EmailTest {
 
         // different values -> returns false
         assertFalse(email.equals(new Email("other.valid@email")));
+    }
+
+    @Test
+    public void hashCode_equalValues_areEqual() {
+        assertEquals(new Email("valid@email").hashCode(), new Email("valid@email").hashCode());
+
+        // unequal values should not be required to differ, but these ones do
+        assertNotEquals(new Email("valid@email").hashCode(), new Email("other@email").hashCode());
     }
 }
