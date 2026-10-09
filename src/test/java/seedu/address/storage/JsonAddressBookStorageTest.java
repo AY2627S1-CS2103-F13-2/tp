@@ -6,6 +6,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
 import static seedu.address.testutil.TypicalPersons.IDA;
+import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
@@ -16,8 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.commons.util.FileUtil;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Person;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
@@ -84,6 +87,34 @@ public class JsonAddressBookStorageTest {
         readBack = jsonAddressBookStorage.readAddressBook().get(); // file path not specified
         assertEquals(original, new AddressBook(readBack));
 
+    }
+
+    @Test
+    public void readAndSaveAddressBook_personWithoutOptionalFields_success() throws Exception {
+        Path filePath = testFolder.resolve("TempAddressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(NAME_ONLY);
+        JsonAddressBookStorage jsonAddressBookStorage = new JsonAddressBookStorage(filePath);
+
+        jsonAddressBookStorage.saveAddressBook(original, filePath);
+        ReadOnlyAddressBook readBack = jsonAddressBookStorage.readAddressBook(filePath).get();
+        assertEquals(original, new AddressBook(readBack));
+    }
+
+    @Test
+    public void readAddressBook_fileWithLegacyAddressField_ignoresUnknownField() throws Exception {
+        // Save files written before the address field was removed must still load, minus the address.
+        Path filePath = testFolder.resolve("LegacyAddressBook.json");
+        FileUtil.writeToFile(filePath, "{\"persons\": [ { \"name\": \"Legacy Person\","
+                + " \"phone\": \"94351253\", \"email\": \"legacy@example.com\","
+                + " \"address\": \"123, Jurong West Ave 6, #08-111\" } ]}");
+
+        ReadOnlyAddressBook readBack = new JsonAddressBookStorage(filePath).readAddressBook(filePath).get();
+
+        Person legacyPerson = readBack.getPersonList().get(0);
+        assertEquals("Legacy Person", legacyPerson.getName().fullName);
+        assertEquals("legacy@example.com", legacyPerson.getEmail().orElseThrow().value);
+        assertEquals(java.util.Optional.empty(), legacyPerson.getCompany());
     }
 
     @Test

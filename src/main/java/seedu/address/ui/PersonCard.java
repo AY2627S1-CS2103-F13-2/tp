@@ -33,11 +33,15 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label id;
     @FXML
+    private Label company;
+    @FXML
+    private Label role;
+    @FXML
     private Label phone;
     @FXML
-    private Label address;
-    @FXML
     private Label email;
+    @FXML
+    private Label linkedin;
     @FXML
     private FlowPane tags;
 
@@ -49,11 +53,26 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().value);
-        address.setText(person.getAddress().value);
-        email.setText(person.getEmail().value);
+        setOptionalLabel(company, person.getCompany().map(value -> value.value).orElse(null));
+        setOptionalLabel(role, person.getRole().map(value -> value.value).orElse(null));
+        setOptionalLabel(phone, person.getPhone().map(value -> value.value).orElse(null));
+        setOptionalLabel(email, person.getEmail().map(value -> value.value).orElse(null));
+        setOptionalLabel(linkedin, person.getLinkedin().map(value -> value.value).orElse(null));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+    }
+
+    /**
+     * Sets {@code label} to show {@code value}, or removes the label from the card when
+     * {@code value} is null, so that an absent field leaves no blank row behind.
+     */
+    private static void setOptionalLabel(Label label, String value) {
+        if (value == null) {
+            label.setVisible(false);
+            label.setManaged(false);
+            return;
+        }
+        label.setText(value);
     }
 }

@@ -15,7 +15,9 @@ UniquePersonList -right-> Person
 Person -up-> "*" Tag
 
 Person *--> Name
+Person *--> Company
+Person *--> Role
 Person *--> Phone
 Person *--> Email
-Person *--> Address
+Person *--> Linkedin
 @enduml

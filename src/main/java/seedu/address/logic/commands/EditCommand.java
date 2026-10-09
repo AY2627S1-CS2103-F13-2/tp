@@ -1,10 +1,12 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_COMPANY;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LINKEDIN;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
@@ -23,12 +25,14 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
-import seedu.address.model.person.Address;
+import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Role;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -43,9 +47,11 @@ public class EditCommand extends Command {
             + "Existing values will be overwritten by the input values.\n"
             + "Parameters: INDEX (must be a positive integer) or NAME "
             + "[" + PREFIX_NAME + "NAME] "
+            + "[" + PREFIX_COMPANY + "COMPANY] "
+            + "[" + PREFIX_ROLE + "ROLE] "
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
-            + "[" + PREFIX_ADDRESS + "ADDRESS] "
+            + "[" + PREFIX_LINKEDIN + "LINKEDIN] "
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
@@ -186,15 +192,33 @@ public class EditCommand extends Command {
             if (otherPerson.equals(personToEdit)) {
                 continue;
             }
-            if (isPhoneEdited && otherPerson.getPhone().equals(editedPerson.getPhone())) {
+            if (isPhoneEdited && hasSamePhone(otherPerson, editedPerson)) {
                 throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
-                        editedPerson.getPhone(), otherPerson.getName()));
+                        editedPerson.getPhone().orElseThrow(), otherPerson.getName()));
             }
-            if (isEmailEdited && otherPerson.getEmail().value.equalsIgnoreCase(editedPerson.getEmail().value)) {
+            if (isEmailEdited && hasSameEmail(otherPerson, editedPerson)) {
                 throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
-                        editedPerson.getEmail(), otherPerson.getName()));
+                        editedPerson.getEmail().orElseThrow(), otherPerson.getName()));
             }
         }
+    }
+
+    /**
+     * Returns true if both persons have a phone number and the two are the same. A person without a
+     * phone number never clashes, since there is no number of theirs to reuse.
+     */
+    private static boolean hasSamePhone(Person first, Person second) {
+        return first.getPhone().isPresent() && second.getPhone().isPresent()
+                && first.getPhone().get().equals(second.getPhone().get());
+    }
+
+    /**
+     * Returns true if both persons have an email and the two are the same, ignoring case.
+     * A person without an email never clashes, since there is no address of theirs to reuse.
+     */
+    private static boolean hasSameEmail(Person first, Person second) {
+        return first.getEmail().isPresent() && second.getEmail().isPresent()
+                && first.getEmail().get().value.equalsIgnoreCase(second.getEmail().get().value);
     }
 
     /**
@@ -205,12 +229,15 @@ public class EditCommand extends Command {
         assert personToEdit != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
-        Phone updatedPhone = editPersonDescriptor.getPhone().orElse(personToEdit.getPhone());
-        Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
-        Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress());
+        Company updatedCompany = editPersonDescriptor.getCompany().or(personToEdit::getCompany).orElse(null);
+        Role updatedRole = editPersonDescriptor.getRole().or(personToEdit::getRole).orElse(null);
+        Phone updatedPhone = editPersonDescriptor.getPhone().or(personToEdit::getPhone).orElse(null);
+        Email updatedEmail = editPersonDescriptor.getEmail().or(personToEdit::getEmail).orElse(null);
+        Linkedin updatedLinkedin = editPersonDescriptor.getLinkedin().or(personToEdit::getLinkedin).orElse(null);
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress, updatedTags);
+        return new Person(updatedName, updatedCompany, updatedRole, updatedPhone, updatedEmail, updatedLinkedin,
+                updatedTags);
     }
 
     /**
@@ -274,9 +301,11 @@ public class EditCommand extends Command {
      */
     public static class EditPersonDescriptor {
         private Name name;
+        private Company company;
+        private Role role;
         private Phone phone;
         private Email email;
-        private Address address;
+        private Linkedin linkedin;
         private Set<Tag> tags;
 
         public EditPersonDescriptor() {}
@@ -287,9 +316,11 @@ public class EditCommand extends Command {
          */
         public EditPersonDescriptor(EditPersonDescriptor toCopy) {
             setName(toCopy.name);
+            setCompany(toCopy.company);
+            setRole(toCopy.role);
             setPhone(toCopy.phone);
             setEmail(toCopy.email);
-            setAddress(toCopy.address);
+            setLinkedin(toCopy.linkedin);
             setTags(toCopy.tags);
         }
 
@@ -297,7 +328,7 @@ public class EditCommand extends Command {
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags);
+            return CollectionUtil.isAnyNonNull(name, company, role, phone, email, linkedin, tags);
         }
 
         public void setName(Name name) {
@@ -324,12 +355,28 @@ public class EditCommand extends Command {
             return Optional.ofNullable(email);
         }
 
-        public void setAddress(Address address) {
-            this.address = address;
+        public void setCompany(Company company) {
+            this.company = company;
         }
 
-        public Optional<Address> getAddress() {
-            return Optional.ofNullable(address);
+        public Optional<Company> getCompany() {
+            return Optional.ofNullable(company);
+        }
+
+        public void setRole(Role role) {
+            this.role = role;
+        }
+
+        public Optional<Role> getRole() {
+            return Optional.ofNullable(role);
+        }
+
+        public void setLinkedin(Linkedin linkedin) {
+            this.linkedin = linkedin;
+        }
+
+        public Optional<Linkedin> getLinkedin() {
+            return Optional.ofNullable(linkedin);
         }
 
         /**
@@ -361,9 +408,11 @@ public class EditCommand extends Command {
             }
 
             return Objects.equals(name, otherEditPersonDescriptor.name)
+                    && Objects.equals(company, otherEditPersonDescriptor.company)
+                    && Objects.equals(role, otherEditPersonDescriptor.role)
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
-                    && Objects.equals(address, otherEditPersonDescriptor.address)
+                    && Objects.equals(linkedin, otherEditPersonDescriptor.linkedin)
                     && Objects.equals(tags, otherEditPersonDescriptor.tags);
         }
 
@@ -371,9 +420,11 @@ public class EditCommand extends Command {
         public String toString() {
             return new ToStringBuilder(this)
                     .add("name", name)
+                    .add("company", company)
+                    .add("role", role)
                     .add("phone", phone)
                     .add("email", email)
-                    .add("address", address)
+                    .add("linkedin", linkedin)
                     .add("tags", tags)
                     .toString();
         }

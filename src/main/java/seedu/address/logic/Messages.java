@@ -32,19 +32,20 @@ public class Messages {
     }
 
     /**
-     * Formats the {@code person} for display to the user.
+     * Formats the {@code person} for display to the user. Fields the person does not have are omitted.
      */
     public static String format(Person person) {
         final StringBuilder builder = new StringBuilder();
-        builder.append(person.getName())
-                .append("; Phone: ")
-                .append(person.getPhone())
-                .append("; Email: ")
-                .append(person.getEmail())
-                .append("; Address: ")
-                .append(person.getAddress())
-                .append("; Tags: ");
-        person.getTags().forEach(builder::append);
+        builder.append(person.getName());
+        person.getCompany().ifPresent(company -> builder.append("; Company: ").append(company));
+        person.getRole().ifPresent(role -> builder.append("; Role: ").append(role));
+        person.getPhone().ifPresent(phone -> builder.append("; Phone: ").append(phone));
+        person.getEmail().ifPresent(email -> builder.append("; Email: ").append(email));
+        person.getLinkedin().ifPresent(linkedin -> builder.append("; LinkedIn: ").append(linkedin));
+        if (!person.getTags().isEmpty()) {
+            builder.append("; Tags: ");
+            person.getTags().forEach(builder::append);
+        }
         return builder.toString();
     }
 
