@@ -211,6 +211,19 @@ public class EditCommandTest {
     }
 
     @Test
+    public void formatUpdatedFields_optionalFieldsChangedAndRemoved_oneLineEach() {
+        Person original = new PersonBuilder().withName("John Lim").withCompany("Google").withRole("Engineer")
+                .withLinkedin("linkedin.com/in/johnlim").build();
+        Person edited = new PersonBuilder(original).withCompany("Apple").withRole(null)
+                .withLinkedin("linkedin.com/in/johnlim2").build();
+
+        String expected = "Updated John Lim's company to Apple.\n"
+                + "Updated John Lim's role to none.\n"
+                + "Updated John Lim's LinkedIn to linkedin.com/in/johnlim2.";
+        assertEquals(expected, EditCommand.formatUpdatedFields(original, edited));
+    }
+
+    @Test
     public void formatUpdatedFields_tagsCleared_showsNone() {
         Person original = new PersonBuilder().withName("John Lim").withTags("friends").build();
         Person edited = new PersonBuilder(original).withTags().build();
