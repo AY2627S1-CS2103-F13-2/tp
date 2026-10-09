@@ -3,6 +3,8 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import seedu.address.commons.util.StringUtil;
+
 /**
  * Represents the role a Person holds at their company in the address book.
  * Guarantees: immutable; is valid as declared in {@link #isValidRole(String)}
@@ -27,14 +29,14 @@ public class Role {
     public Role(String role) {
         requireNonNull(role);
         checkArgument(isValidRole(role), MESSAGE_CONSTRAINTS);
-        value = role;
+        value = StringUtil.normalise(role);
     }
 
     /**
      * Returns true if a given string is a valid role.
      */
     public static boolean isValidRole(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return StringUtil.normalise(test).matches(VALIDATION_REGEX);
     }
 
     @Override

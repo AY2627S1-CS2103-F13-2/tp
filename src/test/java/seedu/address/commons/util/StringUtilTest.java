@@ -1,5 +1,6 @@
 package seedu.address.commons.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -138,6 +139,46 @@ public class StringUtilTest {
     @Test
     public void getDetails_nullGiven_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> StringUtil.getDetails(null));
+    }
+
+    //---------------- Tests for normalise ---------------------------------------
+
+    /*
+     * Equivalence Partitions: null, empty, whitespace only, already normalised,
+     * outer whitespace, repeated inner whitespace, non-space whitespace
+     */
+
+    @Test
+    public void normalise_nullGiven_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> StringUtil.normalise(null));
+    }
+
+    @Test
+    public void normalise_emptyOrWhitespaceOnly_returnsEmptyString() {
+        assertEquals("", StringUtil.normalise(""));
+        assertEquals("", StringUtil.normalise("   "));
+        assertEquals("", StringUtil.normalise("\t \n"));
+    }
+
+    @Test
+    public void normalise_alreadyNormalised_returnsSameValue() {
+        assertEquals("John Doe", StringUtil.normalise("John Doe"));
+        assertEquals("a", StringUtil.normalise("a"));
+    }
+
+    @Test
+    public void normalise_untidySpacing_trimsAndCollapses() {
+        assertEquals("John Doe", StringUtil.normalise("  John Doe"));
+        assertEquals("John Doe", StringUtil.normalise("John Doe   "));
+        assertEquals("John Doe", StringUtil.normalise("John    Doe"));
+        assertEquals("John Doe", StringUtil.normalise("   John     Doe   "));
+        assertEquals("John Doe Jr", StringUtil.normalise(" John  Doe   Jr "));
+    }
+
+    @Test
+    public void normalise_nonSpaceWhitespace_collapsedToSingleSpace() {
+        assertEquals("John Doe", StringUtil.normalise("John\tDoe"));
+        assertEquals("John Doe", StringUtil.normalise("John\n\nDoe"));
     }
 
 }

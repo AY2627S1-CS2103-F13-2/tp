@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -29,6 +30,8 @@ public class NameTest {
         assertFalse(Name.isValidName(" ")); // spaces only
         assertFalse(Name.isValidName("^")); // only non-alphanumeric characters
         assertFalse(Name.isValidName("peter*")); // contains non-alphanumeric characters
+        assertFalse(Name.isValidName("-peter")); // starts with punctuation
+        assertFalse(Name.isValidName("'")); // punctuation only
 
         // valid name
         assertTrue(Name.isValidName("peter jack")); // alphabets only
@@ -36,6 +39,24 @@ public class NameTest {
         assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
         assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+        assertTrue(Name.isValidName("Jean-Luc")); // hyphenated
+        assertTrue(Name.isValidName("Siti O'Brien")); // apostrophe
+        assertTrue(Name.isValidName("A. Kumar")); // initial followed by a full stop
+
+        // valid names using letters outside English (NFR 9)
+        assertTrue(Name.isValidName("Jose Garcia"));
+        assertTrue(Name.isValidName("Zoe Muller"));
+        assertTrue(Name.isValidName("Bjorn Borg"));
+    }
+
+    @Test
+    public void constructor_valueWithUntidySpacing_isNormalised() {
+        assertEquals("John Doe", new Name("  John   Doe  ").fullName);
+    }
+
+    @Test
+    public void equals_sameNameSpacedDifferently_returnsTrue() {
+        assertTrue(new Name("John  Doe").equals(new Name(" John Doe ")));
     }
 
     @Test

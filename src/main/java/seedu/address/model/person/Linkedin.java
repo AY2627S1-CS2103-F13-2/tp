@@ -3,6 +3,8 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import seedu.address.commons.util.StringUtil;
+
 /**
  * Represents a Person's LinkedIn profile in the address book.
  * Guarantees: immutable; is valid as declared in {@link #isValidLinkedin(String)}
@@ -28,14 +30,14 @@ public class Linkedin {
     public Linkedin(String linkedin) {
         requireNonNull(linkedin);
         checkArgument(isValidLinkedin(linkedin), MESSAGE_CONSTRAINTS);
-        value = linkedin;
+        value = StringUtil.normalise(linkedin);
     }
 
     /**
      * Returns true if a given string is a valid LinkedIn profile.
      */
     public static boolean isValidLinkedin(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return StringUtil.normalise(test).matches(VALIDATION_REGEX);
     }
 
     @Override

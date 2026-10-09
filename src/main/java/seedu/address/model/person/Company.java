@@ -3,6 +3,8 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import seedu.address.commons.util.StringUtil;
+
 /**
  * Represents the company a Person works at in the address book.
  * Guarantees: immutable; is valid as declared in {@link #isValidCompany(String)}
@@ -27,14 +29,14 @@ public class Company {
     public Company(String company) {
         requireNonNull(company);
         checkArgument(isValidCompany(company), MESSAGE_CONSTRAINTS);
-        value = company;
+        value = StringUtil.normalise(company);
     }
 
     /**
      * Returns true if a given string is a valid company.
      */
     public static boolean isValidCompany(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return StringUtil.normalise(test).matches(VALIDATION_REGEX);
     }
 
     @Override
