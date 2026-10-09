@@ -104,9 +104,12 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​` or `
   * If exactly one person's name contains it, that person is edited.
   * If several do, they are listed with numbers and nothing is edited. Enter the command again with the person's number from that list in place of the name.
 * At least one of the optional fields must be provided.
+* If every value you enter is the same as the current one, nothing is changed and an error message is shown.
 * Existing values will be updated to the input values.
+* The new phone number or email must not already belong to another person. Emails are compared without regard to letter case, so `JohnDoe@example.com` and `johndoe@example.com` are the same email.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
+* After the edit, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.

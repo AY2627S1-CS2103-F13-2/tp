@@ -41,7 +41,7 @@ public class EditCommandTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.formatUpdatedFields(model.getFilteredPersonList().get(0), editedPerson);
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
@@ -62,7 +62,7 @@ public class EditCommandTest {
                 .withPhone(VALID_PHONE_BOB).withTags(VALID_TAG_HUSBAND).build();
         EditCommand editCommand = new EditCommand(indexLastPerson, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.formatUpdatedFields(lastPerson, editedPerson);
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(lastPerson, editedPerson);
@@ -71,15 +71,19 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_noFieldSpecifiedUnfilteredList_success() {
+    public void execute_noFieldSpecifiedUnfilteredList_failure() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
-        Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGES);
+    }
 
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+    @Test
+    public void execute_sameValuesUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(firstPerson).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGES);
     }
 
     @Test
@@ -91,7 +95,7 @@ public class EditCommandTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
                 new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.formatUpdatedFields(personInFilteredList, editedPerson);
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
@@ -121,6 +125,45 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_phoneTakenByOtherPerson_failure() {
+        Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withPhone(secondPerson.getPhone().value).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = "98765432 is already saved for Benson Meier. No changes were applied.";
+        assertCommandFailure(editCommand, model, expectedMessage);
+    }
+
+    @Test
+    public void execute_emailTakenByOtherPersonInDifferentCase_failure() {
+        Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withEmail(secondPerson.getEmail().value.toUpperCase()).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                secondPerson.getEmail().value.toUpperCase(), secondPerson.getName());
+        assertCommandFailure(editCommand, model, expectedMessage);
+    }
+
+    @Test
+    public void execute_ownPhoneAndEmailWithNewName_success() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(firstPerson).withName(VALID_NAME_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB)
+                .withPhone(firstPerson.getPhone().value).withEmail(firstPerson.getEmail().value).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = EditCommand.formatUpdatedFields(firstPerson, editedPerson);
+
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(firstPerson, editedPerson);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_invalidPersonIndexUnfilteredList_failure() {
         Index outOfBoundIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build();
@@ -144,6 +187,41 @@ public class EditCommandTest {
                 new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build());
 
         assertCommandFailure(editCommand, model, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void formatUpdatedFields_oneFieldChanged_oneLine() {
+        Person original = new PersonBuilder().withName("John Lim").withPhone("91234567").build();
+        Person edited = new PersonBuilder(original).withPhone("98765432").build();
+
+        assertEquals("Updated John Lim's phone to 98765432.", EditCommand.formatUpdatedFields(original, edited));
+    }
+
+    @Test
+    public void formatUpdatedFields_severalFieldsChanged_oneLineEach() {
+        Person original = new PersonBuilder().withName("John Lim").withTags("friends").build();
+        Person edited = new PersonBuilder(original).withName("John Tan").withEmail("john@example.com")
+                .withTags("owesMoney", "colleagues").build();
+
+        String expected = "Updated John Lim's name to John Tan.\n"
+                + "Updated John Lim's email to john@example.com.\n"
+                + "Updated John Lim's tags to colleagues, owesMoney.";
+        assertEquals(expected, EditCommand.formatUpdatedFields(original, edited));
+    }
+
+    @Test
+    public void formatUpdatedFields_tagsCleared_showsNone() {
+        Person original = new PersonBuilder().withName("John Lim").withTags("friends").build();
+        Person edited = new PersonBuilder(original).withTags().build();
+
+        assertEquals("Updated John Lim's tags to none.", EditCommand.formatUpdatedFields(original, edited));
+    }
+
+    @Test
+    public void formatUpdatedFields_nothingChanged_noFieldsMessage() {
+        Person original = new PersonBuilder().withName("John Lim").build();
+
+        assertEquals("No details of John Lim were changed.", EditCommand.formatUpdatedFields(original, original));
     }
 
     @Test
