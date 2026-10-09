@@ -53,7 +53,11 @@ public class EditCommand extends Command {
     public static final String MESSAGE_FIELD_UPDATED = "Updated %1$s's %2$s to %3$s.";
     public static final String MESSAGE_NO_FIELDS_UPDATED = "No details of %1$s were changed.";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
+    public static final String MESSAGE_NO_CHANGES =
+            "The new values are the same as the current ones, so there is nothing to change.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_ALREADY_SAVED_FOR_OTHER =
+            "%1$s is already saved for %2$s. No changes were applied.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -82,9 +86,15 @@ public class EditCommand extends Command {
         Person personToEdit = lastShownList.get(index.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
+        if (editedPerson.equals(personToEdit)) {
+            throw new CommandException(MESSAGE_NO_CHANGES);
+        }
+
         if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
+
+        checkPhoneAndEmailNotTaken(model, personToEdit, editedPerson);
 
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
@@ -130,6 +140,30 @@ public class EditCommand extends Command {
                 .map(tag -> tag.tagName)
                 .sorted()
                 .collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Throws a {@code CommandException} if the new phone number or email in this edit already
+     * belongs to a person other than {@code personToEdit}. Emails are compared case-insensitively.
+     */
+    private void checkPhoneAndEmailNotTaken(Model model, Person personToEdit, Person editedPerson)
+            throws CommandException {
+        boolean isPhoneEdited = editPersonDescriptor.getPhone().isPresent();
+        boolean isEmailEdited = editPersonDescriptor.getEmail().isPresent();
+
+        for (Person otherPerson : model.getAddressBook().getPersonList()) {
+            if (otherPerson.equals(personToEdit)) {
+                continue;
+            }
+            if (isPhoneEdited && otherPerson.getPhone().equals(editedPerson.getPhone())) {
+                throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        editedPerson.getPhone(), otherPerson.getName()));
+            }
+            if (isEmailEdited && otherPerson.getEmail().value.equalsIgnoreCase(editedPerson.getEmail().value)) {
+                throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        editedPerson.getEmail(), otherPerson.getName()));
+            }
+        }
     }
 
     /**
