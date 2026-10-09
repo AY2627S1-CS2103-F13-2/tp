@@ -127,7 +127,7 @@ public class EditCommandTest {
                 .withPhone(secondPerson.getPhone().value).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_DUPLICATE_PHONE, secondPerson.getName());
+        String expectedMessage = "98765432 is already saved for Benson Meier. No changes were applied.";
         assertCommandFailure(editCommand, model, expectedMessage);
     }
 
@@ -138,7 +138,8 @@ public class EditCommandTest {
                 .withEmail(secondPerson.getEmail().value.toUpperCase()).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_DUPLICATE_EMAIL, secondPerson.getName());
+        String expectedMessage = String.format(EditCommand.MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                secondPerson.getEmail().value.toUpperCase(), secondPerson.getName());
         assertCommandFailure(editCommand, model, expectedMessage);
     }
 

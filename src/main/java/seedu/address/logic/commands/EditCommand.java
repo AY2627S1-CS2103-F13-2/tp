@@ -51,8 +51,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
-    public static final String MESSAGE_DUPLICATE_PHONE = "This phone number already belongs to %1$s.";
-    public static final String MESSAGE_DUPLICATE_EMAIL = "This email already belongs to %1$s.";
+    public static final String MESSAGE_ALREADY_SAVED_FOR_OTHER =
+            "%1$s is already saved for %2$s. No changes were applied.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -106,10 +106,12 @@ public class EditCommand extends Command {
                 continue;
             }
             if (isPhoneEdited && otherPerson.getPhone().equals(editedPerson.getPhone())) {
-                throw new CommandException(String.format(MESSAGE_DUPLICATE_PHONE, otherPerson.getName()));
+                throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        editedPerson.getPhone(), otherPerson.getName()));
             }
             if (isEmailEdited && otherPerson.getEmail().value.equalsIgnoreCase(editedPerson.getEmail().value)) {
-                throw new CommandException(String.format(MESSAGE_DUPLICATE_EMAIL, otherPerson.getName()));
+                throw new CommandException(String.format(MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        editedPerson.getEmail(), otherPerson.getName()));
             }
         }
     }
