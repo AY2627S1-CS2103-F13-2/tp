@@ -18,12 +18,14 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
+import seedu.address.storage.ContactFileLock;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StartupLoadResult;
 import seedu.address.storage.StartupResetPlan;
 import seedu.address.storage.Storage;
 import seedu.address.storage.StorageManager;
+import seedu.address.ui.StartupMessageFormatter;
 import seedu.address.ui.Ui;
 import seedu.address.ui.UiManager;
 
@@ -48,6 +50,7 @@ public class MainApp extends Application {
     private IOException startupFailure;
     private StartupResetPlan startupResetPlan;
     private UserPrefs startupPrefs;
+    private ContactFileLock contactFileLock;
 
     public MainApp() {
         this(USER_PREFS_FILE_PATH, ADDRESS_BOOK_FILE_PATH);
@@ -63,26 +66,58 @@ public class MainApp extends Application {
         logger.info("=============================[ Initializing AddressBook ]===========================");
         super.init();
 
+        if (!acquireContactFile()) {
+            return;
+        }
+        try {
+            initializeStorage();
+            loadContacts();
+        } catch (RuntimeException | Error e) {
+            releaseContactFile();
+            throw e;
+        }
+    }
+
+    private boolean acquireContactFile() {
+        try {
+            contactFileLock = ContactFileLock.acquire(addressBookFilePath);
+            return true;
+        } catch (IOException e) {
+            startupFailure = e;
+            return false;
+        }
+    }
+
+    private void initializeStorage() {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(userPrefsFilePath);
         startupPrefs = initPrefs(userPrefsStorage);
-        JsonAddressBookStorage addressBookStorage =
-                new JsonAddressBookStorage(addressBookFilePath);
-        storage = new StorageManager(addressBookStorage, userPrefsStorage);
+        storage = createStorage(userPrefsStorage);
+    }
 
+    /**
+     * Assembles persistent storage independently of startup decisions.
+     */
+    protected Storage createStorage(JsonUserPrefsStorage userPrefsStorage) {
+        return new StorageManager(new JsonAddressBookStorage(addressBookFilePath), userPrefsStorage);
+    }
+
+    private void loadContacts() {
         try {
             StartupLoadResult loadResult = storage.loadForStartup();
             initializeComponents(loadResult);
         } catch (IOException e) {
             startupFailure = e;
             logger.severe("Contact startup failed: " + StringUtil.getDetails(e));
-            try {
-                startupResetPlan = storage.prepareStartupReset(e);
-            } catch (IOException archiveFailure) {
-                startupFailure = new IOException(e.getMessage()
-                        + "\n\nStarting anew is unavailable because the original contact file could not be "
-                        + "preserved safely under reports: " + archiveFailure.getMessage()
-                        + "\nAstra has not cleared your address book.", e);
-            }
+            prepareReset(e);
+        }
+    }
+
+    private void prepareReset(IOException failure) {
+        try {
+            startupResetPlan = storage.prepareStartupReset(failure);
+        } catch (IOException archiveFailure) {
+            startupFailure = new IOException(
+                    StartupMessageFormatter.formatResetUnavailable(failure, archiveFailure), failure);
         }
     }
 
@@ -158,9 +193,15 @@ public class MainApp extends Application {
         if (startupResetPlan == null) {
             UiManager.showStartupError(primaryStage, failure);
         } else {
-            UiManager.showStartupReset(
-                    primaryStage, failure, startupResetPlan.archive(), () -> startAnew(primaryStage));
+            showStartupReset(primaryStage, failure, startupResetPlan);
         }
+    }
+
+    /**
+     * Presents the reset choice only when a preserved snapshot is available.
+     */
+    protected void showStartupReset(Stage primaryStage, IOException failure, StartupResetPlan plan) {
+        UiManager.showStartupReset(primaryStage, failure, plan.archive(), () -> startAnew(primaryStage));
     }
 
     /**
@@ -184,14 +225,27 @@ public class MainApp extends Application {
     public void stop() {
         logger.info("============================ [ Stopping AddressBook ] =============================");
 
-        if (model == null) {
-            return;
-        }
-
         try {
-            storage.saveUserPrefs(model.getUserPrefs());
+            if (model != null) {
+                storage.saveUserPrefs(model.getUserPrefs());
+            }
         } catch (IOException e) {
             logger.severe("Failed to save preferences " + StringUtil.getDetails(e));
+        } finally {
+            releaseContactFile();
+        }
+    }
+
+    private void releaseContactFile() {
+        if (contactFileLock == null) {
+            return;
+        }
+        try {
+            contactFileLock.close();
+        } catch (IOException e) {
+            logger.severe("Failed to release contact file " + StringUtil.getDetails(e));
+        } finally {
+            contactFileLock = null;
         }
     }
 }

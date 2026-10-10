@@ -6,34 +6,46 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.Logic;
+import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.util.SampleDataUtil;
+import seedu.address.storage.ContactFileLock;
+import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StartupLoadResult;
+import seedu.address.storage.StartupResetPlan;
+import seedu.address.storage.Storage;
+import seedu.address.storage.StorageInUseException;
+import seedu.address.storage.StorageManager;
 import seedu.address.testutil.FxTestUtil;
 import seedu.address.ui.Ui;
 
@@ -45,12 +57,54 @@ class MainAppTest {
     private Path contactsFile;
     private Path prefsFile;
     private RecordingMainApp app;
+    private final List<MainApp> applications = new ArrayList<>();
+
+    private <T extends MainApp> T track(T candidate) {
+        applications.add(candidate);
+        return candidate;
+    }
+
+    @AfterEach
+    void stopApplications() {
+        applications.forEach(MainApp::stop);
+    }
 
     @BeforeEach
     void setUp() {
         contactsFile = testFolder.resolve("addressbook.json");
         prefsFile = testFolder.resolve("preferences.json");
-        app = new RecordingMainApp(prefsFile, contactsFile);
+        app = track(new RecordingMainApp(prefsFile, contactsFile));
+    }
+
+    @Test
+    void start_storedContacts_showsOrderCountPathAndAcceptsCommand() throws Exception {
+        Files.writeString(contactsFile, "{\"persons\": [{\"name\": \"Charlie\"}, {\"name\": \"Alice\"}]}");
+        byte[] original = Files.readAllBytes(contactsFile);
+        MainApp candidate = track(new MainApp(prefsFile, contactsFile));
+        candidate.init();
+        assertArrayEquals(original, Files.readAllBytes(contactsFile));
+        FxTestUtil.initialize();
+
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            try {
+                candidate.start(stage);
+                assertTrue(stage.isShowing());
+                ListView<?> contacts = (ListView<?>) stage.getScene().lookup("#personListView");
+                assertEquals(candidate.model.getAddressBook().getPersonList(), contacts.getItems());
+                assertEquals(List.of("Charlie", "Alice"), candidate.model.getAddressBook().getPersonList().stream()
+                        .map(person -> person.getName().fullName).toList());
+                TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
+                assertEquals("Loaded 2 contacts from " + contactsFile.toAbsolutePath() + ".", feedback.getText());
+                TextField command = (TextField) stage.getScene().lookup("#commandTextField");
+                assertFalse(command.isDisabled());
+                command.setText("list");
+                command.fireEvent(new ActionEvent());
+                assertEquals(ListCommand.MESSAGE_SUCCESS, feedback.getText());
+            } finally {
+                stage.hide();
+            }
+        });
     }
 
     @Test
@@ -107,12 +161,13 @@ class MainAppTest {
     void init_invalidPreferences_fallsBackToDefaults() throws Exception {
         for (String json : List.of("{", "null", "{\"guiSettings\": null}")) {
             Files.writeString(prefsFile, json);
-            RecordingMainApp candidate = new RecordingMainApp(prefsFile, contactsFile);
+            RecordingMainApp candidate = track(new RecordingMainApp(prefsFile, contactsFile));
 
             candidate.init();
 
             assertEquals(new UserPrefs(), candidate.model.getUserPrefs(), json);
             assertEquals(new UserPrefs(), new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow(), json);
+            candidate.stop();
         }
     }
 
@@ -144,7 +199,7 @@ class MainAppTest {
         for (String json : List.of("{", "null", "", "{\"persons\": []} {}")) {
             Files.writeString(contactsFile, json);
             byte[] original = Files.readAllBytes(contactsFile);
-            RecordingMainApp candidate = new RecordingMainApp(prefsFile, contactsFile);
+            RecordingMainApp candidate = track(new RecordingMainApp(prefsFile, contactsFile));
 
             candidate.init();
             assertNull(candidate.model);
@@ -211,7 +266,7 @@ class MainAppTest {
         UserPrefs prefs = new UserPrefs();
         prefs.setGuiSettings(new GuiSettings(900, 700, 30, 40));
         new JsonUserPrefsStorage(prefsFile).saveUserPrefs(prefs);
-        ResettingMainApp candidate = new ResettingMainApp(prefsFile, contactsFile);
+        ResettingMainApp candidate = track(new ResettingMainApp(prefsFile, contactsFile));
         candidate.init();
         assertNull(candidate.model);
         assertArrayEquals(original, Files.readAllBytes(contactsFile));
@@ -260,7 +315,7 @@ class MainAppTest {
     @Test
     void startAnew_fileChangesAfterOffer_showsErrorWithoutOpeningUi() throws Exception {
         Files.writeString(contactsFile, "{");
-        ResettingMainApp candidate = new ResettingMainApp(prefsFile, contactsFile);
+        ResettingMainApp candidate = track(new ResettingMainApp(prefsFile, contactsFile));
         candidate.init();
         Files.writeString(contactsFile, "{\"persons\": [{\"name\": \"Bob\"}]}");
         byte[] updated = Files.readAllBytes(contactsFile);
@@ -277,7 +332,7 @@ class MainAppTest {
     void start_userChoosesStartAnew_opensRealEmptyWindowWithReportsReassurance() throws Exception {
         Files.writeString(contactsFile, "{invalid JSON\r\n");
         byte[] original = Files.readAllBytes(contactsFile);
-        MainApp candidate = new MainApp(prefsFile, contactsFile);
+        MainApp candidate = track(new MainApp(prefsFile, contactsFile));
         candidate.init();
         Path backup = findReportsBackup();
         FxTestUtil.initialize();
@@ -323,6 +378,155 @@ class MainAppTest {
         assertArrayEquals(original, Files.readAllBytes(backup));
         assertEquals(StartupLoadResult.Source.STORED, candidate.storage.loadForStartup().source());
         assertTrue(candidate.storage.loadForStartup().contacts().isEmpty());
+    }
+
+    @Test
+    void start_unreadableSource_disablesResetAndLeavesDirectoryIntact() throws Exception {
+        Files.createDirectory(contactsFile);
+        app.init();
+        app.start(null);
+
+        assertNull(app.model);
+        assertNull(app.ui);
+        assertTrue(app.displayedFailure.getMessage().contains("Starting anew is unavailable"));
+        assertTrue(Files.isDirectory(contactsFile));
+        assertFalse(Files.exists(testFolder.resolve("reports")));
+    }
+
+    @Test
+    void stop_rejectedSecondInstance_doesNotReleaseFirstInstanceLock() throws Exception {
+        app.init();
+        RecordingMainApp second = track(new RecordingMainApp(prefsFile, contactsFile));
+        second.init();
+        second.stop();
+
+        assertThrows(StorageInUseException.class, () -> ContactFileLock.acquire(contactsFile));
+        assertNull(second.model);
+        app.stop();
+        try (ContactFileLock next = ContactFileLock.acquire(contactsFile)) {
+            assertFalse(Files.exists(contactsFile));
+        }
+    }
+
+    @Test
+    void init_secondInstanceCannotRecoverOrResetFile() throws Exception {
+        Files.writeString(contactsFile, "{");
+        app.init();
+        Path backup = findReportsBackup();
+        RecordingMainApp second = track(new RecordingMainApp(prefsFile, contactsFile));
+        second.init();
+        second.start(null);
+
+        assertTrue(second.displayedFailure instanceof StorageInUseException);
+        assertNull(second.storage);
+        assertNull(second.model);
+        assertEquals("{", Files.readString(contactsFile));
+        assertEquals(backup, findReportsBackup());
+        try (Stream<Path> reports = Files.list(testFolder.resolve("reports"))) {
+            assertEquals(1, reports.count());
+        }
+        app.stop();
+        RecordingMainApp third = track(new RecordingMainApp(prefsFile, contactsFile));
+        third.init();
+        assertNotNull(third.storage);
+    }
+
+    @Test
+    void init_componentCreationFails_releasesStorageOwnership() throws Exception {
+        MainApp failing = track(new MainApp(prefsFile, contactsFile) {
+            @Override
+            protected Ui createUi(Logic initializedLogic, StartupLoadResult result) {
+                throw new IllegalStateException("UI construction failed");
+            }
+        });
+        assertThrows(IllegalStateException.class, failing::init);
+        try (ContactFileLock next = ContactFileLock.acquire(contactsFile)) {
+            assertFalse(Files.exists(contactsFile));
+        }
+    }
+
+    @Test
+    void init_lockIoFailureDoesNotAttemptRecovery() throws Exception {
+        Files.createDirectory(testFolder.resolve("addressbook.json.lock"));
+        app.init();
+        app.start(null);
+
+        assertNotNull(app.displayedFailure);
+        assertFalse(app.displayedFailure instanceof StorageInUseException);
+        assertNull(app.storage);
+        assertFalse(Files.exists(testFolder.resolve("reports")));
+        assertFalse(Files.exists(contactsFile));
+    }
+
+    @Test
+    void start_noValidContacts_offersPreparedResetAndKeepsOriginal() throws Exception {
+        Files.writeString(contactsFile, "{\"persons\": [{}]}");
+        assertPreparedResetOffered(false);
+    }
+
+    @Test
+    void start_recoveryArchiveFails_offersReportsResetAndKeepsOriginal() throws Exception {
+        Files.writeString(contactsFile, "{\"persons\": [{\"name\": \"Alice\"}, {}]}");
+        Files.writeString(testFolder.resolve("recovery"), "blocked");
+        assertPreparedResetOffered(false);
+    }
+
+    @Test
+    void start_recoveryReplacementFails_offersReportsResetAndKeepsOriginal() throws Exception {
+        Files.writeString(contactsFile, "{\"persons\": [{\"name\": \"Alice\"}, {}]}");
+        assertPreparedResetOffered(true);
+    }
+
+    private void assertPreparedResetOffered(boolean failLoading) throws Exception {
+        byte[] original = Files.readAllBytes(contactsFile);
+        StartupResetPlan[] offered = new StartupResetPlan[1];
+        MainApp candidate = track(new MainApp(prefsFile, contactsFile) {
+            @Override
+            protected Storage createStorage(JsonUserPrefsStorage prefsStorage) {
+                JsonAddressBookStorage contacts = new JsonAddressBookStorage(contactsFile) {
+                    @Override
+                    public StartupLoadResult loadForStartup() throws IOException {
+                        if (failLoading) {
+                            throw new IOException("Could not install recovered contacts: atomic replacement failed");
+                        }
+                        return super.loadForStartup();
+                    }
+                };
+                return new StorageManager(contacts, prefsStorage);
+            }
+
+            @Override
+            protected void showStartupReset(Stage stage, IOException failure, StartupResetPlan plan) {
+                offered[0] = plan;
+            }
+        });
+        candidate.init();
+        candidate.start(null);
+
+        assertNotNull(offered[0]);
+        assertNull(candidate.model);
+        assertNull(candidate.ui);
+        assertArrayEquals(original, Files.readAllBytes(contactsFile));
+        assertArrayEquals(original, Files.readAllBytes(offered[0].archive().backupFile()));
+        assertTrue(Files.readString(offered[0].archive().reportFile()).contains("Startup failure:"));
+    }
+
+    @Test
+    void startAnew_backupVerificationFails_showsArchiveLocationsWithoutUi() throws Exception {
+        Files.writeString(contactsFile, "{");
+        ResettingMainApp candidate = track(new ResettingMainApp(prefsFile, contactsFile));
+        candidate.init();
+        Path backup = findReportsBackup();
+        Files.writeString(backup, "tampered backup");
+
+        candidate.startAnew(null);
+
+        assertFalse(candidate.uiStarted);
+        assertNull(candidate.model);
+        assertEquals("{", Files.readString(contactsFile));
+        assertTrue(candidate.displayedFailure.getMessage().contains("failed verification"));
+        assertTrue(candidate.displayedFailure.getMessage().contains(backup.toString()));
+        assertTrue(candidate.displayedFailure.getMessage().contains(backup.resolveSibling("report.txt").toString()));
     }
 
     private Path findReportsBackup() throws IOException {
