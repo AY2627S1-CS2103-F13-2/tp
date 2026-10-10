@@ -25,6 +25,7 @@ final class ContactStartupLoader {
 
     private final ContactRecoveryParser parser = new ContactRecoveryParser();
     private final ArchiveWriter archiveWriter;
+    private final FailureArchiveWriter failureArchiveWriter;
     private final AtomicReplacement replacement;
 
     ContactStartupLoader() {
@@ -36,7 +37,13 @@ final class ContactStartupLoader {
 
     ContactStartupLoader(ArchiveWriter archiveWriter,
                          AtomicReplacement replacement) {
+        this(archiveWriter, new RecoveryArchiveWriter()::writeStartupFailure, replacement);
+    }
+
+    ContactStartupLoader(ArchiveWriter archiveWriter, FailureArchiveWriter failureArchiveWriter,
+                         AtomicReplacement replacement) {
         this.archiveWriter = archiveWriter;
+        this.failureArchiveWriter = failureArchiveWriter;
         this.replacement = replacement;
     }
 
@@ -83,9 +90,14 @@ final class ContactStartupLoader {
         if (!invalidDocument) {
             throw new IOException("The contact file is now valid. Restart Astra to load it instead of clearing it.");
         }
-        RecoveryArchive archive = new RecoveryArchiveWriter().writeStartupFailure(
+        RecoveryArchive archive = failureArchiveWriter.write(
                 source, originalBytes, failure.getMessage());
-        verifyOriginalUnchanged(source, originalBytes);
+        try {
+            verifyOriginalUnchanged(source, originalBytes);
+        } catch (IOException e) {
+            throw new IOException("Could not prepare a safe reset: " + e.getMessage() + "\n"
+                    + describeArchive(archive), e);
+        }
         return new StartupResetPlan(source, archive, originalBytes);
     }
 
@@ -99,10 +111,7 @@ final class ContactStartupLoader {
             throw new IOException("The reset belongs to a different contact file.");
         }
         try {
-            if (!Arrays.equals(plan.originalBytes(), Files.readAllBytes(plan.archive().backupFile()))
-                    || Files.readString(plan.archive().reportFile()).isBlank()) {
-                throw new IOException("The preserved contact backup or report failed verification.");
-            }
+            verifyResetArchive(plan);
             replaceActiveFile(source, plan.originalBytes(), new ContactRecoveryResult(List.of(), List.of()));
         } catch (IOException e) {
             throw new IOException("Could not start anew: " + e.getMessage() + "\n"
@@ -110,6 +119,13 @@ final class ContactStartupLoader {
         }
         return new StartupLoadResult(List.of(), source,
                 StartupLoadResult.Source.RESET, Optional.of(plan.archive()), 0);
+    }
+
+    private void verifyResetArchive(StartupResetPlan plan) throws IOException {
+        if (!Arrays.equals(plan.originalBytes(), Files.readAllBytes(plan.archive().backupFile()))
+                || Files.readString(plan.archive().reportFile()).isBlank()) {
+            throw new IOException("The preserved contact backup or report failed verification.");
+        }
     }
 
     private StartupLoadResult recover(Path source, byte[] originalBytes,
@@ -196,6 +212,14 @@ final class ContactStartupLoader {
     @FunctionalInterface
     interface ArchiveWriter {
         RecoveryArchive write(Path source, byte[] originalBytes, ContactRecoveryResult result) throws IOException;
+    }
+
+    /**
+     * Preserves a failed document before the user can choose a reset.
+     */
+    @FunctionalInterface
+    interface FailureArchiveWriter {
+        RecoveryArchive write(Path source, byte[] originalBytes, String failureReason) throws IOException;
     }
 
     /**

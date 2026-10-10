@@ -23,6 +23,48 @@ class StartupResetTest {
     private Path testFolder;
 
     @Test
+    void prepare_sourceChangesDuringArchiving_reportsArchiveAndPreservesNewerFile() throws Exception {
+        Path source = writeSource("{");
+        byte[] original = Files.readAllBytes(source);
+        RecoveryArchive[] preserved = new RecoveryArchive[1];
+        ContactStartupLoader loader = new ContactStartupLoader(
+                new RecoveryArchiveWriter()::write, (path, bytes, reason) -> {
+                    preserved[0] = new RecoveryArchiveWriter().writeStartupFailure(path, bytes, reason);
+                    Files.writeString(path, "newer data");
+                    return preserved[0];
+                }, (temporary, target) -> {
+                    throw new AssertionError("Must not replace a changed file");
+                });
+
+        IOException error = assertThrows(IOException.class, () ->
+                loader.prepareStartupReset(source, new IOException("Invalid JSON")));
+
+        assertEquals("newer data", Files.readString(source));
+        assertArrayEquals(original, Files.readAllBytes(preserved[0].backupFile()));
+        assertTrue(error.getMessage().contains(preserved[0].backupFile().toString()));
+        assertTrue(error.getMessage().contains(preserved[0].reportFile().toString()));
+    }
+
+    @Test
+    void prepare_injectedArchiveFailure_preservesSourceAndDoesNotReplace() throws Exception {
+        Path source = writeSource("{broken");
+        byte[] original = Files.readAllBytes(source);
+        AtomicBoolean archiveAttempted = new AtomicBoolean();
+        ContactStartupLoader loader = new ContactStartupLoader(
+                new RecoveryArchiveWriter()::write, (path, bytes, reason) -> {
+                    archiveAttempted.set(true);
+                    assertArrayEquals(original, bytes);
+                    throw new IOException("Report write failed");
+                }, (temporary, target) -> {
+                    throw new AssertionError("Must not replace without an archive");
+                });
+
+        assertThrows(IOException.class, () -> loader.prepareStartupReset(source, new IOException("Invalid JSON")));
+        assertTrue(archiveAttempted.get());
+        assertArrayEquals(original, Files.readAllBytes(source));
+    }
+
+    @Test
     void prepare_malformedDocument_preservesBytesAndExplainsChoiceUnderReports() throws Exception {
         Path source = writeSource("{broken JSON\r\n  original whitespace");
         byte[] original = Files.readAllBytes(source);

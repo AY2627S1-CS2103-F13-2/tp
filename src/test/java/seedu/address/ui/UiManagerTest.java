@@ -43,6 +43,7 @@ import seedu.address.model.person.Person;
 import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.RecoveryArchive;
 import seedu.address.storage.StartupLoadResult;
+import seedu.address.storage.StorageInUseException;
 import seedu.address.testutil.FxTestUtil;
 
 /**
@@ -144,6 +145,25 @@ class UiManagerTest {
     @Test
     void start_fillingWindowFails_showsOriginalErrorBeforeShutdown() throws Exception {
         assertFatalStartup(false);
+    }
+
+    @Test
+    void showStartupError_storageInUse_exitsWithoutResetChoice() throws Exception {
+        runOnFxThread(() -> {
+            List<String> events = new ArrayList<>();
+            CompletableFuture<Void> inspected = dismissNextDialog(pane -> {
+                assertTrue(pane.getContentText().contains("Another Astra instance"));
+                assertTrue(pane.getContentText().contains(SOURCE.toString()));
+                assertEquals(List.of(ButtonType.OK), pane.getButtonTypes());
+                assertTrue(events.isEmpty());
+            });
+
+            UiManager.showStartupError(null, new StorageInUseException(SOURCE), () -> events.add("exit"));
+
+            assertDialogInspected(inspected);
+            assertEquals(List.of("exit"), events);
+            assertTrue(Window.getWindows().isEmpty());
+        });
     }
 
     @Test

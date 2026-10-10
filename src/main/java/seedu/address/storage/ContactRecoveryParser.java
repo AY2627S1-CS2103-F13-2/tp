@@ -91,12 +91,24 @@ final class ContactRecoveryParser {
     private int findConflictingRecord(Person person, List<Person> recovered,
                                       List<Integer> originalNumbers) {
         for (int index = 0; index < recovered.size(); index++) {
-            if (person.isSamePerson(recovered.get(index))) {
+            Person retained = recovered.get(index);
+            if (person.isSamePerson(retained) || hasSamePhone(person, retained) || hasSameEmail(person, retained)) {
                 return originalNumbers.get(index);
             }
         }
 
         return 0;
+    }
+
+    private boolean hasSamePhone(Person first, Person second) {
+        return first.getPhone().isPresent() && second.getPhone().isPresent()
+                && first.getPhone().orElseThrow().value.replaceAll("\\P{Nd}", "")
+                        .equals(second.getPhone().orElseThrow().value.replaceAll("\\P{Nd}", ""));
+    }
+
+    private boolean hasSameEmail(Person first, Person second) {
+        return first.getEmail().isPresent() && second.getEmail().isPresent()
+                && first.getEmail().orElseThrow().value.equalsIgnoreCase(second.getEmail().orElseThrow().value);
     }
 
     private List<String> validateRecord(JsonNode record) {

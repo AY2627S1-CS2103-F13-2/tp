@@ -26,6 +26,27 @@ class RecoveryArchiveWriterTest {
     private Path testFolder;
 
     @Test
+    void writeStartupFailure_sameTimestamp_preservesDistinctIncidentsAndExactBytes() throws Exception {
+        RecoveryArchiveWriter writer = new RecoveryArchiveWriter(
+                Clock.fixed(Instant.parse("2026-10-09T06:30:52Z"), ZoneOffset.UTC));
+        Path source = testFolder.resolve("addressbook.json");
+        byte[] original = {0, (byte) 0xff, 13, 10};
+        Files.write(source, original);
+
+        RecoveryArchive first = writer.writeStartupFailure(source, original, "Malformed document");
+        RecoveryArchive second = writer.writeStartupFailure(source, original, "Malformed document");
+
+        assertNotEquals(first.backupFile().getParent(), second.backupFile().getParent());
+        for (RecoveryArchive archive : List.of(first, second)) {
+            assertEquals(testFolder.resolve("reports"), archive.backupFile().getParent().getParent());
+            assertTrue(archive.backupFile().getParent().getFileName().toString().startsWith("2026-10-09_063052_"));
+            assertArrayEquals(original, Files.readAllBytes(archive.backupFile()));
+            assertTrue(Files.readString(archive.reportFile()).contains("Malformed document"));
+        }
+        assertArrayEquals(original, Files.readAllBytes(source));
+    }
+
+    @Test
     void write_preservesBytesAndCreatesUniqueIncidents() throws Exception {
         Clock clock = Clock.fixed(
                 Instant.parse("2026-10-09T06:30:52Z"), ZoneOffset.ofHours(8));

@@ -15,6 +15,16 @@ public final class StartupMessageFormatter {
     }
 
     /**
+     * Explains why a failed startup cannot safely offer a reset.
+     */
+    public static String formatResetUnavailable(Exception failure, Exception archiveFailure) {
+        return failure.getMessage()
+                + "\n\nStarting anew is unavailable because the original contact file could not be "
+                + "preserved safely under reports: " + archiveFailure.getMessage()
+                + "\nAstra has not cleared your address book.";
+    }
+
+    /**
      * Returns feedback for contacts successfully loaded from storage.
      */
     public static String formatLoadedContacts(int contactCount, Path sourceFile) {
