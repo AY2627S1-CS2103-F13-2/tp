@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -95,5 +96,38 @@ public class ContactFieldPredicateTest {
         Person person = new PersonBuilder().build();
 
         assertFalse(predicate.test(person));
+    }
+
+    @Test
+    public void equals() {
+        ContactFieldPredicate firstPredicate =
+                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+
+        ContactFieldPredicate samePredicate =
+                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+
+        ContactFieldPredicate differentFieldPredicate =
+                new ContactFieldPredicate(ContactFieldPredicate.Field.EMAIL, "91234567");
+
+        ContactFieldPredicate differentQueryPredicate =
+                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "98765432");
+
+        assertTrue(firstPredicate.equals(firstPredicate));
+        assertTrue(firstPredicate.equals(samePredicate));
+        assertFalse(firstPredicate.equals(differentFieldPredicate));
+        assertFalse(firstPredicate.equals(differentQueryPredicate));
+        assertFalse(firstPredicate.equals(null));
+        assertFalse(firstPredicate.equals(1));
+    }
+
+    @Test
+    public void toStringMethod() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+
+        String expected = ContactFieldPredicate.class.getCanonicalName()
+                + "{field=PHONE, query=91234567}";
+
+        assertEquals(expected, predicate.toString());
     }
 }
