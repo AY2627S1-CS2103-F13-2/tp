@@ -2,30 +2,30 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.Predicate;
+
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.model.Model;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 
 /**
- * Finds and lists all persons in the address book whose name contains the search query.
- * Matching is case-insensitive and partial matches are supported.
+ * Finds and lists all persons matching the search predicate.
  */
 public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Finds all persons whose names contain the search query "
-            + "(case-insensitive) and displays them as a list with index numbers.\n"
-            + "Parameters: NAME\n"
-            + "Example: " + COMMAND_WORD + " Alice Tan";
+            + ": Finds contacts by name, phone number or email.\n"
+            + "Parameters: NAME, /contact PHONE, or /email EMAIL\n"
+            + "Example: " + COMMAND_WORD + " Alicia Tan";
 
     public static final String MESSAGE_CONTACT_NOT_FOUND = "Contact not found.";
 
-    private final NameContainsKeywordsPredicate predicate;
+    private final Predicate<Person> predicate;
 
-    public FindCommand(NameContainsKeywordsPredicate predicate) {
+    public FindCommand(Predicate<Person> predicate) {
         this.predicate = predicate;
     }
 
@@ -49,7 +49,6 @@ public class FindCommand extends Command {
             return true;
         }
 
-        // instanceof handles nulls
         if (!(other instanceof FindCommand otherFindCommand)) {
             return false;
         }
