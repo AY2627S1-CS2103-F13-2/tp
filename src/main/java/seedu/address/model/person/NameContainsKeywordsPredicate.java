@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import seedu.address.commons.util.ToStringBuilder;
 
 /**
- * Tests that a {@code Person}'s {@code Name} matches any of the keywords given.
+ * Tests that a {@code Person}'s {@code Name} matches the search query.
  */
 public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
@@ -20,7 +20,8 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
     public boolean test(Person person) {
         String personName = normalize(person.getName().fullName);
         return keywords.stream()
-                .anyMatch(keyword -> personName.contains(normalize(keyword)));
+                .map(NameContainsKeywordsPredicate::normalize)
+                .anyMatch(keyword -> !keyword.isEmpty() && personName.contains(keyword));
     }
 
     private static String normalize(String value) {
@@ -45,6 +46,8 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).add("keywords", keywords).toString();
+        return new ToStringBuilder(this)
+                .add("keywords", keywords)
+                .toString();
     }
 }
