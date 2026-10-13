@@ -163,7 +163,7 @@ public class AddCommandParserTest {
         // only a name, company, role, email which is all that is required
         Person nameOnlyPerson = new PersonBuilder().withName(VALID_NAME_BOB).withCompany(VALID_COMPANY_BOB).withRole(VALID_ROLE_BOB)
                 .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB).withLinkedin(null).withTags().build();
-        assertParseSuccess(parser, NAME_DESC_BOB + COMPANY_DESC_BOB + ROLE_DESC_BOB + PHONE_DESC_BOB 
+        assertParseSuccess(parser, NAME_DESC_BOB + COMPANY_DESC_BOB + ROLE_DESC_BOB + PHONE_DESC_BOB
                 + EMAIL_DESC_BOB , new AddCommand(nameOnlyPerson));
     }
 
