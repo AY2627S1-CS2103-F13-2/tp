@@ -10,7 +10,9 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
+import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
@@ -20,6 +22,7 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
@@ -76,7 +79,7 @@ public class AddressBookParserTest {
     public void parseCommand_find() throws Exception {
         String query = "foo bar baz";
         FindCommand command = (FindCommand) parser.parseCommand(
-            FindCommand.COMMAND_WORD + " " + query);
+                FindCommand.COMMAND_WORD + " " + query);
         assertEquals(new FindCommand(new NameContainsKeywordsPredicate(List.of(query))), command);
     }
 
@@ -93,9 +96,18 @@ public class AddressBookParserTest {
     }
 
     @Test
+    public void parseCommand_view() throws Exception {
+        assertEquals(
+                new ViewCommand(Index.fromOneBased(1)),
+                parser.parseCommand(ViewCommand.COMMAND_WORD + " 1"));
+    }
+
+    @Test
     public void parseCommand_unrecognisedInput_throwsParseException() {
-        assertThrows(ParseException.class, String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE), ()
-            -> parser.parseCommand(""));
+        Executable unrecognisedInput = () -> parser.parseCommand("");
+        assertThrows(ParseException.class,
+            String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE),
+            unrecognisedInput);
     }
 
     @Test
