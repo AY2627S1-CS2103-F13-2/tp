@@ -182,13 +182,13 @@ public class AddCommandParserTest {
         // name without company, role, contact and email 
         assertParseFailure(parser, NAME_DESC_BOB, expectedMessage);
 
-        // name and company withoug role, contact and email
+        // name and company without role, contact and email
         assertParseFailure(parser, NAME_DESC_BOB + COMPANY_DESC_BOB, expectedMessage); 
 
-        // name company, role, without contace and email
+        // name, company, role, without contact and email
         assertParseFailure(parser, NAME_DESC_BOB + COMPANY_DESC_BOB + ROLE_DESC_BOB, expectedMessage); 
 
-        // name company, role, contace withour email
+        // name, company, role, contace without email
         assertParseFailure(parser, NAME_DESC_BOB + COMPANY_DESC_BOB + ROLE_DESC_BOB + PHONE_DESC_BOB, expectedMessage); 
 
         // all prefixes missing
