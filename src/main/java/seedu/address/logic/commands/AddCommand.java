@@ -44,8 +44,10 @@ public class AddCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
-    public static final String MESSAGE_DUPLICATE_EMAIL = "A person with the same email already exist in the address book";
-    public static final String MESSAGE_DUPLICATE_PHONE = "A person with the same phone already exist in the address book";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "A person with the same "
+                                                           + "email already exist in the address book";
+    public static final String MESSAGE_DUPLICATE_PHONE = "A person with the same "
+                                                            + "phone already exist in the address book";
 
     private final Person toAdd;
 
@@ -60,7 +62,6 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        
         //TODO:If same name exist in the contact prompt user if he/she wants to update that contact
         if (model.hasPerson(toAdd)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
