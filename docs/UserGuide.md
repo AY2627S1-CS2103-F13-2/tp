@@ -119,22 +119,56 @@ Examples:
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
 
-### Locating persons by name: `find`
+### Locating persons: `find`
 
-Finds persons whose names contain any of the given keywords.
+Finds persons by name, phone number or email, and shows the matches in the list.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
-* Only full words match; for example, `Han` does not match `Hans`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
+Searching by name:
+
+* The search is case-insensitive, so `alex` matches `Alex`.
+* Part of a name is enough, and it does not have to be a whole word: `Yeo` matches `Alex Yeoh`.
+* What you type must appear in the name **in one piece, in order**. `Alex Yeoh` matches `Alex Yeoh`, but `Yeoh Alex` does not, and neither does `Alex Li`.
+* Extra spaces do not matter, so `find  alex   yeoh` is read as `find alex yeoh`.
+* Only names are searched. To search a phone number or an email, use the forms below.
+
+Searching by phone number or email:
+
+* `find /contact PHONE_NUMBER` matches a phone number **exactly**; partial numbers do not match.
+* `find /email EMAIL` matches an email exactly, ignoring letter case, so `ALEX@example.com` finds `alex@example.com`.
+* The value has to be a valid phone number or email, or Astra reports the problem instead of searching.
+
+If nothing matches, Astra reports `Contact not found.` and the list is left as it was.
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
-  ![result for 'find alex david'](images/findAlexDavidResult.png)
+* `find Alex Yeoh` returns `Alex Yeoh`.
+* `find Yeo` returns `Alex Yeoh`, since part of a name is enough.
+* `find /contact 87438807` returns the person with that exact number.
+* `find /email berniceyu@example.com` returns `Bernice Yu`.
+
+<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
+searching several keywords at once (`find alex david` returning both `Alex Yeoh` and `David Li`),
+and matching keywords in any order. For now a search is one name, one number or one email, matched
+in one piece. Searching by company, role or tag is also planned for a later version.
+</div>
+
+### Viewing a person's full details: `view`
+
+Shows everything Astra has stored about one person, including details the contact list does not show.
+
+Format: `view INDEX`
+
+* Shows the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
+* Details the person does not have are left out rather than shown as empty.
+
+Examples:
+* `list` followed by `view 2` shows the full details of the 2nd person in the address book.
+* `find Yeo` followed by `view 1` shows the full details of the first search result.
+
+<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
+naming the person instead of giving an index, as `delete` and `edit` allow.
+</div>
 
 ### Deleting a person: `delete`
 
@@ -231,6 +265,7 @@ Action | Format, Examples
 **Clear** | `clear`
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`
+**View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`
