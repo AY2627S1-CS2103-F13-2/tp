@@ -29,7 +29,7 @@ class RecoveryArchiveWriterTest {
     void writeStartupFailure_sameTimestamp_preservesDistinctIncidentsAndExactBytes() throws Exception {
         RecoveryArchiveWriter writer = new RecoveryArchiveWriter(
                 Clock.fixed(Instant.parse("2026-10-09T06:30:52Z"), ZoneOffset.UTC));
-        Path source = testFolder.resolve("addressbook.json");
+        Path source = testFolder.resolve("contactfile.json");
         byte[] original = {0, (byte) 0xff, 13, 10};
         Files.write(source, original);
 
@@ -58,9 +58,9 @@ class RecoveryArchiveWriterTest {
                 List.of(), List.of(new SkippedContact(1, "Missing name.")));
 
         RecoveryArchive first = writer.write(
-                testFolder.resolve("addressbook.json"), original, result);
+                testFolder.resolve("contactfile.json"), original, result);
         RecoveryArchive second = writer.write(
-                testFolder.resolve("addressbook.json"), original, result);
+                testFolder.resolve("contactfile.json"), original, result);
 
         assertArrayEquals(original, Files.readAllBytes(first.backupFile()));
         assertArrayEquals(original, Files.readAllBytes(second.backupFile()));
@@ -75,7 +75,7 @@ class RecoveryArchiveWriterTest {
 
     @Test
     void write_partialRecoveryReport_containsCountsPathsAndEveryReason() throws Exception {
-        Path source = testFolder.resolve("addressbook.json");
+        Path source = testFolder.resolve("contactfile.json");
         byte[] original = {0, 1, 2, (byte) 0xff, 13, 10};
         Files.write(source, original);
         ContactRecoveryResult result = new ContactRecoveryResult(List.of(ALICE), List.of(
@@ -101,7 +101,7 @@ class RecoveryArchiveWriterTest {
 
     @Test
     void write_recoveryLocationIsFile_preservesSourceAndExistingFile() throws Exception {
-        Path source = testFolder.resolve("addressbook.json");
+        Path source = testFolder.resolve("contactfile.json");
         byte[] original = "original bytes".getBytes(StandardCharsets.UTF_8);
         Files.write(source, original);
         Path recoveryRoot = testFolder.resolve("recovery");

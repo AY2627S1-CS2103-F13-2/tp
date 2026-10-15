@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import seedu.address.commons.exceptions.DataLoadingException;
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 
@@ -35,24 +35,24 @@ public interface Storage {
     void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException;
 
     /**
-     * Returns the file path of the AddressBook data file.
+     * Returns the file path of the ContactFile data file.
      */
-    Path getAddressBookFilePath();
+    Path getContactFilePath();
 
     /**
-     * Returns AddressBook data as a {@link ReadOnlyAddressBook}.
+     * Returns ContactFile data as a {@link ReadOnlyContactFile}.
      * Returns {@code Optional.empty()} if storage file is not found.
      *
      * @throws DataLoadingException if loading the data from storage failed.
      */
-    Optional<ReadOnlyAddressBook> readAddressBook() throws DataLoadingException;
+    Optional<ReadOnlyContactFile> readContactFile() throws DataLoadingException;
 
     /**
-     * Saves the given {@link ReadOnlyAddressBook} to the storage.
-     * @param addressBook cannot be null.
+     * Saves the given {@link ReadOnlyContactFile} to the storage.
+     * @param contactFile cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
-    void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException;
+    void saveContactFile(ReadOnlyContactFile contactFile) throws IOException;
 
     /**
      * Loads startup contacts and returns any completed recovery information.
@@ -68,7 +68,7 @@ public interface Storage {
     StartupResetPlan prepareStartupReset(IOException failure) throws IOException;
 
     /**
-     * Clears the active address book after the user accepts a prepared reset.
+     * Clears the active contact file after the user accepts a prepared reset.
      * @throws IOException if the backup or active file has changed, or safe replacement fails
      */
     StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException;

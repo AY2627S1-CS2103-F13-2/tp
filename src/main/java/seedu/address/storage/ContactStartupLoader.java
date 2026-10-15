@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.JsonUtil;
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.util.SampleDataUtil;
 
 /**
@@ -60,7 +60,7 @@ final class ContactStartupLoader {
             originalBytes = Files.readAllBytes(source);
         } catch (NoSuchFileException e) {
             return new StartupLoadResult(
-                    SampleDataUtil.getSampleAddressBook().getPersonList(),
+                    SampleDataUtil.getSampleContactFile().getPersonList(),
                     source, StartupLoadResult.Source.SAMPLE, Optional.empty(), 0);
         }
 
@@ -102,7 +102,7 @@ final class ContactStartupLoader {
     }
 
     /**
-     * Installs an empty address book after the user chooses to start anew.
+     * Installs an empty contact file after the user chooses to start anew.
      * The archived original and current active file must still match the preserved snapshot.
      */
     public StartupLoadResult resetForStartup(Path sourceFile, StartupResetPlan plan) throws IOException {
@@ -155,7 +155,7 @@ final class ContactStartupLoader {
     private void replaceActiveFile(Path source, byte[] originalBytes,
                                    ContactRecoveryResult result) throws IOException {
         Path temporary = Files.createTempFile(
-                source.getParent(), "addressbook-recovery-", ".json");
+                source.getParent(), "contactfile-recovery-", ".json");
 
         try {
             writeRecoveredFile(temporary, result);
@@ -169,10 +169,10 @@ final class ContactStartupLoader {
 
     private void writeRecoveredFile(Path temporary,
                                     ContactRecoveryResult result) throws IOException {
-        AddressBook addressBook = new AddressBook();
-        addressBook.setPersons(result.recoveredContacts());
+        ContactFile contactFile = new ContactFile();
+        contactFile.setPersons(result.recoveredContacts());
 
-        JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), temporary);
+        JsonUtil.saveJsonFile(new JsonSerializableContactFile(contactFile), temporary);
     }
 
     private void verifyRecoveredFile(Path temporary,

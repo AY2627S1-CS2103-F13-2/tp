@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,8 +22,8 @@ import seedu.address.model.person.Person;
  */
 public class ViewCommandTest {
 
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-    private final Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
+    private final Model expectedModel = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     @Test
     public void execute_validIndex_success() {

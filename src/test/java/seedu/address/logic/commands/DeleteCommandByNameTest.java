@@ -10,7 +10,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -31,7 +31,7 @@ import seedu.address.model.person.Person;
  */
 public class DeleteCommandByNameTest {
 
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     @Test
     public void execute_fullName_success() {
@@ -64,7 +64,7 @@ public class DeleteCommandByNameTest {
                 + "1. Benson Meier \u2014 GovTech \u2014 johnd@example.com\n"
                 + "2. Daniel Meier \u2014 DBS \u2014 cornelia@example.com\n"
                 + "To delete one of them, enter the command again with its index in place of the name.";
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Meier")));
 
         assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
@@ -77,8 +77,8 @@ public class DeleteCommandByNameTest {
 
         new DeleteCommand(Index.fromOneBased(2)).execute(model);
 
-        assertFalse(model.getAddressBook().getPersonList().contains(DANIEL));
-        assertTrue(model.getAddressBook().getPersonList().contains(BENSON));
+        assertFalse(model.getContactFile().getPersonList().contains(DANIEL));
+        assertTrue(model.getContactFile().getPersonList().contains(BENSON));
     }
 
     @Test
@@ -90,11 +90,11 @@ public class DeleteCommandByNameTest {
     }
 
     @Test
-    public void execute_emptyAddressBook_failure() {
-        Model emptyModel = new ModelManager(new AddressBook(), new UserPrefs());
+    public void execute_emptyContactFile_failure() {
+        Model emptyModel = new ModelManager(new ContactFile(), new UserPrefs());
 
         assertCommandFailure(new DeleteCommand("Alice Pauline"), emptyModel,
-                DeleteCommand.MESSAGE_EMPTY_ADDRESS_BOOK);
+                DeleteCommand.MESSAGE_EMPTY_CONTACT_FILE);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class DeleteCommandByNameTest {
         new DeleteCommand("Alice Pauline").execute(model);
 
         // Resolving the name narrowed the list to Alice alone; once she is gone the full list is back.
-        assertEquals(model.getAddressBook().getPersonList(), model.getFilteredPersonList());
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
     }
 
     @Test
@@ -131,7 +131,7 @@ public class DeleteCommandByNameTest {
     private void assertDeletes(DeleteCommand deleteCommand, Person personToDelete) {
         String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS,
                 Messages.format(personToDelete));
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
 
         assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);

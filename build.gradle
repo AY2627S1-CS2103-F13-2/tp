@@ -79,7 +79,7 @@ dependencies {
 }
 
 shadowJar {
-    archiveFileName = 'addressbook.jar'
+    archiveFileName = 'contactfile.jar'
 }
 
 defaultTasks 'clean', 'test'

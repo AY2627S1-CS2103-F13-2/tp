@@ -6,7 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import seedu.address.commons.util.StringUtil;
 
 /**
- * Represents a Person's LinkedIn profile in the address book.
+ * Represents a Person's LinkedIn profile in the contact file.
  * Guarantees: immutable; is valid as declared in {@link #isValidLinkedin(String)}
  */
 public class Linkedin {

@@ -12,52 +12,52 @@ import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.FileUtil;
 import seedu.address.commons.util.JsonUtil;
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ReadOnlyContactFile;
 
 /**
- * A class to access AddressBook data stored as a JSON file on the hard disk.
+ * A class to access ContactFile data stored as a JSON file on the hard disk.
  */
-public class JsonAddressBookStorage {
+public class JsonContactFileStorage {
 
-    private static final Logger logger = LogsCenter.getLogger(JsonAddressBookStorage.class);
+    private static final Logger logger = LogsCenter.getLogger(JsonContactFileStorage.class);
 
     private Path filePath;
 
-    public JsonAddressBookStorage(Path filePath) {
+    public JsonContactFileStorage(Path filePath) {
         this.filePath = filePath;
     }
 
-    public Path getAddressBookFilePath() {
+    public Path getContactFilePath() {
         return filePath;
     }
 
     /**
-     * Returns AddressBook data as a {@link ReadOnlyAddressBook}.
+     * Returns ContactFile data as a {@link ReadOnlyContactFile}.
      * Returns {@code Optional.empty()} if storage file is not found.
      *
      * @throws DataLoadingException if loading the data from storage failed.
      */
-    public Optional<ReadOnlyAddressBook> readAddressBook() throws DataLoadingException {
-        return readAddressBook(filePath);
+    public Optional<ReadOnlyContactFile> readContactFile() throws DataLoadingException {
+        return readContactFile(filePath);
     }
 
     /**
-     * Similar to {@link #readAddressBook()}.
+     * Similar to {@link #readContactFile()}.
      *
      * @param filePath location of the data. Cannot be null.
      * @throws DataLoadingException if loading the data from storage failed.
      */
-    public Optional<ReadOnlyAddressBook> readAddressBook(Path filePath) throws DataLoadingException {
+    public Optional<ReadOnlyContactFile> readContactFile(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
 
-        Optional<JsonSerializableAddressBook> jsonAddressBook = JsonUtil.readJsonFile(
-                filePath, JsonSerializableAddressBook.class);
-        if (!jsonAddressBook.isPresent()) {
+        Optional<JsonSerializableContactFile> jsonContactFile = JsonUtil.readJsonFile(
+                filePath, JsonSerializableContactFile.class);
+        if (!jsonContactFile.isPresent()) {
             return Optional.empty();
         }
 
         try {
-            return Optional.of(jsonAddressBook.get().toModelType());
+            return Optional.of(jsonContactFile.get().toModelType());
         } catch (IllegalValueException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(ive);
@@ -65,25 +65,25 @@ public class JsonAddressBookStorage {
     }
 
     /**
-     * Saves the given {@link ReadOnlyAddressBook} to the storage.
-     * @param addressBook cannot be null.
+     * Saves the given {@link ReadOnlyContactFile} to the storage.
+     * @param contactFile cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
-    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
-        saveAddressBook(addressBook, filePath);
+    public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+        saveContactFile(contactFile, filePath);
     }
 
     /**
-     * Similar to {@link #saveAddressBook(ReadOnlyAddressBook)}.
+     * Similar to {@link #saveContactFile(ReadOnlyContactFile)}.
      *
      * @param filePath location of the data. Cannot be null.
      */
-    public void saveAddressBook(ReadOnlyAddressBook addressBook, Path filePath) throws IOException {
-        requireNonNull(addressBook);
+    public void saveContactFile(ReadOnlyContactFile contactFile, Path filePath) throws IOException {
+        requireNonNull(contactFile);
         requireNonNull(filePath);
 
         FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), filePath);
+        JsonUtil.saveJsonFile(new JsonSerializableContactFile(contactFile), filePath);
     }
 
     /**
@@ -103,7 +103,7 @@ public class JsonAddressBookStorage {
     }
 
     /**
-     * Safely replaces the active file with an empty address book after confirmation.
+     * Safely replaces the active file with an empty contact file after confirmation.
      */
     public StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException {
         return new ContactStartupLoader().resetForStartup(filePath, plan);
