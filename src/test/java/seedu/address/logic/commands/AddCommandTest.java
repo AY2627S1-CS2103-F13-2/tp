@@ -101,6 +101,45 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_duplicateEmail_throwsCommandException() {
+        Person existing = new PersonBuilder().withName("Alice").withPhone("91111111")
+                .withEmail("shared@example.com").build();
+        Person toAdd = new PersonBuilder().withName("Bob").withPhone("92222222")
+                .withEmail("shared@example.com").build();
+
+        AddCommand addCommand = new AddCommand(toAdd);
+        ModelStub modelStub = new ModelStubWithPerson(existing);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_EMAIL, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_duplicatePhoneWithoutParenthesis_throwsCommandException() {
+        Person existing = new PersonBuilder().withName("Alice").withPhone("9191111111")
+                .withEmail("alice@example.com").build();
+        Person toAdd = new PersonBuilder().withName("Bob").withPhone("9191111111")
+                .withEmail("bob@example.com").build();
+
+        AddCommand addCommand = new AddCommand(toAdd);
+        ModelStub modelStub = new ModelStubWithPerson(existing);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PHONE, () -> addCommand.execute(modelStub));
+    }
+ 
+    @Test
+    public void execute_duplicatePhoneWithParenthesis_throwsCommandException() {
+        Person existing = new PersonBuilder().withName("Alice").withPhone("9191111111")
+                .withEmail("alice@example.com").build();
+        Person toAdd = new PersonBuilder().withName("Bob").withPhone("(91)91111111")
+                .withEmail("bob@example.com").build();
+
+        AddCommand addCommand = new AddCommand(toAdd);
+        ModelStub modelStub = new ModelStubWithPerson(existing);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PHONE, () -> addCommand.execute(modelStub));
+    }
+    
+    @Test
     public void equals() {
         Person alice = new PersonBuilder().withName("Alice").build();
         Person bob = new PersonBuilder().withName("Bob").build();
@@ -170,6 +209,15 @@ public class AddCommandTest {
             throw new AssertionError("This method should not be called.");
         }
 
+        @Override 
+        public boolean hasEmail(Person person) {
+            throw new AssertionError("This method should not be calles");
+        }
+
+        @Override 
+        public boolean hasPhone(Person person) {
+            throw new AssertionError("This method should not be called"); }
+
         @Override
         public void deletePerson(Person target) {
             throw new AssertionError("This method should not be called.");
@@ -207,6 +255,18 @@ public class AddCommandTest {
             requireNonNull(person);
             return this.person.isSamePerson(person);
         }
+
+        @Override 
+        public boolean hasEmail(Person person) {
+            requireNonNull(person);
+            return this.person.hasSameEmail(person);
+        }
+
+        @Override 
+        public boolean hasPhone(Person person) {
+            requireNonNull(person);
+            return this.person.hasSamePhone(person);
+        }
     }
 
     /**
@@ -221,6 +281,18 @@ public class AddCommandTest {
             return personsAdded.stream().anyMatch(person::isSamePerson);
         }
 
+        @Override 
+        public boolean hasEmail(Person person) {
+            requireNonNull(person);
+            return personsAdded.stream().anyMatch(person::hasSameEmail);
+        }
+
+        @Override 
+        public boolean hasPhone(Person person) {
+            requireNonNull(person);
+            return personsAdded.stream().anyMatch(person::hasSamePhone);
+        }
+ 
         @Override
         public void addPerson(Person person) {
             requireNonNull(person);
