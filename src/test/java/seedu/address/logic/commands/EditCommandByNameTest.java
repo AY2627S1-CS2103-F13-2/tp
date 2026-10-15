@@ -7,7 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -29,7 +29,7 @@ import seedu.address.testutil.PersonBuilder;
  */
 public class EditCommandByNameTest {
 
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     private final EditPersonDescriptor phoneBob = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build();
 
@@ -39,7 +39,7 @@ public class EditCommandByNameTest {
         EditCommand editCommand = new EditCommand("alice", phoneBob);
 
         String expectedMessage = "Updated Alice Pauline's phone to " + VALID_PHONE_BOB + ".";
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.setPerson(ALICE, editedAlice);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
@@ -53,7 +53,7 @@ public class EditCommandByNameTest {
                 + "1. Benson Meier \u2014 GovTech \u2014 johnd@example.com\n"
                 + "2. Daniel Meier \u2014 DBS \u2014 cornelia@example.com\n"
                 + "To edit one of them, enter the command again with its index in place of the name.";
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Meier")));
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
@@ -67,7 +67,7 @@ public class EditCommandByNameTest {
         new EditCommand(Index.fromOneBased(2), phoneBob).execute(model);
 
         Person editedDaniel = new PersonBuilder(danielMeier).withPhone(VALID_PHONE_BOB).build();
-        assertTrue(model.getAddressBook().getPersonList().contains(editedDaniel));
+        assertTrue(model.getContactFile().getPersonList().contains(editedDaniel));
     }
 
     @Test

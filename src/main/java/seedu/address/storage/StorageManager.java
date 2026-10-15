@@ -7,24 +7,24 @@ import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 
 /**
- * Manages storage of AddressBook data in local storage.
+ * Manages storage of ContactFile data in local storage.
  */
 public class StorageManager implements Storage {
 
     private static final Logger logger = LogsCenter.getLogger(StorageManager.class);
-    private JsonAddressBookStorage addressBookStorage;
+    private JsonContactFileStorage contactFileStorage;
     private JsonUserPrefsStorage userPrefsStorage;
 
     /**
-     * Creates a {@code StorageManager} with the given address book and user prefs storage.
+     * Creates a {@code StorageManager} with the given contact file and user prefs storage.
      */
-    public StorageManager(JsonAddressBookStorage addressBookStorage, JsonUserPrefsStorage userPrefsStorage) {
-        this.addressBookStorage = addressBookStorage;
+    public StorageManager(JsonContactFileStorage contactFileStorage, JsonUserPrefsStorage userPrefsStorage) {
+        this.contactFileStorage = contactFileStorage;
         this.userPrefsStorage = userPrefsStorage;
     }
 
@@ -46,37 +46,37 @@ public class StorageManager implements Storage {
     }
 
 
-    // ================ AddressBook methods ==============================
+    // ================ ContactFile methods ==============================
 
     @Override
-    public Path getAddressBookFilePath() {
-        return addressBookStorage.getAddressBookFilePath();
+    public Path getContactFilePath() {
+        return contactFileStorage.getContactFilePath();
     }
 
     @Override
-    public Optional<ReadOnlyAddressBook> readAddressBook() throws DataLoadingException {
-        logger.fine("Attempting to read data from file: " + addressBookStorage.getAddressBookFilePath());
-        return addressBookStorage.readAddressBook();
+    public Optional<ReadOnlyContactFile> readContactFile() throws DataLoadingException {
+        logger.fine("Attempting to read data from file: " + contactFileStorage.getContactFilePath());
+        return contactFileStorage.readContactFile();
     }
 
     @Override
-    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
-        logger.fine("Attempting to write to data file: " + addressBookStorage.getAddressBookFilePath());
-        addressBookStorage.saveAddressBook(addressBook);
+    public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+        logger.fine("Attempting to write to data file: " + contactFileStorage.getContactFilePath());
+        contactFileStorage.saveContactFile(contactFile);
     }
 
     @Override
     public StartupLoadResult loadForStartup() throws IOException {
-        return addressBookStorage.loadForStartup();
+        return contactFileStorage.loadForStartup();
     }
 
     @Override
     public StartupResetPlan prepareStartupReset(IOException failure) throws IOException {
-        return addressBookStorage.prepareStartupReset(failure);
+        return contactFileStorage.prepareStartupReset(failure);
     }
 
     @Override
     public StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException {
-        return addressBookStorage.resetForStartup(plan);
+        return contactFileStorage.resetForStartup(plan);
     }
 }

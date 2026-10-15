@@ -35,7 +35,7 @@ import seedu.address.model.person.Role;
 import seedu.address.model.tag.Tag;
 
 /**
- * Edits the details of an existing person in the address book.
+ * Edits the details of an existing person in the contact file.
  */
 public class EditCommand extends Command {
 
@@ -63,7 +63,7 @@ public class EditCommand extends Command {
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_NO_CHANGES =
             "The new values are the same as the current ones, so there is nothing to change.";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the contact file.";
     public static final String MESSAGE_ALREADY_SAVED_FOR_OTHER =
             "%1$s is already saved for %2$s. No changes were applied.";
 
@@ -199,7 +199,7 @@ public class EditCommand extends Command {
         boolean isPhoneEdited = editPersonDescriptor.getPhone().isPresent();
         boolean isEmailEdited = editPersonDescriptor.getEmail().isPresent();
 
-        for (Person otherPerson : model.getAddressBook().getPersonList()) {
+        for (Person otherPerson : model.getContactFile().getPersonList()) {
             if (otherPerson.equals(personToEdit)) {
                 continue;
             }

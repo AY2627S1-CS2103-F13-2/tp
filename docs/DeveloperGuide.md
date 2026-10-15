@@ -100,7 +100,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 How the `Logic` component works:
 
-1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
+1. When `Logic` is called upon to execute a command, the command is passed to a `ContactFileParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
@@ -111,7 +111,7 @@ Here are the other classes in `Logic` (omitted from the class diagram above) tha
 <img src="images/ParserClasses.png" width="600"/>
 
 How the parsing works:
-* When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
+* When called upon to parse a user command, the `ContactFileParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `ContactFileParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
@@ -122,14 +122,14 @@ How the parsing works:
 
 The `Model` component,
 
-* stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
+* stores the contact file data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
 * two `Person` objects are currently treated as duplicates when they have the same `Name`. Keying on the contact number or email instead is planned for a later iteration.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
+<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
 <img src="images/BetterModelClassDiagram.png" width="450" />
 
@@ -143,8 +143,8 @@ The `Model` component,
 <img src="images/StorageClassDiagram.png" width="550" />
 
 The `Storage` component,
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
-* is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
+* can save both contact file data and user preference data in JSON format, and read them back into corresponding objects.
+* is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonContactFileStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 ### Common classes
@@ -213,37 +213,37 @@ one command and as a name by another.
 
 #### Proposed Implementation
 
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+The proposed undo/redo mechanism is facilitated by `VersionedContactFile`. It extends `ContactFile` with an undo/redo history, stored internally as a `contactFileStateList` and `currentStatePointer`. Additionally, it implements the following operations:
 
-* `VersionedAddressBook#commit()` — Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` — Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` — Restores a previously undone address book state from its history.
+* `VersionedContactFile#commit()` — Saves the current contact file state in its history.
+* `VersionedContactFile#undo()` — Restores the previous contact file state from its history.
+* `VersionedContactFile#redo()` — Restores a previously undone contact file state from its history.
 
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
+These operations are exposed in the `Model` interface as `Model#commitContactFile()`, `Model#undoContactFile()` and `Model#redoContactFile()` respectively.
 
 Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
 
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
+Step 1. The user launches the application for the first time. The `VersionedContactFile` will be initialized with the initial contact file state, and the `currentStatePointer` pointing to that single contact file state.
 
 ![UndoRedoState0](images/UndoRedoState0.png)
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
+Step 2. The user executes `delete 5` command to delete the 5th person in the contact file. The `delete` command calls `Model#commitContactFile()`, causing the modified state of the contact file after the `delete 5` command executes to be saved in the `contactFileStateList`, and the `currentStatePointer` is shifted to the newly inserted contact file state.
 
 ![UndoRedoState1](images/UndoRedoState1.png)
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitContactFile()`, causing another modified contact file state to be saved into the `contactFileStateList`.
 
 ![UndoRedoState2](images/UndoRedoState2.png)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitContactFile()`, so the contact file state will not be saved into the `contactFileStateList`.
 
 </div>
 
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
+Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoContactFile()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous contact file state, and restores the contact file to that state.
 
 ![UndoRedoState3](images/UndoRedoState3.png)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial ContactFile state, then there are no previous ContactFile states to restore. The `undo` command uses `Model#canUndoContactFile()` to check if this is the case. If so, it will return an error to the user rather
 than attempting to perform the undo.
 
 </div>
@@ -260,17 +260,17 @@ Similarly, how an undo operation goes through the `Model` component is shown bel
 
 ![UndoSequenceDiagram](images/UndoSequenceDiagram-Model.png)
 
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
+The `redo` command does the opposite — it calls `Model#redoContactFile()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the contact file to that state.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `contactFileStateList.size() - 1`, pointing to the latest contact file state, then there are no undone ContactFile states to restore. The `redo` command uses `Model#canRedoContactFile()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
 
 </div>
 
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
+Step 5. The user then decides to execute the command `list`. Commands that do not modify the contact file, such as `list`, will usually not call `Model#commitContactFile()`, `Model#undoContactFile()` or `Model#redoContactFile()`. Thus, the `contactFileStateList` remains unchanged.
 
 ![UndoRedoState4](images/UndoRedoState4.png)
 
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
+Step 6. The user executes `clear`, which calls `Model#commitContactFile()`. Since the `currentStatePointer` is not pointing at the end of the `contactFileStateList`, all contact file states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
 
 ![UndoRedoState5](images/UndoRedoState5.png)
 
@@ -282,7 +282,7 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 **Aspect: How undo & redo execute:**
 
-* **Alternative 1 (current choice):** Saves the entire address book.
+* **Alternative 1 (current choice):** Saves the entire contact file.
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
@@ -355,7 +355,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`    | user                                       | see when I last interacted with someone | know how long it has been since we last met                            |
 | `* *`    | careless user                            | undo an accidental deletion or edit                                 | avoid losing important information                                |
 | `* *`    | potential user exploring the app         | see the app populated with sample data                              | get a feel for how the app looks in use                           |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+| `*`      | user with many persons in the contact file | sort persons by name           | locate a person easily                                                 |
 | `*`      | user                                     | see which contact entries are incomplete                            | remember to fill in missing details later                         |
 | `*`      | frequent user                            | reorder the information shown for a contact                         | see the details I care about first                                |
 | `*`      | expert user                              | define shortcuts for commands                                       | add contacts faster than typing commands in full                  |
@@ -651,11 +651,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
       and offers **Start anew** or **Exit**. Exit is the default choice.
     * 2c3. If the user chooses Start anew, Astra verifies the backup and checks
       that the active file has not changed, then atomically replaces it with an
-      empty address book and opens the command interface. The original backup remains unchanged.
+      empty contact file and opens the command interface. The original backup remains unchanged.
     * 2c4. Astra shows an empty contact list and reminds the user of the backup and report locations.
 
     * 2c2a. The original file cannot be read or safely preserved under reports.
-        * 2c2a1. Astra explains that starting anew is unavailable and stops without clearing the address book.
+        * 2c2a1. Astra explains that starting anew is unavailable and stops without clearing the contact file.
     * 2c2b. The user chooses Exit or dismisses the dialog.
         * 2c2b1. Astra stops without replacing the active file.
     * 2c3a. Backup verification or atomic replacement fails, or the active file changes.
@@ -788,7 +788,7 @@ testers are expected to do more *exploratory* testing.
    1. Other invalid names to try: `delete @#$`, `delete -Alice`<br>
       Expected: No person is deleted. The status message shows the command usage.
 
-1. Deleting from an empty address book
+1. Deleting from an empty contact file
 
    1. Prerequisites: Remove every contact with the `clear` command.
 

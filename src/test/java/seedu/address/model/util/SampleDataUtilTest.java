@@ -10,7 +10,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 
@@ -28,7 +28,7 @@ public class SampleDataUtilTest {
 
     @Test
     public void getSamplePersons_namesAreUnique() {
-        // the sample data is loaded into an AddressBook, which rejects two persons with the same name
+        // the sample data is loaded into a ContactFile, which rejects two persons with the same name
         List<String> names = Arrays.stream(SampleDataUtil.getSamplePersons())
                 .map(person -> person.getName().fullName)
                 .toList();
@@ -54,10 +54,10 @@ public class SampleDataUtilTest {
     }
 
     @Test
-    public void getSampleAddressBook_containsEverySamplePerson() {
-        ReadOnlyAddressBook sampleAddressBook = SampleDataUtil.getSampleAddressBook();
+    public void getSampleContactFile_containsEverySamplePerson() {
+        ReadOnlyContactFile sampleContactFile = SampleDataUtil.getSampleContactFile();
 
-        assertEquals(Arrays.asList(SampleDataUtil.getSamplePersons()), sampleAddressBook.getPersonList());
+        assertEquals(Arrays.asList(SampleDataUtil.getSamplePersons()), sampleContactFile.getPersonList());
     }
 
     @Test

@@ -14,7 +14,7 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Deletes a person from the address book, identified either by displayed index or by name.
+ * Deletes a person from the contact file, identified either by displayed index or by name.
  */
 public class DeleteCommand extends Command {
 
@@ -28,7 +28,7 @@ public class DeleteCommand extends Command {
             + "Example: " + COMMAND_WORD + " John Doe";
 
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted person: %1$s";
-    public static final String MESSAGE_EMPTY_ADDRESS_BOOK = "There are no contacts to delete.";
+    public static final String MESSAGE_EMPTY_CONTACT_FILE = "There are no contacts to delete.";
 
     /** Exactly one of these two is set; {@code targetName} is set when the user named the contact. */
     private final Index targetIndex;
@@ -56,10 +56,10 @@ public class DeleteCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
-        // Checked before the target is resolved, so that an empty address book is reported as such
+        // Checked before the target is resolved, so that an empty contact file is reported as such
         // rather than as a bad index or a missing name (UC02 extension 1a).
-        if (model.getAddressBook().getPersonList().isEmpty()) {
-            throw new CommandException(MESSAGE_EMPTY_ADDRESS_BOOK);
+        if (model.getContactFile().getPersonList().isEmpty()) {
+            throw new CommandException(MESSAGE_EMPTY_CONTACT_FILE);
         }
 
         Person personToDelete;

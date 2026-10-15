@@ -21,7 +21,7 @@ public final class StartupMessageFormatter {
         return failure.getMessage()
                 + "\n\nStarting anew is unavailable because the original contact file could not be "
                 + "preserved safely under reports: " + archiveFailure.getMessage()
-                + "\nAstra has not cleared your address book.";
+                + "\nAstra has not cleared your contact file.";
     }
 
     /**
@@ -65,7 +65,7 @@ public final class StartupMessageFormatter {
                 + "\n\nYour original contacts file has been preserved unchanged under reports."
                 + "\nOriginal backup: " + archive.backupFile()
                 + "\nReport: " + archive.reportFile()
-                + "\n\nChoose Start anew to clear the active address book and open Astra with an empty contact list."
+                + "\n\nChoose Start anew to clear the active contact file and open Astra with an empty contact list."
                 + " Choose Exit to keep the active file.";
     }
 

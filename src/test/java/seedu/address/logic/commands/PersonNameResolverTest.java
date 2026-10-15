@@ -8,7 +8,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
-import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.ContactFileBuilder;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -28,7 +28,7 @@ import seedu.address.testutil.PersonBuilder;
  */
 public class PersonNameResolverTest {
 
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     @Test
     public void resolve_fullName_returnsUniqueMatch() throws Exception {
@@ -92,7 +92,7 @@ public class PersonNameResolverTest {
                 .withCompany(null).withRole(null).withPhone(null).withEmail(null).withLinkedin(null).build();
         Person secondNameOnly = new PersonBuilder().withName("Nadia Two")
                 .withCompany(null).withRole(null).withPhone(null).withEmail(null).withLinkedin(null).build();
-        Model nameOnlyModel = new ModelManager(new AddressBookBuilder()
+        Model nameOnlyModel = new ModelManager(new ContactFileBuilder()
                 .withPerson(firstNameOnly).withPerson(secondNameOnly).build(), new UserPrefs());
 
         PersonNameResolver.Outcome outcome = PersonNameResolver.resolve(nameOnlyModel, "Nadia", "delete");
@@ -116,7 +116,7 @@ public class PersonNameResolverTest {
     public void resolve_noMatch_showsEveryContactAgain() {
         assertThrows(CommandException.class, () -> PersonNameResolver.resolve(model, "Zed", "delete"));
 
-        assertEquals(getTypicalAddressBook().getPersonList(), model.getFilteredPersonList());
+        assertEquals(getTypicalContactFile().getPersonList(), model.getFilteredPersonList());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class PersonNameResolverTest {
     @Test
     public void resolve_doesNotLeakLiveListIntoOutcome() throws Exception {
         // The resolved person must survive the displayed list being filtered away underneath it,
-        // since callers go on to change the address book while holding onto the outcome.
+        // since callers go on to change the contact file while holding onto the outcome.
         PersonNameResolver.Outcome outcome = PersonNameResolver.resolve(model, "Alice Pauline", "delete");
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
 

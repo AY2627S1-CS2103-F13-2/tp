@@ -49,16 +49,16 @@ public final class PersonNameResolver {
     }
 
     /**
-     * Returns the contact named by {@code targetName}, searching every contact in the address book
+     * Returns the contact named by {@code targetName}, searching every contact in the contact file
      * rather than only the ones on display, so that naming someone in full reaches them even while a
      * {@code find} filter is hiding them.
      *
      * <p>As a side effect the displayed list is filtered down to the matches, so that the contacts
-     * being talked about are the contacts on screen. A caller that goes on to change the address book
+     * being talked about are the contacts on screen. A caller that goes on to change the contact file
      * is expected to restore the full list afterwards; when no contact matches, the full list is
      * restored here, since there is nothing left to show.
      *
-     * @param model address book to search, and whose displayed list is filtered to the matches
+     * @param model contact file to search, and whose displayed list is filtered to the matches
      * @param targetName name as the user typed it, matched case-insensitively and need not be in full
      * @param commandWord word the user typed, used to tell them how to retry when the name is ambiguous
      * @throws CommandException if no contact matches {@code targetName}
