@@ -77,7 +77,7 @@ public class EditPersonDescriptorTest {
                 + editPersonDescriptor.getPhone().orElse(null) + ", email="
                 + editPersonDescriptor.getEmail().orElse(null) + ", linkedin="
                 + editPersonDescriptor.getLinkedin().orElse(null) + ", tags="
-                + editPersonDescriptor.getTags().orElse(null) + "}";
+                + editPersonDescriptor.getTags().orElse(null) + ", fieldsToRemove=[]}";
         assertEquals(expected, editPersonDescriptor.toString());
     }
 }
