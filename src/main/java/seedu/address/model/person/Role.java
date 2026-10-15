@@ -6,7 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import seedu.address.commons.util.StringUtil;
 
 /**
- * Represents the role a Person holds at their company in the address book.
+ * Represents the role a Person holds at their company in the contact file.
  * Guarantees: immutable; is valid as declared in {@link #isValidRole(String)}
  */
 public class Role {

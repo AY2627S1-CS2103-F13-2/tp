@@ -3,7 +3,7 @@ layout: page
 title: User Guide
 ---
 
-AddressBook Level 3 (AB3) is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, AB3 can help you manage contacts faster than traditional GUI applications.
+Astra is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, Astra can help you manage contacts faster than traditional GUI applications.
 
 * Table of Contents
 {:toc}
@@ -17,9 +17,9 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
 1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to the folder you want to use as the _home folder_ for Astra.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar contactfile.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. On first launch, Astra shows sample contacts and a welcome message. Type `clear` to remove the sample contacts when you are ready to add your own.<br>
    ![Ui](images/Ui.png)
 
@@ -28,7 +28,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Address Book.
+   * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Contact File.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -42,17 +42,17 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
 ## Starting Astra
 
-Always launch Astra from the same home folder so it can find your saved contacts in `data/addressbook.json`.
+Always launch Astra from the same home folder so it can find your saved contacts in `data/contactfile.json`.
 
 * **No saved contact file:** Astra shows sample contacts and a welcome message explaining how to clear them.
-* **Saved contacts load successfully:** The message area shows the number of loaded contacts and the full path to the contact file. A saved empty address book stays empty.
+* **Saved contacts load successfully:** The message area shows the number of loaded contacts and the full path to the contact file. A saved empty contact file stays empty.
 * **Another Astra instance is using the same contact file:** Startup stops with an error. Close that instance, then launch Astra again.
 
 ### Recovering contacts at startup
 
 If the file can be read but contains some invalid or duplicate contacts, Astra automatically keeps the valid contacts and skips the affected records. For duplicate contacts, the first valid record is kept. Recovery proceeds only if at least one valid contact remains.
 
-Before replacing the active file with the recovered contacts, Astra preserves the original file as `addressbook.original.json` and writes a `report.txt` in a separate folder under `data/recovery/`. The startup message shows how many contacts were recovered and skipped, along with the paths to the active file, backup, and report.
+Before replacing the active file with the recovered contacts, Astra preserves the original file as `contactfile.original.json` and writes a `report.txt` in a separate folder under `data/recovery/`. The startup message shows how many contacts were recovered and skipped, along with the paths to the active file, backup, and report.
 
 Read the report for the positions and reasons for skipped records in the original file. Keep the backup unchanged; use it to look up missing details, correct them, and add those contacts through Astra. Recovery is complete only when Astra displays the successful recovery message.
 
@@ -60,12 +60,12 @@ Read the report for the positions and reasons for skipped records in the origina
 
 If the file is malformed, no valid contacts can be recovered, or recovery cannot finish safely, Astra displays **Astra startup failed** before opening the main window.
 
-When Astra can safely preserve the original contact file, it saves `addressbook.original.json` and `report.txt` in a separate folder under `data/reports/`. The error dialog shows their paths and offers two choices:
+When Astra can safely preserve the original contact file, it saves `contactfile.original.json` and `report.txt` in a separate folder under `data/reports/`. The error dialog shows their paths and offers two choices:
 
-* **Start anew:** Replaces the active address book with an empty one and opens Astra. The startup message confirms the reset and shows the backup and report paths. Keep the backup if you want to restore contact details manually later.
+* **Start anew:** Replaces the active contact file with an empty one and opens Astra. The startup message confirms the reset and shows the backup and report paths. Keep the backup if you want to restore contact details manually later.
 * **Exit:** Closes Astra and leaves the active contact file unchanged. Closing the dialog also exits. You can repair the file or restore a known good backup while Astra is closed, then launch it again.
 
-If Astra cannot safely prepare a reset, **Start anew** is unavailable and the address book is not cleared. Follow the error message, check that the contact file is readable and its folder is writable, and restart after resolving the problem. If a reset fails, Astra displays an error instead of opening an empty address book.
+If Astra cannot safely prepare a reset, **Start anew** is unavailable and the contact file is not cleared. Follow the error message, check that the contact file is readable and its folder is writable, and restart after resolving the problem. If a reset fails, Astra displays an error instead of opening an empty contact file.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ Format: `help`
 
 ### Adding a person: `add`
 
-Adds a person to the address book.
+Adds a person to the contact file.
 
 Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
 
@@ -121,13 +121,13 @@ Examples:
 
 ### Listing all persons: `list`
 
-Shows a list of all persons in the address book.
+Shows a list of all persons in the contact file.
 
 Format: `list`
 
 ### Editing a person: `edit`
 
-Edits an existing person in the address book.
+Edits an existing person in the contact file.
 
 Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
 
@@ -167,7 +167,7 @@ Examples:
 
 ### Deleting a person: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified person from the contact file.
 
 Format: `delete INDEX` or `delete NAME`
 
@@ -177,10 +177,10 @@ Format: `delete INDEX` or `delete NAME`
   * If several do, they are listed with numbers and **nothing is deleted**. Enter the command again with the person's number from that list in place of the name.
   * Deleting by name searches every contact, not just the ones currently on display, so naming someone reaches them even while a `find` filter is hiding them. Once the person is deleted, the full list is shown again.
 * If the first word of your input is a number, it is read as an index rather than as a name. `delete 3` therefore always means "the 3rd person on display".
-* If the address book is empty, Astra reports that there are no contacts to delete and changes nothing.
+* If the contact file is empty, Astra reports that there are no contacts to delete and changes nothing.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
+* `list` followed by `delete 2` deletes the 2nd person in the contact file.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 * `delete John Lim` deletes John Lim, if he is the only person whose name contains `John Lim`.
 * `delete Meier`, with both `Benson Meier` and `Daniel Meier` stored, deletes neither and instead reports:
@@ -198,12 +198,12 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears every contact from the address book and reports how many were cleared.
+Clears every contact from the contact file and reports how many were cleared.
 
 Format: `clear`
 
 * `clear` takes no parameters. Extra parameters are rejected rather than ignored, so `clear 3` is reported as an invalid command instead of silently clearing everything.
-* If the address book is already empty, Astra reports that there are no contacts to clear and changes nothing.
+* If the contact file is already empty, Astra reports that there are no contacts to clear and changes nothing.
 
 Examples:
 * `clear`, with 12 contacts stored, reports `Cleared 12 contact(s). 0 contact(s) remaining.`
@@ -221,15 +221,15 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+Astra automatically saves data after every command. You do not need to save manually.
 
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `data/addressbook.json` in the folder from which you launch Astra (the home folder when following Quick start). Advanced users can edit this file while Astra is closed.
+Contact data is saved automatically as a JSON file `data/contactfile.json` in the folder from which you launch Astra (the home folder when following Quick start). Advanced users can edit this file while Astra is closed.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Back up the file before editing it. On the next launch, Astra may recover valid contacts and skip invalid or duplicate records, or stop with an error and offer **Start anew** if a safe backup can be made. See [Starting Astra](#starting-astra) for the recovery process and backup locations.<br>
-Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+Furthermore, certain edits can cause Astra to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
 ### Archiving data files `[coming in v2.0]`
@@ -241,7 +241,7 @@ _Details coming soon ..._
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
+**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Astra home folder.
 
 --------------------------------------------------------------------------------------------------------------------
 

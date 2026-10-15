@@ -53,7 +53,7 @@ final class RecoveryArchiveWriter {
                         + "\n\nStartup failure: " + failureReason
                         + "\n\nThe original contact file has been preserved unchanged.\n"
                         + "This report is created before the user chooses whether to start anew.\n"
-                        + "The active address book is cleared only after the user chooses Start anew\n"
+                        + "The active contact file is cleared only after the user chooses Start anew\n"
                         + "and Astra reports that it has started with an empty contact list.\n"
                         + "Keep the original backup unchanged; it may contain details you can restore manually.\n");
     }
@@ -68,7 +68,7 @@ final class RecoveryArchiveWriter {
         String prefix = DIRECTORY_TIME.format(timestamp) + "_";
         Path incidentDirectory = Files.createTempDirectory(recoveryRoot, prefix);
 
-        Path backup = incidentDirectory.resolve("addressbook.original.json");
+        Path backup = incidentDirectory.resolve("contactfile.original.json");
         Path report = incidentDirectory.resolve("report.txt");
 
         try {

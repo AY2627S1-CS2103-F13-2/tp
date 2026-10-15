@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.core.GuiSettings;
-import seedu.address.model.AddressBook;
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ContactFile;
+import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.UserPrefs;
 
 public class StorageManagerTest {
@@ -30,9 +30,9 @@ public class StorageManagerTest {
 
     @BeforeEach
     public void setUp() {
-        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(getTempFilePath("ab"));
+        JsonContactFileStorage contactFileStorage = new JsonContactFileStorage(getTempFilePath("ab"));
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(getTempFilePath("prefs"));
-        storageManager = new StorageManager(addressBookStorage, userPrefsStorage);
+        storageManager = new StorageManager(contactFileStorage, userPrefsStorage);
     }
 
     private Path getTempFilePath(String fileName) {
@@ -54,21 +54,21 @@ public class StorageManagerTest {
     }
 
     @Test
-    public void addressBookReadSave() throws Exception {
+    public void contactFileReadSave() throws Exception {
         /*
          * Note: This is an integration test that verifies the StorageManager is properly wired to the
-         * {@link JsonAddressBookStorage} class.
-         * More extensive testing of UserPref saving/reading is done in {@link JsonAddressBookStorageTest} class.
+         * {@link JsonContactFileStorage} class.
+         * More extensive testing of UserPref saving/reading is done in {@link JsonContactFileStorageTest} class.
          */
-        AddressBook original = getTypicalAddressBook();
-        storageManager.saveAddressBook(original);
-        ReadOnlyAddressBook retrieved = storageManager.readAddressBook().get();
-        assertEquals(original, new AddressBook(retrieved));
+        ContactFile original = getTypicalContactFile();
+        storageManager.saveContactFile(original);
+        ReadOnlyContactFile retrieved = storageManager.readContactFile().get();
+        assertEquals(original, new ContactFile(retrieved));
     }
 
     @Test
-    public void getAddressBookFilePath() {
-        assertNotNull(storageManager.getAddressBookFilePath());
+    public void getContactFilePath() {
+        assertNotNull(storageManager.getContactFilePath());
     }
 
     @Test
@@ -77,13 +77,13 @@ public class StorageManagerTest {
 
         assertEquals(StartupLoadResult.Source.SAMPLE, result.source());
         assertEquals(getTempFilePath("ab").toAbsolutePath().normalize(), result.sourceFile());
-        assertFalse(Files.exists(storageManager.getAddressBookFilePath()));
+        assertFalse(Files.exists(storageManager.getContactFilePath()));
     }
 
     @Test
     public void loadForStartup_savedContacts_loadsAllContacts() throws Exception {
-        AddressBook original = getTypicalAddressBook();
-        storageManager.saveAddressBook(original);
+        ContactFile original = getTypicalContactFile();
+        storageManager.saveContactFile(original);
 
         StartupLoadResult result = storageManager.loadForStartup();
 
@@ -94,7 +94,7 @@ public class StorageManagerTest {
 
     @Test
     public void loadForStartup_recoverableFile_repairsConfiguredFile() throws Exception {
-        Path source = storageManager.getAddressBookFilePath();
+        Path source = storageManager.getContactFilePath();
         Files.writeString(source, "{\"persons\": [{\"name\": \"Alice\"}, {}]}");
         byte[] original = Files.readAllBytes(source);
 
@@ -103,12 +103,12 @@ public class StorageManagerTest {
         assertEquals(StartupLoadResult.Source.RECOVERED, result.source());
         assertEquals(1, result.skippedCount());
         assertArrayEquals(original, Files.readAllBytes(result.recoveryArchive().orElseThrow().backupFile()));
-        assertEquals(result.contacts(), storageManager.readAddressBook().orElseThrow().getPersonList());
+        assertEquals(result.contacts(), storageManager.readContactFile().orElseThrow().getPersonList());
     }
 
     @Test
     public void loadForStartup_invalidDocument_propagatesFailureAndPreservesFile() throws Exception {
-        Path source = storageManager.getAddressBookFilePath();
+        Path source = storageManager.getContactFilePath();
         Files.writeString(source, "{");
         byte[] original = Files.readAllBytes(source);
 

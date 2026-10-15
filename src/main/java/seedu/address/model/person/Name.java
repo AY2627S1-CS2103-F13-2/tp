@@ -6,7 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import seedu.address.commons.util.StringUtil;
 
 /**
- * Represents a Person's name in the address book.
+ * Represents a Person's name in the contact file.
  * Guarantees: immutable; is valid as declared in {@link #isValidName(String)}
  */
 public class Name {

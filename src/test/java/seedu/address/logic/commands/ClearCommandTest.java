@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 import static seedu.address.testutil.TypicalPersons.getTypicalPersons;
 
 import org.junit.jupiter.api.Test;
 
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -17,17 +17,17 @@ import seedu.address.model.UserPrefs;
 public class ClearCommandTest {
 
     @Test
-    public void execute_emptyAddressBook_throwsCommandException() {
+    public void execute_emptyContactFile_throwsCommandException() {
         Model model = new ModelManager();
 
-        assertCommandFailure(new ClearCommand(), model, ClearCommand.MESSAGE_EMPTY_ADDRESS_BOOK);
+        assertCommandFailure(new ClearCommand(), model, ClearCommand.MESSAGE_EMPTY_CONTACT_FILE);
     }
 
     @Test
-    public void execute_nonEmptyAddressBook_success() {
-        Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-        Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-        expectedModel.setAddressBook(new AddressBook());
+    public void execute_nonEmptyContactFile_success() {
+        Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
+        Model expectedModel = new ModelManager(getTypicalContactFile(), new UserPrefs());
+        expectedModel.setContactFile(new ContactFile());
 
         String expectedMessage = String.format(ClearCommand.MESSAGE_SUCCESS, getTypicalPersons().size());
 

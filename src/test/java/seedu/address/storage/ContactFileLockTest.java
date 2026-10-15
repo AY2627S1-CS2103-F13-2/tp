@@ -22,7 +22,7 @@ class ContactFileLockTest {
     @Test
     @Timeout(20)
     void acquire_otherProcessOwnsFile_thenCrashReleasesOwnership() throws Exception {
-        Path source = folder.resolve("addressbook.json");
+        Path source = folder.resolve("contactfile.json");
         String classpath = Path.of(LockProcess.class.getProtectionDomain().getCodeSource().getLocation().toURI())
                 + File.pathSeparator
                 + Path.of(ContactFileLock.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -61,15 +61,15 @@ class ContactFileLockTest {
 
     @Test
     void acquire_missingContactFile_excludesSecondOwnerAndAllowsRestart() throws Exception {
-        Path source = folder.resolve("nested/addressbook.json");
+        Path source = folder.resolve("nested/contactfile.json");
         try (ContactFileLock first = ContactFileLock.acquire(source)) {
             assertFalse(Files.exists(source));
             assertThrows(StorageInUseException.class, () -> ContactFileLock.acquire(source));
             assertThrows(StorageInUseException.class, () ->
-                    ContactFileLock.acquire(source.getParent().resolve("../nested/addressbook.json")));
+                    ContactFileLock.acquire(source.getParent().resolve("../nested/contactfile.json")));
         }
         try (ContactFileLock restarted = ContactFileLock.acquire(source)) {
-            assertTrue(Files.exists(source.resolveSibling("addressbook.json.lock")));
+            assertTrue(Files.exists(source.resolveSibling("contactfile.json.lock")));
         }
     }
 
@@ -84,7 +84,7 @@ class ContactFileLockTest {
 
     @Test
     void acquire_contactFileReplaced_lockRemainsHeld() throws Exception {
-        Path source = folder.resolve("addressbook.json");
+        Path source = folder.resolve("contactfile.json");
         Files.writeString(source, "original");
         try (ContactFileLock first = ContactFileLock.acquire(source)) {
             Files.delete(source);

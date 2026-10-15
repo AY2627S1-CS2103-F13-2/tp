@@ -15,7 +15,7 @@ import seedu.address.model.person.Person;
 
 class StartupLoadResultTest {
 
-    private static final Path SOURCE = Path.of("data", "nested", "..", "addressbook.json");
+    private static final Path SOURCE = Path.of("data", "nested", "..", "contactfile.json");
     private static final RecoveryArchive ARCHIVE = new RecoveryArchive(
             Path.of("recovery", "original.json"), Path.of("recovery", "report.txt"));
 
