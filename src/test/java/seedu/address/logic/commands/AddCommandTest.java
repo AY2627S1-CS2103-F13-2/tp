@@ -125,7 +125,7 @@ public class AddCommandTest {
 
         assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PHONE, () -> addCommand.execute(modelStub));
     }
- 
+
     @Test
     public void execute_duplicatePhoneWithParenthesis_throwsCommandException() {
         Person existing = new PersonBuilder().withName("Alice").withPhone("9191111111")
@@ -138,7 +138,7 @@ public class AddCommandTest {
 
         assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PHONE, () -> addCommand.execute(modelStub));
     }
-    
+
     @Test
     public void equals() {
         Person alice = new PersonBuilder().withName("Alice").build();
@@ -209,12 +209,12 @@ public class AddCommandTest {
             throw new AssertionError("This method should not be called.");
         }
 
-        @Override 
+        @Override
         public boolean hasEmail(Person person) {
             throw new AssertionError("This method should not be calles");
         }
 
-        @Override 
+        @Override
         public boolean hasPhone(Person person) {
             throw new AssertionError("This method should not be called"); }
 
@@ -256,13 +256,13 @@ public class AddCommandTest {
             return this.person.isSamePerson(person);
         }
 
-        @Override 
+        @Override
         public boolean hasEmail(Person person) {
             requireNonNull(person);
             return this.person.hasSameEmail(person);
         }
 
-        @Override 
+        @Override
         public boolean hasPhone(Person person) {
             requireNonNull(person);
             return this.person.hasSamePhone(person);
@@ -281,18 +281,18 @@ public class AddCommandTest {
             return personsAdded.stream().anyMatch(person::isSamePerson);
         }
 
-        @Override 
+        @Override
         public boolean hasEmail(Person person) {
             requireNonNull(person);
             return personsAdded.stream().anyMatch(person::hasSameEmail);
         }
 
-        @Override 
+        @Override
         public boolean hasPhone(Person person) {
             requireNonNull(person);
             return personsAdded.stream().anyMatch(person::hasSamePhone);
         }
- 
+
         @Override
         public void addPerson(Person person) {
             requireNonNull(person);
