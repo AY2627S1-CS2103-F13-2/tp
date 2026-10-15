@@ -89,7 +89,9 @@ public class Phone {
             return false;
         }
 
-        return value.equals(otherPhone.value);
+        return StringUtil.normalisePhone(value)
+                            .equals(StringUtil
+                                .normalisePhone(otherPhone.value));
     }
 
     @Override
