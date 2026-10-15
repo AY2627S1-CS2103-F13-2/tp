@@ -39,7 +39,7 @@ import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.ContactFileLock;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StartupLoadResult;
 import seedu.address.storage.StartupResetPlan;
@@ -71,7 +71,7 @@ class MainAppTest {
 
     @BeforeEach
     void setUp() {
-        contactsFile = testFolder.resolve("addressbook.json");
+        contactsFile = testFolder.resolve("contactfile.json");
         prefsFile = testFolder.resolve("preferences.json");
         app = track(new RecordingMainApp(prefsFile, contactsFile));
     }
@@ -91,8 +91,8 @@ class MainAppTest {
                 candidate.start(stage);
                 assertTrue(stage.isShowing());
                 ListView<?> contacts = (ListView<?>) stage.getScene().lookup("#personListView");
-                assertEquals(candidate.model.getAddressBook().getPersonList(), contacts.getItems());
-                assertEquals(List.of("Charlie", "Alice"), candidate.model.getAddressBook().getPersonList().stream()
+                assertEquals(candidate.model.getContactFile().getPersonList(), contacts.getItems());
+                assertEquals(List.of("Charlie", "Alice"), candidate.model.getContactFile().getPersonList().stream()
                         .map(person -> person.getName().fullName).toList());
                 TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
                 assertEquals("Loaded 2 contacts from " + contactsFile.toAbsolutePath() + ".", feedback.getText());
@@ -111,7 +111,7 @@ class MainAppTest {
     void init_missingContacts_initializesSamplesWithoutSavingThem() throws Exception {
         app.init();
 
-        assertEquals(SampleDataUtil.getSampleAddressBook(), app.model.getAddressBook());
+        assertEquals(SampleDataUtil.getSampleContactFile(), app.model.getContactFile());
         assertNotNull(app.logic);
         assertNotNull(app.ui);
         assertFalse(Files.exists(contactsFile));
@@ -128,7 +128,7 @@ class MainAppTest {
 
         app.init();
 
-        assertEquals(List.of("Charlie", "Alice"), app.model.getAddressBook().getPersonList().stream()
+        assertEquals(List.of("Charlie", "Alice"), app.model.getContactFile().getPersonList().stream()
                 .map(person -> person.getName().fullName).toList());
         assertEquals(prefs, app.model.getUserPrefs());
         assertArrayEquals(original, Files.readAllBytes(contactsFile));
@@ -140,7 +140,7 @@ class MainAppTest {
 
         app.init();
 
-        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        assertTrue(app.model.getContactFile().getPersonList().isEmpty());
         assertNotNull(app.logic);
         assertNotNull(app.ui);
     }
@@ -151,9 +151,9 @@ class MainAppTest {
 
         app.init();
 
-        assertEquals(1, app.model.getAddressBook().getPersonList().size());
-        assertEquals("Alice", app.model.getAddressBook().getPersonList().get(0).getName().fullName);
-        assertEquals(app.model.getAddressBook(), app.storage.readAddressBook().orElseThrow());
+        assertEquals(1, app.model.getContactFile().getPersonList().size());
+        assertEquals("Alice", app.model.getContactFile().getPersonList().get(0).getName().fullName);
+        assertEquals(app.model.getContactFile(), app.storage.readContactFile().orElseThrow());
         assertNotNull(app.ui);
     }
 
@@ -260,7 +260,7 @@ class MainAppTest {
     }
 
     @Test
-    void startAnew_malformedFile_opensEmptyAddressBookAndKeepsPreferencesAndOriginal() throws Exception {
+    void startAnew_malformedFile_opensEmptyContactFileAndKeepsPreferencesAndOriginal() throws Exception {
         Files.writeString(contactsFile, "{bad JSON\r\n");
         byte[] original = Files.readAllBytes(contactsFile);
         UserPrefs prefs = new UserPrefs();
@@ -275,7 +275,7 @@ class MainAppTest {
 
         assertTrue(candidate.uiStarted);
         assertEquals(StartupLoadResult.Source.RESET, candidate.uiResult.source());
-        assertTrue(candidate.model.getAddressBook().getPersonList().isEmpty());
+        assertTrue(candidate.model.getContactFile().getPersonList().isEmpty());
         assertEquals(prefs, candidate.model.getUserPrefs());
         assertArrayEquals(original,
                 Files.readAllBytes(candidate.uiResult.recoveryArchive().orElseThrow().backupFile()));
@@ -307,7 +307,7 @@ class MainAppTest {
         app.start(null);
 
         assertTrue(app.displayedFailure.getMessage().contains("Starting anew is unavailable"));
-        assertTrue(app.displayedFailure.getMessage().contains("Astra has not cleared your address book"));
+        assertTrue(app.displayedFailure.getMessage().contains("Astra has not cleared your contact file"));
         assertNull(app.model);
         assertArrayEquals(original, Files.readAllBytes(contactsFile));
     }
@@ -364,7 +364,7 @@ class MainAppTest {
                 assertTrue(inspected.isDone());
                 inspected.join();
                 assertTrue(stage.isShowing());
-                assertTrue(candidate.model.getAddressBook().getPersonList().isEmpty());
+                assertTrue(candidate.model.getContactFile().getPersonList().isEmpty());
                 ListView<?> contacts = (ListView<?>) stage.getScene().lookup("#personListView");
                 assertTrue(contacts.getItems().isEmpty());
                 TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
@@ -447,7 +447,7 @@ class MainAppTest {
 
     @Test
     void init_lockIoFailureDoesNotAttemptRecovery() throws Exception {
-        Files.createDirectory(testFolder.resolve("addressbook.json.lock"));
+        Files.createDirectory(testFolder.resolve("contactfile.json.lock"));
         app.init();
         app.start(null);
 
@@ -483,7 +483,7 @@ class MainAppTest {
         MainApp candidate = track(new MainApp(prefsFile, contactsFile) {
             @Override
             protected Storage createStorage(JsonUserPrefsStorage prefsStorage) {
-                JsonAddressBookStorage contacts = new JsonAddressBookStorage(contactsFile) {
+                JsonContactFileStorage contacts = new JsonContactFileStorage(contactsFile) {
                     @Override
                     public StartupLoadResult loadForStartup() throws IOException {
                         if (failLoading) {
@@ -531,7 +531,7 @@ class MainAppTest {
 
     private Path findReportsBackup() throws IOException {
         try (Stream<Path> paths = Files.walk(testFolder.resolve("reports"))) {
-            return paths.filter(path -> path.getFileName().toString().equals("addressbook.original.json"))
+            return paths.filter(path -> path.getFileName().toString().equals("contactfile.original.json"))
                     .findFirst().orElseThrow();
         }
     }

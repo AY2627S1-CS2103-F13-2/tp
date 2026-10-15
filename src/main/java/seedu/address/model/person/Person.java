@@ -12,7 +12,7 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
 
 /**
- * Represents a Person in the address book.
+ * Represents a Person in the contact file.
  * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
  * Every other field is optional and may be absent.
  */

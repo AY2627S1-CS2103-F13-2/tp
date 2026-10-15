@@ -3,7 +3,7 @@ layout: page
 title: User Guide
 ---
 
-AddressBook Level 3 (AB3) is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, AB3 can help you manage contacts faster than traditional GUI applications.
+Astra is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, Astra can help you manage contacts faster than traditional GUI applications.
 
 * Table of Contents
 {:toc}
@@ -17,10 +17,10 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
 1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to the folder you want to use as the _home folder_ for Astra.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar contactfile.jar`.<br>
+   A GUI similar to the one below should appear in a few seconds. On first launch, Astra shows sample contacts and a welcome message. Type `clear` to remove the sample contacts when you are ready to add your own.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -28,7 +28,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Address Book.
+   * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Contact File.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -37,6 +37,35 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
    * `exit` : Exits the app.
 
 1. Refer to the [Features](#features) section below for details of each command.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Starting Astra
+
+Always launch Astra from the same home folder so it can find your saved contacts in `data/contactfile.json`.
+
+* **No saved contact file:** Astra shows sample contacts and a welcome message explaining how to clear them.
+* **Saved contacts load successfully:** The message area shows the number of loaded contacts and the full path to the contact file. A saved empty contact file stays empty.
+* **Another Astra instance is using the same contact file:** Startup stops with an error. Close that instance, then launch Astra again.
+
+### Recovering contacts at startup
+
+If the file can be read but contains some invalid or duplicate contacts, Astra automatically keeps the valid contacts and skips the affected records. For duplicate contacts, the first valid record is kept. Recovery proceeds only if at least one valid contact remains.
+
+Before replacing the active file with the recovered contacts, Astra preserves the original file as `contactfile.original.json` and writes a `report.txt` in a separate folder under `data/recovery/`. The startup message shows how many contacts were recovered and skipped, along with the paths to the active file, backup, and report.
+
+Read the report for the positions and reasons for skipped records in the original file. Keep the backup unchanged; use it to look up missing details, correct them, and add those contacts through Astra. Recovery is complete only when Astra displays the successful recovery message.
+
+### When contacts cannot be loaded
+
+If the file is malformed, no valid contacts can be recovered, or recovery cannot finish safely, Astra displays **Astra startup failed** before opening the main window.
+
+When Astra can safely preserve the original contact file, it saves `contactfile.original.json` and `report.txt` in a separate folder under `data/reports/`. The error dialog shows their paths and offers two choices:
+
+* **Start anew:** Replaces the active contact file with an empty one and opens Astra. The startup message confirms the reset and shows the backup and report paths. Keep the backup if you want to restore contact details manually later.
+* **Exit:** Closes Astra and leaves the active contact file unchanged. Closing the dialog also exits. You can repair the file or restore a known good backup while Astra is closed, then launch it again.
+
+If Astra cannot safely prepare a reset, **Start anew** is unavailable and the contact file is not cleared. Follow the error message, check that the contact file is readable and its folder is writable, and restart after resolving the problem. If a reset fails, Astra displays an error instead of opening an empty contact file.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -75,7 +104,7 @@ Format: `help`
 
 ### Adding a person: `add`
 
-Adds a person to the address book.
+Adds a person to the contact file.
 
 Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
 
@@ -92,13 +121,13 @@ Examples:
 
 ### Listing all persons: `list`
 
-Shows a list of all persons in the address book.
+Shows a list of all persons in the contact file.
 
 Format: `list`
 
 ### Editing a person: `edit`
 
-Edits an existing person in the address book.
+Edits an existing person in the contact file.
 
 Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
 
@@ -112,52 +141,105 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
 * The new phone number or email must not already belong to another person. Emails are compared without regard to letter case, so `JohnDoe@example.com` and `johndoe@example.com` are the same email.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
+* To remove a person's company, role, phone, email or LinkedIn, enter its prefix with nothing after it, e.g. `c/`. The name cannot be removed.
 * After the edit, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
+*  `edit 3 c/ r/` Removes the company and role of the 3rd person.
 
-### Locating persons by name: `find`
+### Locating persons: `find`
 
-Finds persons whose names contain any of the given keywords.
+Finds persons by name, phone number or email, and shows the matches in the list.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
-* Only full words match; for example, `Han` does not match `Hans`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
+Searching by name:
+
+* The search is case-insensitive, so `alex` matches `Alex`.
+* Part of a name is enough, and it does not have to be a whole word: `Yeo` matches `Alex Yeoh`.
+* What you type must appear in the name **in one piece, in order**. `Alex Yeoh` matches `Alex Yeoh`, but `Yeoh Alex` does not, and neither does `Alex Li`.
+* Extra spaces do not matter, so `find  alex   yeoh` is read as `find alex yeoh`.
+* Only names are searched. To search a phone number or an email, use the forms below.
+
+Searching by phone number or email:
+
+* `find /contact PHONE_NUMBER` matches a phone number **exactly**; partial numbers do not match.
+* `find /email EMAIL` matches an email exactly, ignoring letter case, so `ALEX@example.com` finds `alex@example.com`.
+* The value has to be a valid phone number or email, or Astra reports the problem instead of searching.
+
+If nothing matches, Astra reports `Contact not found.` and the list is left as it was.
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
-  ![result for 'find alex david'](images/findAlexDavidResult.png)
+* `find Alex Yeoh` returns `Alex Yeoh`.
+* `find Yeo` returns `Alex Yeoh`, since part of a name is enough.
+* `find /contact 87438807` returns the person with that exact number.
+* `find /email berniceyu@example.com` returns `Bernice Yu`.
+
+<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
+searching several keywords at once (`find alex david` returning both `Alex Yeoh` and `David Li`),
+and matching keywords in any order. For now a search is one name, one number or one email, matched
+in one piece. Searching by company, role or tag is also planned for a later version.
+</div>
+
+### Viewing a person's full details: `view`
+
+Shows everything Astra has stored about one person, including details the contact list does not show.
+
+Format: `view INDEX`
+
+* Shows the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
+* Details the person does not have are left out rather than shown as empty.
+
+Examples:
+* `list` followed by `view 2` shows the full details of the 2nd person in the address book.
+* `find Yeo` followed by `view 1` shows the full details of the first search result.
+
+<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
+naming the person instead of giving an index, as `delete` and `edit` allow.
+</div>
 
 ### Deleting a person: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified person from the contact file.
 
-Format: `delete INDEX`
+Format: `delete INDEX` or `delete NAME`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
-* The index **must be a positive integer** 1, 2, 3, …​
+* Deletes the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
+* Instead of an index, you can give all or part of the person's name, e.g. `delete John Lim`. Letter case is ignored, and names are matched the same way `find` matches them.
+  * If exactly one person's name contains it, that person is deleted.
+  * If several do, they are listed with numbers and **nothing is deleted**. Enter the command again with the person's number from that list in place of the name.
+  * Deleting by name searches every contact, not just the ones currently on display, so naming someone reaches them even while a `find` filter is hiding them. Once the person is deleted, the full list is shown again.
+* If the first word of your input is a number, it is read as an index rather than as a name. `delete 3` therefore always means "the 3rd person on display".
+* If the contact file is empty, Astra reports that there are no contacts to delete and changes nothing.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
+* `list` followed by `delete 2` deletes the 2nd person in the contact file.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `delete John Lim` deletes John Lim, if he is the only person whose name contains `John Lim`.
+* `delete Meier`, with both `Benson Meier` and `Daniel Meier` stored, deletes neither and instead reports:
+
+  ```
+  2 contacts found:
+  1. Benson Meier — GovTech — johnd@example.com
+  2. Daniel Meier — DBS — cornelia@example.com
+  To delete one of them, enter the command again with its index in place of the name.
+  ```
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+`delete` cannot be undone. A confirmation prompt is planned for a later version.
+</div>
 
 ### Clearing all entries: `clear`
 
-Clears every contact from the address book and reports how many were cleared.
+Clears every contact from the contact file and reports how many were cleared.
 
 Format: `clear`
 
 * `clear` takes no parameters. Extra parameters are rejected rather than ignored, so `clear 3` is reported as an invalid command instead of silently clearing everything.
-* If the address book is already empty, Astra reports that there are no contacts to clear and changes nothing.
+* If the contact file is already empty, Astra reports that there are no contacts to clear and changes nothing.
 
 Examples:
 * `clear`, with 12 contacts stored, reports `Cleared 12 contact(s). 0 contact(s) remaining.`
@@ -175,15 +257,15 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+Astra automatically saves data after every command. You do not need to save manually.
 
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Contact data is saved automatically as a JSON file `data/contactfile.json` in the folder from which you launch Astra (the home folder when following Quick start). Advanced users can edit this file while Astra is closed.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until you run a command (AddressBook saves after every command). Still, we recommend backing up the file before editing it.<br>
-Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+Back up the file before editing it. On the next launch, Astra may recover valid contacts and skip invalid or duplicate records, or stop with an error and offer **Start anew** if a safe backup can be made. See [Starting Astra](#starting-astra) for the recovery process and backup locations.<br>
+Furthermore, certain edits can cause Astra to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
 ### Archiving data files `[coming in v2.0]`
@@ -195,7 +277,7 @@ _Details coming soon ..._
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
+**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Astra home folder.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -212,8 +294,9 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
 **Clear** | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
+**Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
+**Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`
+**View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`

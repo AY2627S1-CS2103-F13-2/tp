@@ -100,7 +100,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 How the `Logic` component works:
 
-1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
+1. When `Logic` is called upon to execute a command, the command is passed to a `ContactFileParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
@@ -111,7 +111,7 @@ Here are the other classes in `Logic` (omitted from the class diagram above) tha
 <img src="images/ParserClasses.png" width="600"/>
 
 How the parsing works:
-* When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
+* When called upon to parse a user command, the `ContactFileParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `ContactFileParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
@@ -122,14 +122,14 @@ How the parsing works:
 
 The `Model` component,
 
-* stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
+* stores the contact file data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
 * two `Person` objects are currently treated as duplicates when they have the same `Name`. Keying on the contact number or email instead is planned for a later iteration.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
+<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
 <img src="images/BetterModelClassDiagram.png" width="450" />
 
@@ -143,8 +143,8 @@ The `Model` component,
 <img src="images/StorageClassDiagram.png" width="550" />
 
 The `Storage` component,
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
-* is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
+* can save both contact file data and user preference data in JSON format, and read them back into corresponding objects.
+* is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonContactFileStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 ### Common classes
@@ -157,41 +157,93 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Identifying a contact by name
+
+`find`, `edit` and `delete` all let the user refer to a contact by name instead of by its index in the
+displayed list. Left to themselves, each command would need its own answer to what naming a contact
+means: how much of the name has to be given, whether case matters, and what to do when a name fits more
+than one contact. Three answers that are meant to agree but are written three times are three answers
+that will eventually disagree, and a user who is told `find Meier` matches two contacts but
+`delete Meier` deletes one would be right to call that a bug.
+
+So there is one answer, in two pieces:
+
+* `NameContainsKeywordsPredicate` (in `model.person`) decides whether a contact's name matches a query.
+  Both sides are trimmed, their runs of whitespace collapsed and their case folded, and the query must
+  then appear in the name as a contiguous run. `find` applies this predicate directly.
+* `PersonNameResolver` (in `logic.commands`) turns a name into the single contact it refers to, by
+  applying that predicate and looking at how many contacts came back. `edit` and `delete` go through it.
+
+`PersonNameResolver#resolve` returns a sealed `Outcome` of either `Unique`, carrying the one contact
+that matched, or `Several`, carrying a numbered list of the matches for the command to show. A name
+matching nothing is a `CommandException` instead, since there is no contact for the caller to act on.
+Making the ambiguous case a value rather than an error is what stops a command from quietly picking the
+first match: there is no `Person` to reach for until the user has narrowed it down.
+
+Two consequences are worth noting:
+
+* **Resolving a name searches every contact, not only the ones on display.** Naming someone therefore
+  reaches them even while a `find` filter is hiding them, which is what a user who has just typed a
+  full name expects. As a side effect the displayed list is narrowed to the matches, so that the
+  contacts under discussion are the contacts on screen; a command that goes on to change the address
+  book restores the full list once it is done.
+* **The resolver is told which command word to name in its message**, so the list of matches ends with
+  "To delete one of them…" or "To edit one of them…" as appropriate. This is the only thing the
+  resolver needs to know about its caller, which keeps the dependency pointing one way: commands depend
+  on the resolver, and the resolver depends on nothing but `Model` and the predicate.
+
+Deciding *whether* the user typed an index or a name happens earlier, in the parsers, and is shared the
+same way: `ParserUtil#isIndexInput` reports whether the first word of the argument is a number.
+`EditCommandParser` and `DeleteCommandParser` both consult it, so no input can be read as an index by
+one command and as a name by another.
+
+#### Alternatives considered
+
+* **Matching full names exactly, instead of reusing `find`'s partial matching.** An earlier draft of
+  `delete` did this, on the grounds that an irreversible command should not act on a fuzzy match. It was
+  dropped because it gave Astra two meanings for the same gesture, and because the ambiguous case is
+  handled by *refusing to delete* and asking the user to pick, which is just as safe and far less
+  surprising than `delete Meier` reporting that nobody is called that.
+* **A `PersonSelector` type with index and name implementations**, which commands would hold instead of
+  a nullable index and a nullable name. This removes the remaining nullable-field pair from `EditCommand`
+  and `DeleteCommand` and would let `view` gain name support for free. It is the natural next step once
+  a third command needs it; it was not done here to keep the change to `edit` small.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
 
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+The proposed undo/redo mechanism is facilitated by `VersionedContactFile`. It extends `ContactFile` with an undo/redo history, stored internally as a `contactFileStateList` and `currentStatePointer`. Additionally, it implements the following operations:
 
-* `VersionedAddressBook#commit()` — Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` — Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` — Restores a previously undone address book state from its history.
+* `VersionedContactFile#commit()` — Saves the current contact file state in its history.
+* `VersionedContactFile#undo()` — Restores the previous contact file state from its history.
+* `VersionedContactFile#redo()` — Restores a previously undone contact file state from its history.
 
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
+These operations are exposed in the `Model` interface as `Model#commitContactFile()`, `Model#undoContactFile()` and `Model#redoContactFile()` respectively.
 
 Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
 
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
+Step 1. The user launches the application for the first time. The `VersionedContactFile` will be initialized with the initial contact file state, and the `currentStatePointer` pointing to that single contact file state.
 
 ![UndoRedoState0](images/UndoRedoState0.png)
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
+Step 2. The user executes `delete 5` command to delete the 5th person in the contact file. The `delete` command calls `Model#commitContactFile()`, causing the modified state of the contact file after the `delete 5` command executes to be saved in the `contactFileStateList`, and the `currentStatePointer` is shifted to the newly inserted contact file state.
 
 ![UndoRedoState1](images/UndoRedoState1.png)
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitContactFile()`, causing another modified contact file state to be saved into the `contactFileStateList`.
 
 ![UndoRedoState2](images/UndoRedoState2.png)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitContactFile()`, so the contact file state will not be saved into the `contactFileStateList`.
 
 </div>
 
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
+Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoContactFile()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous contact file state, and restores the contact file to that state.
 
 ![UndoRedoState3](images/UndoRedoState3.png)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial ContactFile state, then there are no previous ContactFile states to restore. The `undo` command uses `Model#canUndoContactFile()` to check if this is the case. If so, it will return an error to the user rather
 than attempting to perform the undo.
 
 </div>
@@ -208,17 +260,17 @@ Similarly, how an undo operation goes through the `Model` component is shown bel
 
 ![UndoSequenceDiagram](images/UndoSequenceDiagram-Model.png)
 
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
+The `redo` command does the opposite — it calls `Model#redoContactFile()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the contact file to that state.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
+<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `contactFileStateList.size() - 1`, pointing to the latest contact file state, then there are no undone ContactFile states to restore. The `redo` command uses `Model#canRedoContactFile()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
 
 </div>
 
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
+Step 5. The user then decides to execute the command `list`. Commands that do not modify the contact file, such as `list`, will usually not call `Model#commitContactFile()`, `Model#undoContactFile()` or `Model#redoContactFile()`. Thus, the `contactFileStateList` remains unchanged.
 
 ![UndoRedoState4](images/UndoRedoState4.png)
 
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
+Step 6. The user executes `clear`, which calls `Model#commitContactFile()`. Since the `currentStatePointer` is not pointing at the end of the `contactFileStateList`, all contact file states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
 
 ![UndoRedoState5](images/UndoRedoState5.png)
 
@@ -230,7 +282,7 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 **Aspect: How undo & redo execute:**
 
-* **Alternative 1 (current choice):** Saves the entire address book.
+* **Alternative 1 (current choice):** Saves the entire contact file.
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
@@ -285,7 +337,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
 | `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
 | `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
-| `* * *`  | user                                       | clear all contacts after confirming | start over when I no longer need the list                              |
+| `* * *`  | user                                       | clear all contacts | start over when I no longer need the list                              |
+| `* *`    | careless user                              | be asked to confirm before contacts are deleted or cleared | avoid wiping out contacts by a mistyped command                  |
 | `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data   
 | `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
 | `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
@@ -303,7 +356,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`    | user                                       | see when I last interacted with someone | know how long it has been since we last met                            |
 | `* *`    | careless user                            | undo an accidental deletion or edit                                 | avoid losing important information                                |
 | `* *`    | potential user exploring the app         | see the app populated with sample data                              | get a feel for how the app looks in use                           |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+| `*`      | user with many persons in the contact file | sort persons by name           | locate a person easily                                                 |
 | `*`      | user                                     | see which contact entries are incomplete                            | remember to fill in missing details later                         |
 | `*`      | frequent user                            | reorder the information shown for a contact                         | see the details I care about first                                |
 | `*`      | expert user                              | define shortcuts for commands                                       | add contacts faster than typing commands in full                  |
@@ -370,14 +423,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
       Use case ends.
 
 
-**Use case: UC02 - Delete contacts**
+**Use case: UC02 - Delete a contact**
 
 **MSS**
 
-1. User enters a delete command with one or more emails, one contact number, or one name.
-2. Astra shows the selected contacts and asks for confirmation.
-3. User confirms.
-4. Astra deletes the contacts, saves the contact list and shows the number of contacts remaining.
+1. User enters a delete command, identifying the contact either by its index in the displayed list or by name.
+2. Astra deletes the contact, saves the contact list and shows the details of the contact it deleted.
 
    Use case ends.
 
@@ -388,36 +439,35 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 1b. The input is empty, mixes selector types, or contains a malformed email.
-    * 1b1. Astra shows the relevant error message.
+* 1b. The input is empty, is a malformed index, or is not a valid name.
+    * 1b1. Astra shows the command usage.
 
       Use case ends.
 
-* 1c. A requested email, contact number or name does not match any contact.
-    * 1c1. Astra identifies the missing target and deletes nothing.
+* 1c. The given index is not in the displayed list.
+    * 1c1. Astra shows that the index is invalid.
 
       Use case ends.
 
-* 1d. Several contacts match the given name.
-    * 1d1. Astra shows a ranked, numbered list of matching contacts with their names, companies and emails.
-    * 1d2. User selects a contact by index.
+* 1d. The given name matches no contact.
+    * 1d1. Astra shows that no contact of that name was found, and deletes nothing.
+
+      Use case ends.
+
+* 1e. Several contacts match the given name.
+    * 1e1. Astra shows a numbered list of the matching contacts with their names, companies and emails, and deletes nothing.
+    * 1e2. User enters the command again with the index of the contact they meant.
 
       Use case resumes at step 2.
 
-    * 1d2a. User enters an invalid index.
-        * 1d2a1. Astra shows an error message.
+**Deferred to a later version**
 
-          Use case resumes at step 1d2.
-
-* 3a. User answers n or cancel.
-    * 3a1. Astra shows that the deletion was cancelled.
-
-      Use case ends.
-
-* 4a. Saving fails.
-    * 4a1. Astra shows a save error. The contact list and file are unchanged.
-
-      Use case ends.
+* Confirming before the contact is deleted. v1.3 deletes immediately; the prompt arrives with the
+  pending-command layer, which UC05 will share.
+* Deleting by email or contact number, and deleting several contacts in one command. These wait on the
+  matching for those fields so that it is shared with `find` rather than written twice.
+* Reporting a failed save and leaving the contact list and file unchanged. This needs atomic saves in
+  `Storage` to be meaningful, since a half-written file is worse than a reported failure.
 
 **Use case: UC03 - Find and view a contact**
 
@@ -465,7 +515,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters an edit command with a contact's name and the new values of one or more fields.
+1. User enters an edit command, identifying the contact either by its index in the displayed list or by name, with the new values of one or more fields.
 2. Astra finds the contact and validates the new values.
 3. Astra updates the contact, saves the contact list and lists every updated field.
 
@@ -478,56 +528,61 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 1b. A prefix is unsupported or repeated, a required value is empty, or a value is malformed.
-    * 1b1. Astra shows the relevant error message and the edit command format.
+* 1b. The command format is invalid, a prefix is repeated, or a value is malformed.
+    * 1b1. Astra shows the relevant error message, with the command usage if the format is invalid.
 
       Use case ends.
 
-* 2a. No contact matches the name.
-    * 2a1. Astra shows that the contact was not found.
-
-      Use case ends.
-
-* 2b. Several contacts match the name.
-    * 2b1. Astra shows a ranked, numbered list of matching contacts.
-    * 2b2. User selects a contact by index.
+* 1c. A company, role, contact number, email or LinkedIn prefix is given with no value, e.g. `c/`.
+    * 1c1. Astra treats it as removing that field from the contact.
 
       Use case resumes at step 2.
 
-* 2c. The new contact number or email already belongs to another contact.
-    * 2c1. Astra rejects the whole edit and changes nothing.
+* 2a. The given index is not in the displayed list.
+    * 2a1. Astra shows that the index is invalid.
 
       Use case ends.
 
-* 2d. The new name or LinkedIn URL matches another contact.
-    * 2d1. Astra warns the user and asks for confirmation.
-    * 2d2. User confirms.
-
-      Use case resumes at step 3.
-
-* 2e. Every new value is identical to the current one.
-    * 2e1. Astra shows that there are no changes to apply and does not save.
+* 2b. The given name matches no contact.
+    * 2b1. Astra shows that no contact of that name was found, and changes nothing.
 
       Use case ends.
 
-* 3a. Saving fails.
-    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+* 2c. Several contacts match the given name.
+    * 2c1. Astra shows a numbered list of the matching contacts with their names, companies and emails, and changes nothing.
+    * 2c2. User enters the command again with the index of the contact they meant.
+
+      Use case resumes at step 2.
+
+* 2d. The new contact number or email already belongs to another contact.
+    * 2d1. Astra rejects the whole edit, names the other contact, and changes nothing.
 
       Use case ends.
 
-* *a. At any prompt, the user enters cancel or n.
-    * *a1. Astra shows that the edit was cancelled.
+* 2e. The new name is exactly the name of another contact.
+    * 2e1. Astra rejects the edit and changes nothing.
 
       Use case ends.
+
+* 2f. Every new value is identical to the current one.
+    * 2f1. Astra shows that there are no changes to apply and does not save.
+
+      Use case ends.
+
+**Deferred to a later version**
+* Choosing one of several matching contacts at a prompt instead of entering the command again, and cancelling at
+  any prompt. These arrive with the pending-command layer that UC02 and UC05 will share.
+* Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
+  rejecting an identical name outright. This also needs the pending-command layer.
+* Reporting a failed save and leaving the contact list and file unchanged. As for UC02, this needs atomic saves in
+  `Storage` to be meaningful.
 
 **Use case: UC05 - Clear all contacts**
 
 **MSS**
 
 1. User requests to clear all contacts.
-2. Astra shows the total number of contacts and asks for confirmation.
-3. User confirms.
-4. Astra saves an empty contact list and shows that 0 contacts remain.
+2. Astra saves an empty contact list and shows how many contacts it cleared and that 0 remain.
 
    Use case ends.
 
@@ -543,10 +598,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 3a. User answers n or cancel.
-    * 3a1. Astra shows that the clear was cancelled and how many contacts remain.
+**Deferred to a later version**
 
-      Use case ends.
+* Confirming before the list is cleared, together with UC02's prompt and sharing the same
+  pending-command layer.
 
 * 3b. User enters a response other than y or n.
     * 3b1. Astra asks the user to enter y or n.
@@ -604,11 +659,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
       and offers **Start anew** or **Exit**. Exit is the default choice.
     * 2c3. If the user chooses Start anew, Astra verifies the backup and checks
       that the active file has not changed, then atomically replaces it with an
-      empty address book and opens the command interface. The original backup remains unchanged.
+      empty contact file and opens the command interface. The original backup remains unchanged.
     * 2c4. Astra shows an empty contact list and reminds the user of the backup and report locations.
 
     * 2c2a. The original file cannot be read or safely preserved under reports.
-        * 2c2a1. Astra explains that starting anew is unavailable and stops without clearing the address book.
+        * 2c2a1. Astra explains that starting anew is unavailable and stops without clearing the contact file.
     * 2c2b. The user chooses Exit or dismisses the dialog.
         * 2c2b1. Astra stops without replacing the active file.
     * 2c3a. Backup verification or atomic replacement fails, or the active file changes.
@@ -642,7 +697,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
+* **Contact**: A record of one person. Only the name is required; a company, a role, a contact number, an email address, a LinkedIn URL and any number of tags are each optional, and the single-valued ones hold at most one value apiece
 * **Contact number**: A phone number made up of at least three digits, which may also use spaces, hyphens, a leading plus sign for a country code, and balanced parentheses
 * **Prefix**: A field marker in a command, such as `c/` for a company or `e/` for an email. Prefixes are case-sensitive
 * **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field
@@ -693,7 +748,7 @@ testers are expected to do more *exploratory* testing.
 
 ### Deleting a person
 
-1. Deleting a person while all persons are being shown
+1. Deleting a person by index while all persons are being shown
 
    1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
 
@@ -701,12 +756,67 @@ testers are expected to do more *exploratory* testing.
       Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
 
    1. Test case: `delete 0`<br>
+      Expected: No person is deleted. The status message shows the command usage.
+
+   1. Other incorrect delete commands to try: `delete`, `delete 1 abc`, `delete x` (where x is larger than the list size)<br>
       Expected: No person is deleted. The status message shows error details.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+1. Deleting a person by index while the list is filtered
 
-1. _{ more test cases …​ }_
+   1. Prerequisites: Filter the list with `find Meier`, so that fewer persons are shown than are stored.
+
+   1. Test case: `delete 1`<br>
+      Expected: The first contact *of the filtered results* is deleted. The remaining results stay on display.
+
+   1. Test case: `delete x` (where x is larger than the number of results but no larger than the number stored)<br>
+      Expected: No person is deleted. The status message says the index is invalid, since the index refers to what is displayed.
+
+1. Deleting a person by name
+
+   1. Prerequisites: List all persons using the `list` command. The sample data has one `Alice Pauline`, and both a `Benson Meier` and a `Daniel Meier`.
+
+   1. Test case: `delete Alice Pauline`<br>
+      Expected: Alice Pauline is deleted. The status message shows her details, and every remaining contact is shown again.
+
+   1. Test case: `delete alice pauline`<br>
+      Expected: As above; letter case is ignored.
+
+   1. Test case: `delete Pauline`<br>
+      Expected: As above; a partial name is enough when only one contact matches it.
+
+   1. Test case: `delete Meier`<br>
+      Expected: **Nothing is deleted.** The status message lists both Meiers, numbered, with their companies and emails, and asks for the command to be entered again with an index. Following it with `delete 2` deletes the second one listed.
+
+   1. Test case: `delete Zed`<br>
+      Expected: No person is deleted. The status message says no contact named Zed was found, and the full list is still shown.
+
+   1. Test case: `find Alice` followed by `delete Carl Kurz`<br>
+      Expected: Carl Kurz is deleted even though he was not among the displayed results, since naming a contact searches every contact.
+
+   1. Other invalid names to try: `delete @#$`, `delete -Alice`<br>
+      Expected: No person is deleted. The status message shows the command usage.
+
+1. Deleting from an empty contact file
+
+   1. Prerequisites: Remove every contact with the `clear` command.
+
+   1. Test case: `delete 1`, and `delete Alice Pauline`<br>
+      Expected: No person is deleted. Both report that there are no contacts to delete, rather than complaining about the index or the name.
+
+### Clearing all entries
+
+1. Clearing a list that has contacts in it
+
+   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+
+   1. Test case: `clear`<br>
+      Expected: Every contact is removed. The status message reports how many were cleared and that 0 remain.
+
+   1. Test case: `clear` again, on the now empty list<br>
+      Expected: Nothing changes. The status message reports that there are no contacts to clear.
+
+   1. Test case: `clear 3`<br>
+      Expected: Nothing is cleared. The status message shows the command usage, since `clear` takes no parameters.
 
 ### Saving data
 

@@ -3,33 +3,33 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import seedu.address.logic.commands.exceptions.CommandException;
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 
 /**
- * Clears the address book.
+ * Clears the contact file.
  */
 public class ClearCommand extends Command {
 
     public static final String COMMAND_WORD = "clear";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Clears every contact from the address book. Takes no parameters.\n"
+            + ": Clears every contact from the contact file. Takes no parameters.\n"
             + "Example: " + COMMAND_WORD;
 
     public static final String MESSAGE_SUCCESS = "Cleared %1$d contact(s). 0 contact(s) remaining.";
-    public static final String MESSAGE_EMPTY_ADDRESS_BOOK = "There are no contacts to clear.";
+    public static final String MESSAGE_EMPTY_CONTACT_FILE = "There are no contacts to clear.";
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        int clearedCount = model.getAddressBook().getPersonList().size();
+        int clearedCount = model.getContactFile().getPersonList().size();
 
         if (clearedCount == 0) {
-            throw new CommandException(MESSAGE_EMPTY_ADDRESS_BOOK);
+            throw new CommandException(MESSAGE_EMPTY_CONTACT_FILE);
         }
 
-        model.setAddressBook(new AddressBook());
+        model.setContactFile(new ContactFile());
         return new CommandResult(String.format(MESSAGE_SUCCESS, clearedCount));
     }
 

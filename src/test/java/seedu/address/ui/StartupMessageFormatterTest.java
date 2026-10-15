@@ -21,7 +21,7 @@ class StartupMessageFormatterTest {
 
     @Test
     void formatLoadedContacts_singularAndPlural_showsNormalizedAbsolutePath() {
-        Path source = Path.of("data", "nested", "..", "addressbook.json");
+        Path source = Path.of("data", "nested", "..", "contactfile.json");
         Path absolute = source.toAbsolutePath().normalize();
 
         assertEquals("Loaded 0 contacts from " + absolute + ".",
@@ -35,7 +35,7 @@ class StartupMessageFormatterTest {
     @Test
     void formatStartup_storedContacts_showsCountAndSource() {
         StartupLoadResult result = new StartupLoadResult(List.of(ALICE, BOB),
-                Path.of("data", "addressbook.json"), StartupLoadResult.Source.STORED, Optional.empty(), 0);
+                Path.of("data", "contactfile.json"), StartupLoadResult.Source.STORED, Optional.empty(), 0);
 
         assertEquals("Loaded 2 contacts from " + result.sourceFile() + ".",
                 StartupMessageFormatter.formatStartup(result));
@@ -43,9 +43,9 @@ class StartupMessageFormatterTest {
 
     @Test
     void formatStartup_recoveredContacts_showsCountsAndAllRecoveryLocations() {
-        Path source = Path.of("data", "addressbook.json");
+        Path source = Path.of("data", "contactfile.json");
         RecoveryArchive archive = new RecoveryArchive(
-                Path.of("data", "recovery", "incident", "addressbook.original.json"),
+                Path.of("data", "recovery", "incident", "contactfile.original.json"),
                 Path.of("data", "recovery", "incident", "report.txt"));
         StartupLoadResult result = new StartupLoadResult(List.of(ALICE, BOB), source,
                 StartupLoadResult.Source.RECOVERED, Optional.of(archive), 3);
@@ -68,8 +68,8 @@ class StartupMessageFormatterTest {
     @Test
     void formatStartup_sampleSource_showsSampleGuidance() {
         StartupLoadResult result = new StartupLoadResult(
-                SampleDataUtil.getSampleAddressBook().getPersonList(),
-                Path.of("data", "addressbook.json"),
+                SampleDataUtil.getSampleContactFile().getPersonList(),
+                Path.of("data", "contactfile.json"),
                 StartupLoadResult.Source.SAMPLE,
                 Optional.empty(),
                 0);
@@ -84,7 +84,7 @@ class StartupMessageFormatterTest {
     void formatStartup_emptyStoredFile_doesNotShowSampleGuidance() {
         StartupLoadResult result = new StartupLoadResult(
                 List.of(),
-                Path.of("data", "addressbook.json"),
+                Path.of("data", "contactfile.json"),
                 StartupLoadResult.Source.STORED,
                 Optional.empty(),
                 0);

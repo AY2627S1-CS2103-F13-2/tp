@@ -29,15 +29,15 @@ public interface Model {
     void setGuiSettings(GuiSettings guiSettings);
 
     /**
-     * Replaces address book data with the data in {@code addressBook}.
+     * Replaces contact file data with the data in {@code contactFile}.
      */
-    void setAddressBook(ReadOnlyAddressBook addressBook);
+    void setContactFile(ReadOnlyContactFile contactFile);
 
-    /** Returns the AddressBook */
-    ReadOnlyAddressBook getAddressBook();
+    /** Returns the ContactFile */
+    ReadOnlyContactFile getContactFile();
 
     /**
-     * Returns true if a person with the same identity as {@code person} exists in the address book.
+     * Returns true if a person with the same identity as {@code person} exists in the contact file.
      */
     boolean hasPerson(Person person);
 
@@ -53,20 +53,20 @@ public interface Model {
 
     /**
      * Deletes the given person.
-     * The person must exist in the address book.
+     * The person must exist in the contact file.
      */
     void deletePerson(Person target);
 
     /**
      * Adds the given person.
-     * {@code person} must not already exist in the address book.
+     * {@code person} must not already exist in the contact file.
      */
     void addPerson(Person person);
 
     /**
      * Replaces the given person {@code target} with {@code editedPerson}.
-     * {@code target} must exist in the address book.
-     * The person identity of {@code editedPerson} must not be the same as another existing person in the address book.
+     * {@code target} must exist in the contact file.
+     * The person identity of {@code editedPerson} must not be the same as another existing person in the contact file.
      */
     void setPerson(Person target, Person editedPerson);
 

@@ -18,6 +18,7 @@ import java.util.Set;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
+import seedu.address.logic.commands.EditCommand.RemovableField;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Name;
 import seedu.address.model.tag.Tag;
@@ -41,7 +42,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         Index index = null;
         String targetName = null;
 
-        if (isIndexPreamble(preamble)) {
+        if (ParserUtil.isIndexInput(preamble)) {
             try {
                 index = ParserUtil.parseIndex(preamble);
             } catch (ParseException pe) {
@@ -61,19 +62,29 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (argMultimap.getValue(PREFIX_NAME).isPresent()) {
             editPersonDescriptor.setName(ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get()));
         }
-        if (argMultimap.getValue(PREFIX_COMPANY).isPresent()) {
+        if (isEmptyValue(argMultimap, PREFIX_COMPANY)) {
+            editPersonDescriptor.removeField(RemovableField.COMPANY);
+        } else if (argMultimap.getValue(PREFIX_COMPANY).isPresent()) {
             editPersonDescriptor.setCompany(ParserUtil.parseCompany(argMultimap.getValue(PREFIX_COMPANY).get()));
         }
-        if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
+        if (isEmptyValue(argMultimap, PREFIX_ROLE)) {
+            editPersonDescriptor.removeField(RemovableField.ROLE);
+        } else if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
             editPersonDescriptor.setRole(ParserUtil.parseRole(argMultimap.getValue(PREFIX_ROLE).get()));
         }
-        if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
+        if (isEmptyValue(argMultimap, PREFIX_PHONE)) {
+            editPersonDescriptor.removeField(RemovableField.PHONE);
+        } else if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
             editPersonDescriptor.setPhone(ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get()));
         }
-        if (argMultimap.getValue(PREFIX_EMAIL).isPresent()) {
+        if (isEmptyValue(argMultimap, PREFIX_EMAIL)) {
+            editPersonDescriptor.removeField(RemovableField.EMAIL);
+        } else if (argMultimap.getValue(PREFIX_EMAIL).isPresent()) {
             editPersonDescriptor.setEmail(ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get()));
         }
-        if (argMultimap.getValue(PREFIX_LINKEDIN).isPresent()) {
+        if (isEmptyValue(argMultimap, PREFIX_LINKEDIN)) {
+            editPersonDescriptor.removeField(RemovableField.LINKEDIN);
+        } else if (argMultimap.getValue(PREFIX_LINKEDIN).isPresent()) {
             editPersonDescriptor.setLinkedin(ParserUtil.parseLinkedin(argMultimap.getValue(PREFIX_LINKEDIN).get()));
         }
         parseTagsForEdit(argMultimap.getAllValues(PREFIX_TAG)).ifPresent(editPersonDescriptor::setTags);
@@ -88,11 +99,10 @@ public class EditCommandParser implements Parser<EditCommand> {
     }
 
     /**
-     * Returns true if the first word of {@code preamble} is a number, i.e. the user meant to give an index.
+     * Returns true if {@code prefix} is given with nothing after it, which removes that field.
      */
-    private static boolean isIndexPreamble(String preamble) {
-        String firstWord = preamble.split("\\s+")[0];
-        return firstWord.matches("[+-]?\\d+");
+    private static boolean isEmptyValue(ArgumentMultimap argMultimap, Prefix prefix) {
+        return argMultimap.getValue(prefix).map(String::isBlank).orElse(false);
     }
 
     /**

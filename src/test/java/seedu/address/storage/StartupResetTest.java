@@ -260,14 +260,14 @@ class StartupResetTest {
     }
 
     private Path writeSource(String json) throws IOException {
-        Path source = testFolder.resolve("addressbook.json");
+        Path source = testFolder.resolve("contactfile.json");
         Files.writeString(source, json);
         return source;
     }
 
     private void assertNoTemporaryFiles() throws IOException {
         try (Stream<Path> paths = Files.list(testFolder)) {
-            assertFalse(paths.anyMatch(path -> path.getFileName().toString().startsWith("addressbook-recovery-")));
+            assertFalse(paths.anyMatch(path -> path.getFileName().toString().startsWith("contactfile-recovery-")));
         }
     }
 }

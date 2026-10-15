@@ -13,13 +13,13 @@ import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 import seedu.address.storage.ContactFileLock;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StartupLoadResult;
 import seedu.address.storage.StartupResetPlan;
@@ -38,7 +38,7 @@ public class MainApp extends Application {
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
     private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
-    private static final Path ADDRESS_BOOK_FILE_PATH = Paths.get("data", "addressbook.json");
+    private static final Path CONTACT_FILE_PATH = Paths.get("data", "contactfile.json");
 
     protected Ui ui;
     protected Logic logic;
@@ -46,24 +46,24 @@ public class MainApp extends Application {
     protected Model model;
 
     private final Path userPrefsFilePath;
-    private final Path addressBookFilePath;
+    private final Path contactFilePath;
     private IOException startupFailure;
     private StartupResetPlan startupResetPlan;
     private UserPrefs startupPrefs;
     private ContactFileLock contactFileLock;
 
     public MainApp() {
-        this(USER_PREFS_FILE_PATH, ADDRESS_BOOK_FILE_PATH);
+        this(USER_PREFS_FILE_PATH, CONTACT_FILE_PATH);
     }
 
-    MainApp(Path userPrefsFilePath, Path addressBookFilePath) {
+    MainApp(Path userPrefsFilePath, Path contactFilePath) {
         this.userPrefsFilePath = userPrefsFilePath;
-        this.addressBookFilePath = addressBookFilePath;
+        this.contactFilePath = contactFilePath;
     }
 
     @Override
     public void init() throws Exception {
-        logger.info("=============================[ Initializing AddressBook ]===========================");
+        logger.info("=============================[ Initializing ContactFile ]===========================");
         super.init();
 
         if (!acquireContactFile()) {
@@ -80,7 +80,7 @@ public class MainApp extends Application {
 
     private boolean acquireContactFile() {
         try {
-            contactFileLock = ContactFileLock.acquire(addressBookFilePath);
+            contactFileLock = ContactFileLock.acquire(contactFilePath);
             return true;
         } catch (IOException e) {
             startupFailure = e;
@@ -98,7 +98,7 @@ public class MainApp extends Application {
      * Assembles persistent storage independently of startup decisions.
      */
     protected Storage createStorage(JsonUserPrefsStorage userPrefsStorage) {
-        return new StorageManager(new JsonAddressBookStorage(addressBookFilePath), userPrefsStorage);
+        return new StorageManager(new JsonContactFileStorage(contactFilePath), userPrefsStorage);
     }
 
     private void loadContacts() {
@@ -138,9 +138,9 @@ public class MainApp extends Application {
      * Creates the model from a completed startup loading result.
      */
     private Model initModelManager(StartupLoadResult loadResult, ReadOnlyUserPrefs userPrefs) {
-        AddressBook addressBook = new AddressBook();
-        addressBook.setPersons(loadResult.contacts());
-        return new ModelManager(addressBook, userPrefs);
+        ContactFile contactFile = new ContactFile();
+        contactFile.setPersons(loadResult.contacts());
+        return new ModelManager(contactFile, userPrefs);
     }
 
     /**
@@ -182,7 +182,7 @@ public class MainApp extends Application {
             return;
         }
 
-        logger.info("Starting AddressBook " + MainApp.VERSION);
+        logger.info("Starting ContactFile " + MainApp.VERSION);
         ui.start(primaryStage);
     }
 
@@ -205,7 +205,7 @@ public class MainApp extends Application {
     }
 
     /**
-     * Opens an empty address book after the user explicitly chooses to start anew.
+     * Opens an empty contact file after the user explicitly chooses to start anew.
      */
     protected void startAnew(Stage primaryStage) {
         try {
@@ -223,7 +223,7 @@ public class MainApp extends Application {
 
     @Override
     public void stop() {
-        logger.info("============================ [ Stopping AddressBook ] =============================");
+        logger.info("============================ [ Stopping ContactFile ] =============================");
 
         try {
             if (model != null) {

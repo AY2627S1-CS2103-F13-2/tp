@@ -12,6 +12,7 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -29,14 +30,13 @@ import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Role;
 import seedu.address.model.tag.Tag;
 
 /**
- * Edits the details of an existing person in the address book.
+ * Edits the details of an existing person in the contact file.
  */
 public class EditCommand extends Command {
 
@@ -64,13 +64,9 @@ public class EditCommand extends Command {
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_NO_CHANGES =
             "The new values are the same as the current ones, so there is nothing to change.";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the contact file.";
     public static final String MESSAGE_ALREADY_SAVED_FOR_OTHER =
             "%1$s is already saved for %2$s. No changes were applied.";
-
-    public static final String MESSAGE_NAME_NOT_FOUND = "No contact named %1$s found.";
-    public static final String MESSAGE_SEVERAL_NAME_MATCHES = "%1$d contacts found:\n%2$s\n"
-            + "To edit one of them, enter the command again with its index in place of the name.";
 
     private final Index index;
     private final String targetName;
@@ -105,22 +101,23 @@ public class EditCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Index targetIndex = index;
-        if (targetName != null) {
-            int matchCount = showPersonsMatchingTargetName(model);
-            if (matchCount > 1) {
-                return new CommandResult(String.format(MESSAGE_SEVERAL_NAME_MATCHES,
-                        matchCount, formatNumberedList(model.getFilteredPersonList())));
+
+        Person personToEdit;
+        if (targetName == null) {
+            List<Person> lastShownList = model.getFilteredPersonList();
+            if (index.getZeroBased() >= lastShownList.size()) {
+                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
             }
-            targetIndex = Index.fromOneBased(1);
+            personToEdit = lastShownList.get(index.getZeroBased());
+        } else {
+            switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
+                case PersonNameResolver.Outcome.Unique unique -> personToEdit = unique.person();
+                case PersonNameResolver.Outcome.Several several -> {
+                    return new CommandResult(several.message());
+                }
+            }
         }
-        List<Person> lastShownList = model.getFilteredPersonList();
 
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        Person personToEdit = lastShownList.get(targetIndex.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
         if (editedPerson.equals(personToEdit)) {
@@ -203,7 +200,7 @@ public class EditCommand extends Command {
         boolean isPhoneEdited = editPersonDescriptor.getPhone().isPresent();
         boolean isEmailEdited = editPersonDescriptor.getEmail().isPresent();
 
-        for (Person otherPerson : model.getAddressBook().getPersonList()) {
+        for (Person otherPerson : model.getContactFile().getPersonList()) {
             if (otherPerson.equals(personToEdit)) {
                 continue;
             }
@@ -244,11 +241,16 @@ public class EditCommand extends Command {
         assert personToEdit != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
-        Company updatedCompany = editPersonDescriptor.getCompany().or(personToEdit::getCompany).orElse(null);
-        Role updatedRole = editPersonDescriptor.getRole().or(personToEdit::getRole).orElse(null);
-        Phone updatedPhone = editPersonDescriptor.getPhone().or(personToEdit::getPhone).orElse(null);
-        Email updatedEmail = editPersonDescriptor.getEmail().or(personToEdit::getEmail).orElse(null);
-        Linkedin updatedLinkedin = editPersonDescriptor.getLinkedin().or(personToEdit::getLinkedin).orElse(null);
+        Company updatedCompany = updatedValue(editPersonDescriptor, RemovableField.COMPANY,
+                editPersonDescriptor.getCompany(), personToEdit.getCompany());
+        Role updatedRole = updatedValue(editPersonDescriptor, RemovableField.ROLE,
+                editPersonDescriptor.getRole(), personToEdit.getRole());
+        Phone updatedPhone = updatedValue(editPersonDescriptor, RemovableField.PHONE,
+                editPersonDescriptor.getPhone(), personToEdit.getPhone());
+        Email updatedEmail = updatedValue(editPersonDescriptor, RemovableField.EMAIL,
+                editPersonDescriptor.getEmail(), personToEdit.getEmail());
+        Linkedin updatedLinkedin = updatedValue(editPersonDescriptor, RemovableField.LINKEDIN,
+                editPersonDescriptor.getLinkedin(), personToEdit.getLinkedin());
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
         return new Person(updatedName, updatedCompany, updatedRole, updatedPhone, updatedEmail, updatedLinkedin,
@@ -256,35 +258,15 @@ public class EditCommand extends Command {
     }
 
     /**
-     * Shows only the persons whose names contain {@code targetName}, ignoring case, and returns how many there are.
-     * If there are none, the full list is shown again and a {@code CommandException} is thrown.
+     * Returns the value an optional field should have after the edit: null if the edit removes the field,
+     * otherwise the new value if one is given, or else the current value (which may be absent, i.e. null).
      */
-    private int showPersonsMatchingTargetName(Model model) throws CommandException {
-        model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of(targetName)));
-        int matchCount = model.getFilteredPersonList().size();
-        if (matchCount == 0) {
-            model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-            throw new CommandException(String.format(MESSAGE_NAME_NOT_FOUND, targetName));
+    private static <T> T updatedValue(EditPersonDescriptor editPersonDescriptor, RemovableField field,
+            Optional<T> newValue, Optional<T> currentValue) {
+        if (editPersonDescriptor.isRemoved(field)) {
+            return null;
         }
-        return matchCount;
-    }
-
-    /**
-     * Returns the given persons as numbered lines of their name, company and email, skipping absent details,
-     * e.g. "1. John Lim \u2014 Google \u2014 john.lim@example.com".
-     */
-    private static String formatNumberedList(List<Person> persons) {
-        StringBuilder list = new StringBuilder();
-        for (int i = 0; i < persons.size(); i++) {
-            Person person = persons.get(i);
-            if (i > 0) {
-                list.append("\n");
-            }
-            list.append(i + 1).append(". ").append(person.getName());
-            person.getCompany().ifPresent(company -> list.append(" \u2014 ").append(company));
-            person.getEmail().ifPresent(email -> list.append(" \u2014 ").append(email));
-        }
-        return list.toString();
+        return newValue.or(() -> currentValue).orElse(null);
     }
 
     @Override
@@ -313,6 +295,13 @@ public class EditCommand extends Command {
     }
 
     /**
+     * Optional person fields that an edit can remove.
+     */
+    public enum RemovableField {
+        COMPANY, ROLE, PHONE, EMAIL, LINKEDIN
+    }
+
+    /**
      * Stores the details to edit the person with. Each non-empty field value will replace the
      * corresponding field value of the person.
      */
@@ -324,6 +313,7 @@ public class EditCommand extends Command {
         private Email email;
         private Linkedin linkedin;
         private Set<Tag> tags;
+        private final Set<RemovableField> fieldsToRemove = EnumSet.noneOf(RemovableField.class);
 
         public EditPersonDescriptor() {}
 
@@ -339,13 +329,29 @@ public class EditCommand extends Command {
             setEmail(toCopy.email);
             setLinkedin(toCopy.linkedin);
             setTags(toCopy.tags);
+            fieldsToRemove.addAll(toCopy.fieldsToRemove);
         }
 
         /**
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, company, role, phone, email, linkedin, tags);
+            return CollectionUtil.isAnyNonNull(name, company, role, phone, email, linkedin, tags)
+                    || !fieldsToRemove.isEmpty();
+        }
+
+        /**
+         * Marks {@code field} to be removed from the person by this edit.
+         */
+        public void removeField(RemovableField field) {
+            fieldsToRemove.add(field);
+        }
+
+        /**
+         * Returns true if this edit removes {@code field} from the person.
+         */
+        public boolean isRemoved(RemovableField field) {
+            return fieldsToRemove.contains(field);
         }
 
         public void setName(Name name) {
@@ -430,7 +436,8 @@ public class EditCommand extends Command {
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
                     && Objects.equals(linkedin, otherEditPersonDescriptor.linkedin)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && fieldsToRemove.equals(otherEditPersonDescriptor.fieldsToRemove);
         }
 
         @Override
@@ -443,6 +450,7 @@ public class EditCommand extends Command {
                     .add("email", email)
                     .add("linkedin", linkedin)
                     .add("tags", tags)
+                    .add("fieldsToRemove", fieldsToRemove)
                     .toString();
         }
     }

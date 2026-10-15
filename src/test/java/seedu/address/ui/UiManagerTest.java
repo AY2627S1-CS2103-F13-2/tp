@@ -52,7 +52,7 @@ import seedu.address.testutil.FxTestUtil;
 @Timeout(20)
 class UiManagerTest {
 
-    private static final Path SOURCE = Path.of("data", "addressbook.json").toAbsolutePath().normalize();
+    private static final Path SOURCE = Path.of("data", "contactfile.json").toAbsolutePath().normalize();
 
     @BeforeAll
     static void startToolkit() throws Exception {
@@ -90,7 +90,7 @@ class UiManagerTest {
 
     @Test
     void start_sampleContacts_showsSampleGuidanceAndClearCommand() throws Exception {
-        StartupLoadResult result = new StartupLoadResult(SampleDataUtil.getSampleAddressBook().getPersonList(), SOURCE,
+        StartupLoadResult result = new StartupLoadResult(SampleDataUtil.getSampleContactFile().getPersonList(), SOURCE,
                 StartupLoadResult.Source.SAMPLE, Optional.empty(), 0);
 
         assertSuccessfulStartup(result,
@@ -345,7 +345,7 @@ class UiManagerTest {
                 assertTrue(pane.getContentText().contains("preserved unchanged under reports"));
                 assertTrue(pane.getContentText().contains(archive.backupFile().toString()));
                 assertTrue(pane.getContentText().contains(archive.reportFile().toString()));
-                assertTrue(pane.getContentText().contains("clear the active address book"));
+                assertTrue(pane.getContentText().contains("clear the active contact file"));
                 assertEquals(List.of("Start anew", "Exit"), pane.getButtonTypes().stream()
                         .map(ButtonType::getText).toList());
                 Button reset = (Button) pane.lookupButton(pane.getButtonTypes().get(0));
@@ -370,7 +370,7 @@ class UiManagerTest {
     }
 
     private static RecoveryArchive resetArchive() {
-        return new RecoveryArchive(SOURCE.resolveSibling("reports/incident/addressbook.original.json"),
+        return new RecoveryArchive(SOURCE.resolveSibling("reports/incident/contactfile.original.json"),
                 SOURCE.resolveSibling("reports/incident/report.txt"));
     }
 

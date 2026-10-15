@@ -13,9 +13,9 @@ package "UserPrefs Storage" #F4F6F6{
 Class JsonUserPrefsStorage
 }
 
-package "AddressBook Storage" #F4F6F6{
-Class JsonAddressBookStorage
-Class JsonSerializableAddressBook
+package "ContactFile Storage" #F4F6F6{
+Class JsonContactFileStorage
+Class JsonSerializableContactFile
 Class JsonAdaptedPerson
 Class JsonAdaptedTag
 }
@@ -27,10 +27,10 @@ HiddenOutside ..> Storage
 
 StorageManager .up.|> Storage
 StorageManager -down-> "1" JsonUserPrefsStorage
-StorageManager -down-> "1" JsonAddressBookStorage
+StorageManager -down-> "1" JsonContactFileStorage
 
-JsonAddressBookStorage ..> JsonSerializableAddressBook
-JsonSerializableAddressBook --> "*" JsonAdaptedPerson
+JsonContactFileStorage ..> JsonSerializableContactFile
+JsonSerializableContactFile --> "*" JsonAdaptedPerson
 JsonAdaptedPerson --> "*" JsonAdaptedTag
 
 @enduml

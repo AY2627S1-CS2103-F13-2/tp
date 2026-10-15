@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -190,5 +191,31 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void isIndexInput_firstWordIsANumber_returnsTrue() {
+        assertTrue(ParserUtil.isIndexInput("1"));
+        assertTrue(ParserUtil.isIndexInput("  12  "));
+        assertTrue(ParserUtil.isIndexInput("0"));
+        assertTrue(ParserUtil.isIndexInput("-1"));
+        assertTrue(ParserUtil.isIndexInput("+1"));
+        // A malformed index is still the user reaching for an index, not for a name.
+        assertTrue(ParserUtil.isIndexInput("1 abc"));
+        assertTrue(ParserUtil.isIndexInput("2 p/91234567"));
+    }
+
+    @Test
+    public void isIndexInput_firstWordIsNotANumber_returnsFalse() {
+        assertFalse(ParserUtil.isIndexInput("Alice Pauline"));
+        assertFalse(ParserUtil.isIndexInput("Alice 2"));
+        assertFalse(ParserUtil.isIndexInput("1a"));
+        assertFalse(ParserUtil.isIndexInput(""));
+        assertFalse(ParserUtil.isIndexInput("   "));
+    }
+
+    @Test
+    public void isIndexInput_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.isIndexInput(null));
     }
 }
