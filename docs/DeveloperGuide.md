@@ -337,7 +337,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
 | `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
 | `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
-| `* * *`  | user                                       | clear all contacts after confirming | start over when I no longer need the list                              |
+| `* * *`  | user                                       | clear all contacts | start over when I no longer need the list                              |
+| `* *`    | careless user                              | be asked to confirm before contacts are deleted or cleared | avoid wiping out contacts by a mistyped command                  |
 | `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data   
 | `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
 | `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
@@ -689,7 +690,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
+* **Contact**: A record of one person. Only the name is required; a company, a role, a contact number, an email address, a LinkedIn URL and any number of tags are each optional, and the single-valued ones hold at most one value apiece
 * **Contact number**: A phone number made up of at least three digits, which may also use spaces, hyphens, a leading plus sign for a country code, and balanced parentheses
 * **Prefix**: A field marker in a command, such as `c/` for a company or `e/` for an email. Prefixes are case-sensitive
 * **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field

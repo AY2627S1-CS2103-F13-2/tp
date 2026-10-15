@@ -10,13 +10,19 @@
 
 * **Who it is for:** students and professionals who attend networking events, career fairs and conferences, type fast, and are comfortable with a CLI.
 * **What it does:**
-  * `add` a contact, with multiple companies, roles, numbers and emails per person
-  * `find` a contact by name (partial matches allowed), phone number or email, and view everything stored about them
-  * `edit` details that were mistyped or have changed
-  * `delete` contacts by email, phone number or name, after confirmation
-  * `list` all contacts, `help` for command formats, `clear` the whole list, and `exit`
-  * Detects duplicate phone numbers and emails, and lets you keep, replace or merge the records
+  * `add` a contact with their name, and optionally a company, role, phone number, email, LinkedIn profile and tags
+  * `find` a contact by part of their name, or by phone number or email, and `view` everything stored about them
+  * `edit` details that were mistyped or have changed, one field or several at a time
+  * `delete` a contact by name or by its number in the list, or `clear` the whole list
+  * `list` all contacts, `help` for command formats, and `exit`
+  * Refuses to store two contacts under the same name, and refuses an `edit` that would reuse another contact's phone number or email
   * Saves automatically after every change, and recovers what it can from a corrupted data file
+
+* **Planned for after the MVP:** several companies, roles, numbers or emails per contact; deleting by
+  email or phone number; deleting several contacts at once; a confirmation prompt before `delete` and
+  `clear`; merging duplicate records rather than only refusing them; catching a duplicate phone number
+  or email on `add` as well as on `edit`; and treating names that differ only in letter case as the
+  same contact.
 
 * **Getting started:** see the [User Guide](https://ay2627s1-cs2103-f13-2.github.io/tp/UserGuide.html).
 * **For developers:** see the [Developer Guide](https://ay2627s1-cs2103-f13-2.github.io/tp/DeveloperGuide.html).
