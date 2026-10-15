@@ -57,6 +57,22 @@ public class ContactFile implements ReadOnlyContactFile {
     }
 
     /**
+     * Returns true if a person with the same email as {@code person} exists in the contact file.
+     */
+    public boolean hasEmail(Person person) {
+        requireNonNull(person);
+        return persons.containsEmail(person);
+    }
+
+    /**
+     * Returns true if a person with the same phone as {@code person} exists in the contact file.
+     */
+    public boolean hasPhone(Person person) {
+        requireNonNull(person);
+        return persons.containsPhone(person);
+    }
+
+    /**
      * Adds a person to the contact file.
      * The person must not already exist in the contact file.
      */

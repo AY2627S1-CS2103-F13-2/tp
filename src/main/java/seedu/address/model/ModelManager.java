@@ -76,6 +76,18 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public boolean hasEmail(Person person) {
+        requireNonNull(person);
+        return contactFile.hasEmail(person);
+    }
+
+    @Override
+    public boolean hasPhone(Person person) {
+        requireNonNull(person);
+        return contactFile.hasPhone(person);
+    }
+
+    @Override
     public void deletePerson(Person target) {
         contactFile.removePerson(target);
     }
