@@ -6,13 +6,13 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.EditCommand.RemovableField;
-import seedu.address.model.AddressBook;
+import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -24,7 +24,7 @@ import seedu.address.testutil.PersonBuilder;
  */
 public class EditCommandRemoveFieldTest {
 
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     @Test
     public void execute_removeCompany_success() {
@@ -33,7 +33,7 @@ public class EditCommandRemoveFieldTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         Person editedAlice = new PersonBuilder(ALICE).withCompany(null).build();
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.setPerson(ALICE, editedAlice);
 
         assertCommandSuccess(editCommand, model, "Updated Alice Pauline's company to none.", expectedModel);
@@ -47,7 +47,7 @@ public class EditCommandRemoveFieldTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         Person editedAlice = new PersonBuilder(ALICE).withRole(null).withPhone(null).build();
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.setPerson(ALICE, editedAlice);
 
         String expectedMessage = "Updated Alice Pauline's role to none.\n"
