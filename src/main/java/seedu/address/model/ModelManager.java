@@ -78,13 +78,13 @@ public class ModelManager implements Model {
     @Override
     public boolean hasEmail(Person person) {
         requireNonNull(person);
-        return addressBook.hasEmail(person);
+        return contactFile.hasEmail(person);
     }
 
     @Override
     public boolean hasPhone(Person person) {
         requireNonNull(person);
-        return addressBook.hasPhone(person);
+        return contactFile.hasPhone(person);
     }
 
     @Override
