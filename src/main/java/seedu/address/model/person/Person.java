@@ -93,8 +93,8 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same phone. 
-     * Phone number is normalised before checking 
+     * Returns true if both persons have the same phone.
+     * Phone number is normalised before checking
      */
     public boolean hasSamePhone(Person otherPerson) {
         if (otherPerson == this) {
