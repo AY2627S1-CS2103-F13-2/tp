@@ -75,17 +75,17 @@ public class ModelManager implements Model {
         return addressBook.hasPerson(person);
     }
 
-    @Override 
+    @Override
     public boolean hasEmail(Person person) {
         requireNonNull(person);
         return addressBook.hasEmail(person);
     }
 
-    @Override 
+    @Override
     public boolean hasPhone(Person person) {
         requireNonNull(person);
         return addressBook.hasPhone(person);
-    } 
+    }
 
     @Override
     public void deletePerson(Person target) {
