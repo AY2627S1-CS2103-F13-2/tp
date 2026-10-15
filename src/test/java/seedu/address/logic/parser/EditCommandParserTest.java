@@ -95,6 +95,11 @@ public class EditCommandParserTest {
         removeRoleAndLinkedin.removeField(RemovableField.LINKEDIN);
         assertParseSuccess(parser, "1 r/ l/", new EditCommand(INDEX_FIRST_PERSON, removeRoleAndLinkedin));
 
+        EditPersonDescriptor removePhoneAndEmail = new EditPersonDescriptor();
+        removePhoneAndEmail.removeField(RemovableField.PHONE);
+        removePhoneAndEmail.removeField(RemovableField.EMAIL);
+        assertParseSuccess(parser, "1 p/ e/", new EditCommand(INDEX_FIRST_PERSON, removePhoneAndEmail));
+
         // the name is required, so it cannot be removed
         assertParseFailure(parser, "1 n/", Name.MESSAGE_CONSTRAINTS);
     }
