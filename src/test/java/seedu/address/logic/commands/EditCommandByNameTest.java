@@ -74,7 +74,7 @@ public class EditCommandByNameTest {
     public void execute_noMatch_failure() {
         EditCommand editCommand = new EditCommand("Zed", phoneBob);
 
-        assertCommandFailure(editCommand, model, String.format(EditCommand.MESSAGE_NAME_NOT_FOUND, "Zed"));
+        assertCommandFailure(editCommand, model, String.format(PersonNameResolver.MESSAGE_NAME_NOT_FOUND, "Zed"));
     }
 
     @Test

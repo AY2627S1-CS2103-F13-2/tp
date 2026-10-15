@@ -38,6 +38,17 @@ public class ParserUtil {
     }
 
     /**
+     * Returns true if {@code input} is the user identifying a contact by index rather than by name,
+     * i.e. its first word is a number. Commands that accept either form share this test so that the
+     * same input is never read as an index by one command and as a name by another.
+     */
+    public static boolean isIndexInput(String input) {
+        requireNonNull(input);
+        String firstWord = input.trim().split("\\s+")[0];
+        return firstWord.matches("[+-]?\\d+");
+    }
+
+    /**
      * Parses a {@code String name} into a {@code Name}.
      * Leading and trailing whitespaces will be trimmed.
      *

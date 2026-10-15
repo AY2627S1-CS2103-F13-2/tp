@@ -41,7 +41,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         Index index = null;
         String targetName = null;
 
-        if (isIndexPreamble(preamble)) {
+        if (ParserUtil.isIndexInput(preamble)) {
             try {
                 index = ParserUtil.parseIndex(preamble);
             } catch (ParseException pe) {
@@ -85,14 +85,6 @@ public class EditCommandParser implements Parser<EditCommand> {
         return index != null
                 ? new EditCommand(index, editPersonDescriptor)
                 : new EditCommand(targetName, editPersonDescriptor);
-    }
-
-    /**
-     * Returns true if the first word of {@code preamble} is a number, i.e. the user meant to give an index.
-     */
-    private static boolean isIndexPreamble(String preamble) {
-        String firstWord = preamble.split("\\s+")[0];
-        return firstWord.matches("[+-]?\\d+");
     }
 
     /**

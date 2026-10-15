@@ -140,15 +140,32 @@ Examples:
 
 Deletes the specified person from the address book.
 
-Format: `delete INDEX`
+Format: `delete INDEX` or `delete NAME`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
-* The index **must be a positive integer** 1, 2, 3, …​
+* Deletes the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
+* Instead of an index, you can give all or part of the person's name, e.g. `delete John Lim`. Letter case is ignored, and names are matched the same way `find` matches them.
+  * If exactly one person's name contains it, that person is deleted.
+  * If several do, they are listed with numbers and **nothing is deleted**. Enter the command again with the person's number from that list in place of the name.
+  * Deleting by name searches every contact, not just the ones currently on display, so naming someone reaches them even while a `find` filter is hiding them. Once the person is deleted, the full list is shown again.
+* If the first word of your input is a number, it is read as an index rather than as a name. `delete 3` therefore always means "the 3rd person on display".
+* If the address book is empty, Astra reports that there are no contacts to delete and changes nothing.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in the address book.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `delete John Lim` deletes John Lim, if he is the only person whose name contains `John Lim`.
+* `delete Meier`, with both `Benson Meier` and `Daniel Meier` stored, deletes neither and instead reports:
+
+  ```
+  2 contacts found:
+  1. Benson Meier — GovTech — johnd@example.com
+  2. Daniel Meier — DBS — cornelia@example.com
+  To delete one of them, enter the command again with its index in place of the name.
+  ```
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+`delete` cannot be undone. A confirmation prompt is planned for a later version.
+</div>
 
 ### Clearing all entries: `clear`
 
@@ -212,7 +229,7 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
 **Clear** | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
