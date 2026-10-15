@@ -157,6 +157,58 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Identifying a contact by name
+
+`find`, `edit` and `delete` all let the user refer to a contact by name instead of by its index in the
+displayed list. Left to themselves, each command would need its own answer to what naming a contact
+means: how much of the name has to be given, whether case matters, and what to do when a name fits more
+than one contact. Three answers that are meant to agree but are written three times are three answers
+that will eventually disagree, and a user who is told `find Meier` matches two contacts but
+`delete Meier` deletes one would be right to call that a bug.
+
+So there is one answer, in two pieces:
+
+* `NameContainsKeywordsPredicate` (in `model.person`) decides whether a contact's name matches a query.
+  Both sides are trimmed, their runs of whitespace collapsed and their case folded, and the query must
+  then appear in the name as a contiguous run. `find` applies this predicate directly.
+* `PersonNameResolver` (in `logic.commands`) turns a name into the single contact it refers to, by
+  applying that predicate and looking at how many contacts came back. `edit` and `delete` go through it.
+
+`PersonNameResolver#resolve` returns a sealed `Outcome` of either `Unique`, carrying the one contact
+that matched, or `Several`, carrying a numbered list of the matches for the command to show. A name
+matching nothing is a `CommandException` instead, since there is no contact for the caller to act on.
+Making the ambiguous case a value rather than an error is what stops a command from quietly picking the
+first match: there is no `Person` to reach for until the user has narrowed it down.
+
+Two consequences are worth noting:
+
+* **Resolving a name searches every contact, not only the ones on display.** Naming someone therefore
+  reaches them even while a `find` filter is hiding them, which is what a user who has just typed a
+  full name expects. As a side effect the displayed list is narrowed to the matches, so that the
+  contacts under discussion are the contacts on screen; a command that goes on to change the address
+  book restores the full list once it is done.
+* **The resolver is told which command word to name in its message**, so the list of matches ends with
+  "To delete one of them…" or "To edit one of them…" as appropriate. This is the only thing the
+  resolver needs to know about its caller, which keeps the dependency pointing one way: commands depend
+  on the resolver, and the resolver depends on nothing but `Model` and the predicate.
+
+Deciding *whether* the user typed an index or a name happens earlier, in the parsers, and is shared the
+same way: `ParserUtil#isIndexInput` reports whether the first word of the argument is a number.
+`EditCommandParser` and `DeleteCommandParser` both consult it, so no input can be read as an index by
+one command and as a name by another.
+
+#### Alternatives considered
+
+* **Matching full names exactly, instead of reusing `find`'s partial matching.** An earlier draft of
+  `delete` did this, on the grounds that an irreversible command should not act on a fuzzy match. It was
+  dropped because it gave Astra two meanings for the same gesture, and because the ambiguous case is
+  handled by *refusing to delete* and asking the user to pick, which is just as safe and far less
+  surprising than `delete Meier` reporting that nobody is called that.
+* **A `PersonSelector` type with index and name implementations**, which commands would hold instead of
+  a nullable index and a nullable name. This removes the remaining nullable-field pair from `EditCommand`
+  and `DeleteCommand` and would let `view` gain name support for free. It is the natural next step once
+  a third command needs it; it was not done here to keep the change to `edit` small.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -370,14 +422,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
       Use case ends.
 
 
-**Use case: UC02 - Delete contacts**
+**Use case: UC02 - Delete a contact**
 
 **MSS**
 
-1. User enters a delete command with one or more emails, one contact number, or one name.
-2. Astra shows the selected contacts and asks for confirmation.
-3. User confirms.
-4. Astra deletes the contacts, saves the contact list and shows the number of contacts remaining.
+1. User enters a delete command, identifying the contact either by its index in the displayed list or by name.
+2. Astra deletes the contact, saves the contact list and shows the details of the contact it deleted.
 
    Use case ends.
 
@@ -388,36 +438,35 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 1b. The input is empty, mixes selector types, or contains a malformed email.
-    * 1b1. Astra shows the relevant error message.
+* 1b. The input is empty, is a malformed index, or is not a valid name.
+    * 1b1. Astra shows the command usage.
 
       Use case ends.
 
-* 1c. A requested email, contact number or name does not match any contact.
-    * 1c1. Astra identifies the missing target and deletes nothing.
+* 1c. The given index is not in the displayed list.
+    * 1c1. Astra shows that the index is invalid.
 
       Use case ends.
 
-* 1d. Several contacts match the given name.
-    * 1d1. Astra shows a ranked, numbered list of matching contacts with their names, companies and emails.
-    * 1d2. User selects a contact by index.
+* 1d. The given name matches no contact.
+    * 1d1. Astra shows that no contact of that name was found, and deletes nothing.
+
+      Use case ends.
+
+* 1e. Several contacts match the given name.
+    * 1e1. Astra shows a numbered list of the matching contacts with their names, companies and emails, and deletes nothing.
+    * 1e2. User enters the command again with the index of the contact they meant.
 
       Use case resumes at step 2.
 
-    * 1d2a. User enters an invalid index.
-        * 1d2a1. Astra shows an error message.
+**Deferred to a later version**
 
-          Use case resumes at step 1d2.
-
-* 3a. User answers n or cancel.
-    * 3a1. Astra shows that the deletion was cancelled.
-
-      Use case ends.
-
-* 4a. Saving fails.
-    * 4a1. Astra shows a save error. The contact list and file are unchanged.
-
-      Use case ends.
+* Confirming before the contact is deleted. v1.3 deletes immediately; the prompt arrives with the
+  pending-command layer, which UC05 will share.
+* Deleting by email or contact number, and deleting several contacts in one command. These wait on the
+  matching for those fields so that it is shared with `find` rather than written twice.
+* Reporting a failed save and leaving the contact list and file unchanged. This needs atomic saves in
+  `Storage` to be meaningful, since a half-written file is worse than a reported failure.
 
 **Use case: UC03 - Find and view a contact**
 
@@ -525,9 +574,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User requests to clear all contacts.
-2. Astra shows the total number of contacts and asks for confirmation.
-3. User confirms.
-4. Astra saves an empty contact list and shows that 0 contacts remain.
+2. Astra saves an empty contact list and shows how many contacts it cleared and that 0 remain.
 
    Use case ends.
 
@@ -543,10 +590,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 3a. User answers n or cancel.
-    * 3a1. Astra shows that the clear was cancelled and how many contacts remain.
+**Deferred to a later version**
 
-      Use case ends.
+* Confirming before the list is cleared, together with UC02's prompt and sharing the same
+  pending-command layer.
 
 * 3b. User enters a response other than y or n.
     * 3b1. Astra asks the user to enter y or n.
@@ -693,7 +740,7 @@ testers are expected to do more *exploratory* testing.
 
 ### Deleting a person
 
-1. Deleting a person while all persons are being shown
+1. Deleting a person by index while all persons are being shown
 
    1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
 
@@ -701,12 +748,67 @@ testers are expected to do more *exploratory* testing.
       Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
 
    1. Test case: `delete 0`<br>
+      Expected: No person is deleted. The status message shows the command usage.
+
+   1. Other incorrect delete commands to try: `delete`, `delete 1 abc`, `delete x` (where x is larger than the list size)<br>
       Expected: No person is deleted. The status message shows error details.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+1. Deleting a person by index while the list is filtered
 
-1. _{ more test cases …​ }_
+   1. Prerequisites: Filter the list with `find Meier`, so that fewer persons are shown than are stored.
+
+   1. Test case: `delete 1`<br>
+      Expected: The first contact *of the filtered results* is deleted. The remaining results stay on display.
+
+   1. Test case: `delete x` (where x is larger than the number of results but no larger than the number stored)<br>
+      Expected: No person is deleted. The status message says the index is invalid, since the index refers to what is displayed.
+
+1. Deleting a person by name
+
+   1. Prerequisites: List all persons using the `list` command. The sample data has one `Alice Pauline`, and both a `Benson Meier` and a `Daniel Meier`.
+
+   1. Test case: `delete Alice Pauline`<br>
+      Expected: Alice Pauline is deleted. The status message shows her details, and every remaining contact is shown again.
+
+   1. Test case: `delete alice pauline`<br>
+      Expected: As above; letter case is ignored.
+
+   1. Test case: `delete Pauline`<br>
+      Expected: As above; a partial name is enough when only one contact matches it.
+
+   1. Test case: `delete Meier`<br>
+      Expected: **Nothing is deleted.** The status message lists both Meiers, numbered, with their companies and emails, and asks for the command to be entered again with an index. Following it with `delete 2` deletes the second one listed.
+
+   1. Test case: `delete Zed`<br>
+      Expected: No person is deleted. The status message says no contact named Zed was found, and the full list is still shown.
+
+   1. Test case: `find Alice` followed by `delete Carl Kurz`<br>
+      Expected: Carl Kurz is deleted even though he was not among the displayed results, since naming a contact searches every contact.
+
+   1. Other invalid names to try: `delete @#$`, `delete -Alice`<br>
+      Expected: No person is deleted. The status message shows the command usage.
+
+1. Deleting from an empty address book
+
+   1. Prerequisites: Remove every contact with the `clear` command.
+
+   1. Test case: `delete 1`, and `delete Alice Pauline`<br>
+      Expected: No person is deleted. Both report that there are no contacts to delete, rather than complaining about the index or the name.
+
+### Clearing all entries
+
+1. Clearing a list that has contacts in it
+
+   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+
+   1. Test case: `clear`<br>
+      Expected: Every contact is removed. The status message reports how many were cleared and that 0 remain.
+
+   1. Test case: `clear` again, on the now empty list<br>
+      Expected: Nothing changes. The status message reports that there are no contacts to clear.
+
+   1. Test case: `clear 3`<br>
+      Expected: Nothing is cleared. The status message shows the command usage, since `clear` takes no parameters.
 
 ### Saving data
 

@@ -29,7 +29,6 @@ import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Role;
@@ -68,10 +67,6 @@ public class EditCommand extends Command {
     public static final String MESSAGE_ALREADY_SAVED_FOR_OTHER =
             "%1$s is already saved for %2$s. No changes were applied.";
 
-    public static final String MESSAGE_NAME_NOT_FOUND = "No contact named %1$s found.";
-    public static final String MESSAGE_SEVERAL_NAME_MATCHES = "%1$d contacts found:\n%2$s\n"
-            + "To edit one of them, enter the command again with its index in place of the name.";
-
     private final Index index;
     private final String targetName;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -105,22 +100,23 @@ public class EditCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Index targetIndex = index;
-        if (targetName != null) {
-            int matchCount = showPersonsMatchingTargetName(model);
-            if (matchCount > 1) {
-                return new CommandResult(String.format(MESSAGE_SEVERAL_NAME_MATCHES,
-                        matchCount, formatNumberedList(model.getFilteredPersonList())));
+
+        Person personToEdit;
+        if (targetName == null) {
+            List<Person> lastShownList = model.getFilteredPersonList();
+            if (index.getZeroBased() >= lastShownList.size()) {
+                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
             }
-            targetIndex = Index.fromOneBased(1);
+            personToEdit = lastShownList.get(index.getZeroBased());
+        } else {
+            switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
+                case PersonNameResolver.Outcome.Unique unique -> personToEdit = unique.person();
+                case PersonNameResolver.Outcome.Several several -> {
+                    return new CommandResult(several.message());
+                }
+            }
         }
-        List<Person> lastShownList = model.getFilteredPersonList();
 
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        Person personToEdit = lastShownList.get(targetIndex.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
         if (editedPerson.equals(personToEdit)) {
@@ -253,38 +249,6 @@ public class EditCommand extends Command {
 
         return new Person(updatedName, updatedCompany, updatedRole, updatedPhone, updatedEmail, updatedLinkedin,
                 updatedTags);
-    }
-
-    /**
-     * Shows only the persons whose names contain {@code targetName}, ignoring case, and returns how many there are.
-     * If there are none, the full list is shown again and a {@code CommandException} is thrown.
-     */
-    private int showPersonsMatchingTargetName(Model model) throws CommandException {
-        model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of(targetName)));
-        int matchCount = model.getFilteredPersonList().size();
-        if (matchCount == 0) {
-            model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-            throw new CommandException(String.format(MESSAGE_NAME_NOT_FOUND, targetName));
-        }
-        return matchCount;
-    }
-
-    /**
-     * Returns the given persons as numbered lines of their name, company and email, skipping absent details,
-     * e.g. "1. John Lim \u2014 Google \u2014 john.lim@example.com".
-     */
-    private static String formatNumberedList(List<Person> persons) {
-        StringBuilder list = new StringBuilder();
-        for (int i = 0; i < persons.size(); i++) {
-            Person person = persons.get(i);
-            if (i > 0) {
-                list.append("\n");
-            }
-            list.append(i + 1).append(". ").append(person.getName());
-            person.getCompany().ifPresent(company -> list.append(" \u2014 ").append(company));
-            person.getEmail().ifPresent(email -> list.append(" \u2014 ").append(email));
-        }
-        return list.toString();
     }
 
     @Override
