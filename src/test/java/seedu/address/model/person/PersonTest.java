@@ -102,6 +102,7 @@ public class PersonTest {
 
         // one email absent -> returns false
         assertFalse(personWithoutEmail.hasSameEmail(ALICE));
+        assertFalse(ALICE.hasSameEmail(personWithoutEmail));
     }
 
     @Test
