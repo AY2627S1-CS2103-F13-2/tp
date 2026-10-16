@@ -90,6 +90,19 @@ public class PersonTest {
         // same email, different other fields -> returns true
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertTrue(ALICE.hasSameEmail(editedAlice));
+
+        // same email with different letter case -> returns true
+        editedAlice = new PersonBuilder(ALICE).withEmail(ALICE.getEmail().orElseThrow().value.toUpperCase()).build();
+        assertTrue(ALICE.hasSameEmail(editedAlice));
+
+        // both emails absent -> returns false
+        Person personWithoutEmail = new PersonBuilder().withName(VALID_NAME_BOB).withEmail(null).build();
+        Person anotherPersonWithoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
+        assertFalse(personWithoutEmail.hasSameEmail(anotherPersonWithoutEmail));
+
+        // one email absent -> returns false
+        assertFalse(personWithoutEmail.hasSameEmail(ALICE));
+        assertFalse(ALICE.hasSameEmail(personWithoutEmail));
     }
 
     @Test
@@ -158,6 +171,13 @@ public class PersonTest {
         // identity is still the name, so two contacts with no other details still clash
         Person otherNameOnly = new PersonBuilder(NAME_ONLY).build();
         assertTrue(NAME_ONLY.isSamePerson(otherNameOnly));
+    }
+
+    @Test
+    public void isSamePerson_otherPersonHasNoEmail_returnsFalse() {
+        Person withEmail = new PersonBuilder(ALICE).build();
+        Person withoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
+        assertFalse(withEmail.isSamePerson(withoutEmail));
     }
 
     @Test

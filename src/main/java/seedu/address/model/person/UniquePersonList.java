@@ -39,7 +39,9 @@ public class UniquePersonList implements Iterable<Person> {
      * Returns true if the list contains an equivalent email as the given argument.
      */
     public boolean containsEmail(Person toCheck) {
-        requireNonNull(toCheck);
+        if (toCheck.getEmail().isEmpty()) {
+            return false;
+        }
         return internalList.stream().anyMatch(toCheck::hasSameEmail);
     }
 
@@ -47,7 +49,9 @@ public class UniquePersonList implements Iterable<Person> {
      * Returns true if the list contains an equivalent phone as the given argument.
      */
     public boolean containsPhone(Person toCheck) {
-        requireNonNull(toCheck);
+        if (toCheck.getPhone().isEmpty()) {
+            return false;
+        }
         return internalList.stream().anyMatch(toCheck::hasSamePhone);
     }
 
