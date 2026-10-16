@@ -99,6 +99,9 @@ public class PersonTest {
         Person personWithoutEmail = new PersonBuilder().withName(VALID_NAME_BOB).withEmail(null).build();
         Person anotherPersonWithoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
         assertFalse(personWithoutEmail.hasSameEmail(anotherPersonWithoutEmail));
+
+        // one email absent -> returns false
+        assertFalse(personWithoutEmail.hasSameEmail(ALICE));
     }
 
     @Test
