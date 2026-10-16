@@ -46,6 +46,25 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void containsPhone_personNotInList_returnsFalse() {
+        assertFalse(uniquePersonList.containsPhone(ALICE));
+    }
+
+    @Test
+    public void containsPhone_personWithSamePhoneInList_returnsTrue() {
+        uniquePersonList.add(ALICE);
+        Person personWithSamePhone = new PersonBuilder(BOB).withPhone(ALICE.getPhone().orElseThrow().value).build();
+        assertTrue(uniquePersonList.containsPhone(personWithSamePhone));
+    }
+
+    @Test
+    public void containsPhone_personWithoutPhone_returnsFalse() {
+        uniquePersonList.add(ALICE);
+        Person personWithoutPhone = new PersonBuilder(BOB).withPhone(null).build();
+        assertFalse(uniquePersonList.containsPhone(personWithoutPhone));
+    }
+
+    @Test
     public void add_nullPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> uniquePersonList.add(null));
     }
