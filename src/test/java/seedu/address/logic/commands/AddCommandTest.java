@@ -19,6 +19,7 @@ import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.person.Person;
@@ -111,6 +112,20 @@ public class AddCommandTest {
         ModelStub modelStub = new ModelStubWithPerson(existing);
 
         assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_EMAIL, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_personWithoutEmailAndExistingPersonWithoutEmail_addSuccessful() throws Exception {
+        Model model = new ModelManager();
+        Person existing = new PersonBuilder().withName("Alice").withPhone("81111111").withEmail(null).build();
+        model.addPerson(existing);
+        Person toAdd = new PersonBuilder().withName("YC").withPhone("82222222").withEmail(null).build();
+
+        CommandResult commandResult = new AddCommand(toAdd).execute(model);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(toAdd)),
+                commandResult.getFeedbackToUser());
+        assertEquals(List.of(existing, toAdd), model.getFilteredPersonList());
     }
 
     @Test
