@@ -194,7 +194,7 @@ Format: `view INDEX`
 * Details the person does not have are left out rather than shown as empty.
 
 Examples:
-* `list` followed by `view 2` shows the full details of the 2nd person in the address book.
+* `list` followed by `view 2` shows the full details of the 2nd person in the contact file.
 * `find Yeo` followed by `view 1` shows the full details of the first search result.
 
 <div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**

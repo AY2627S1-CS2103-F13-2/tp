@@ -15,14 +15,13 @@
   * `edit` details that were mistyped or have changed, one field or several at a time
   * `delete` a contact by name or by its number in the list, or `clear` the whole list
   * `list` all contacts, `help` for command formats, and `exit`
-  * Refuses to store two contacts under the same name, and refuses an `edit` that would reuse another contact's phone number or email
+  * Refuses to store two contacts under the same name, or to give one contact a phone number or email already saved for another, whether you are adding or editing
   * Saves automatically after every change, and recovers what it can from a corrupted data file
 
 * **Planned for after the MVP:** several companies, roles, numbers or emails per contact; deleting by
   email or phone number; deleting several contacts at once; a confirmation prompt before `delete` and
-  `clear`; merging duplicate records rather than only refusing them; catching a duplicate phone number
-  or email on `add` as well as on `edit`; and treating names that differ only in letter case as the
-  same contact.
+  `clear`; merging duplicate records rather than only refusing them; and treating names that differ
+  only in letter case as the same contact.
 
 * **Getting started:** see the [User Guide](https://ay2627s1-cs2103-f13-2.github.io/tp/UserGuide.html).
 * **For developers:** see the [Developer Guide](https://ay2627s1-cs2103-f13-2.github.io/tp/DeveloperGuide.html).
