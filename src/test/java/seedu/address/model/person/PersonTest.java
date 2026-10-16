@@ -90,6 +90,15 @@ public class PersonTest {
         // same email, different other fields -> returns true
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertTrue(ALICE.hasSameEmail(editedAlice));
+
+        // same email with different letter case -> returns true
+        editedAlice = new PersonBuilder(ALICE).withEmail(ALICE.getEmail().orElseThrow().value.toUpperCase()).build();
+        assertTrue(ALICE.hasSameEmail(editedAlice));
+
+        // both emails absent -> returns false
+        Person personWithoutEmail = new PersonBuilder().withName(VALID_NAME_BOB).withEmail(null).build();
+        Person anotherPersonWithoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
+        assertFalse(personWithoutEmail.hasSameEmail(anotherPersonWithoutEmail));
     }
 
     @Test

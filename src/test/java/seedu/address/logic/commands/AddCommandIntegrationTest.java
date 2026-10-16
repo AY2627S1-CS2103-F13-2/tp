@@ -45,4 +45,13 @@ public class AddCommandIntegrationTest {
                 AddCommand.MESSAGE_DUPLICATE_PERSON);
     }
 
+    @Test
+    public void execute_duplicateEmailWithDifferentCase_throwsCommandException() {
+        Person existing = new PersonBuilder().withName("Alice").withEmail("casecheck.unique@example.com").build();
+        model.addPerson(existing);
+        Person toAdd = new PersonBuilder().withName("Bob").withEmail("CASECHECK.UNIQUE@EXAMPLE.COM").build();
+
+        assertCommandFailure(new AddCommand(toAdd), model, AddCommand.MESSAGE_DUPLICATE_EMAIL);
+    }
+
 }

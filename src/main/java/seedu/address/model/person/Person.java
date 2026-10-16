@@ -114,7 +114,9 @@ public class Person {
         }
 
         return otherPerson != null
-                && otherPerson.getEmail().equals(getEmail());
+                && getEmail().isPresent()
+                && otherPerson.getEmail().isPresent()
+                && otherPerson.getEmail().orElseThrow().value.equalsIgnoreCase(getEmail().orElseThrow().value);
     }
 
     /**
