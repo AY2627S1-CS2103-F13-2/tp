@@ -173,6 +173,13 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_otherPersonHasNoEmail_returnsFalse() {
+        Person withEmail = new PersonBuilder(ALICE).build();
+        Person withoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
+        assertFalse(withEmail.isSamePerson(withoutEmail));
+    }
+
+    @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName()
                 + ", company=" + ALICE.getCompany().orElse(null)
