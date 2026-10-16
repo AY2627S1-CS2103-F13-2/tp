@@ -23,7 +23,7 @@ public class AddCommand extends Command {
     public static final String COMMAND_WORD = "add";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the contact file. "
-            + "Only the name, company, role, email and phone number is required.\n"
+            + "Only the name is required; every other detail is optional.\n"
             + "Parameters: "
             + PREFIX_NAME + "NAME "
             + "[" + PREFIX_COMPANY + "COMPANY] "
