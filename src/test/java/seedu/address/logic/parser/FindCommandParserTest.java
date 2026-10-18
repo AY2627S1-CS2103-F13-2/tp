@@ -13,6 +13,7 @@ import seedu.address.model.person.ContactFieldPredicate;
 import seedu.address.model.person.ContactFieldPredicate.Field;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.EventContainsKeywordsPredicate;
+import seedu.address.model.person.FuzzyNamePredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Phone;
 
@@ -113,6 +114,38 @@ public class FindCommandParserTest {
         assertParseFailure(
                 parser,
                 "/event",
+                String.format(
+                        MESSAGE_INVALID_COMMAND_FORMAT,
+                        FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_validFuzzyName_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(new FuzzyNamePredicate("Alicee"));
+
+        assertParseSuccess(
+                parser,
+                "/fuzzy Alicee",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_fuzzyNameWithExtraSpaces_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(new FuzzyNamePredicate("Alicee"));
+
+        assertParseSuccess(
+                parser,
+                " /fuzzy   Alicee ",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_missingFuzzyName_throwsParseException() {
+        assertParseFailure(
+                parser,
+                "/fuzzy",
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
                         FindCommand.MESSAGE_USAGE));
