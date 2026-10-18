@@ -12,6 +12,7 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.model.person.ContactFieldPredicate;
 import seedu.address.model.person.ContactFieldPredicate.Field;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.EventContainsKeywordsPredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Phone;
 
@@ -81,5 +82,39 @@ public class FindCommandParserTest {
     public void parse_unknownSelector_throwsParseException() {
         assertParseFailure(parser, "/company Google",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_eventSearch_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(
+                        new EventContainsKeywordsPredicate("NUS Career Fair"));
+
+        assertParseSuccess(
+                parser,
+                "/event NUS Career Fair",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_eventSearchWithExtraSpaces_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(
+                        new EventContainsKeywordsPredicate("NUS Career Fair"));
+
+        assertParseSuccess(
+                parser,
+                " /event   NUS   Career   Fair ",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_eventSearchWithoutValue_throwsParseException() {
+        assertParseFailure(
+                parser,
+                "/event",
+                String.format(
+                        MESSAGE_INVALID_COMMAND_FORMAT,
+                        FindCommand.MESSAGE_USAGE));
     }
 }
