@@ -93,12 +93,19 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_duplicatePerson_throwsCommandException() {
-        Person validPerson = new PersonBuilder().build();
-        AddCommand addCommand = new AddCommand(validPerson);
-        ModelStub modelStub = new ModelStubWithPerson(validPerson);
+    public void execute_sameNameDifferentDetails_addSuccessful() throws Exception {
+        Model model = new ModelManager();
+        Person existing = new PersonBuilder().withName("Alice").withPhone("81111111")
+                .withEmail("alice@example.com").build();
+        Person toAdd = new PersonBuilder().withName("Alice").withPhone("82222222")
+                .withEmail("alice2@example.com").build();
+        model.addPerson(existing);
 
-        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+        CommandResult commandResult = new AddCommand(toAdd).execute(model);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(toAdd)),
+                commandResult.getFeedbackToUser());
+        assertEquals(List.of(existing, toAdd), model.getFilteredPersonList());
     }
 
     @Test

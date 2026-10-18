@@ -62,11 +62,6 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        //TODO:If same name exist in the contact prompt user if he/she wants to update that contact
-        if (model.hasPerson(toAdd)) {
-            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
-        }
-
         if (model.hasEmail(toAdd)) {
             throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
         }
