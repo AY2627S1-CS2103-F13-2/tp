@@ -28,16 +28,42 @@ public class Person {
     private final Email email;
     private final Linkedin linkedin;
     private final Set<Tag> tags = new HashSet<>();
+    private final Set<Event> events = new HashSet<>();
 
     /**
-     * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
-     * contact is often captured with just a name and whatever details were exchanged, so
-     * {@code company}, {@code role}, {@code phone}, {@code email} and {@code linkedin} may be null.
+     * Constructs a {@code Person} without any events.
+     *
+     * @param name name of the person
+     * @param company company of the person
+     * @param role role of the person
+     * @param phone phone number of the person
+     * @param email email of the person
+     * @param linkedin LinkedIn profile of the person
+     * @param tags tags associated with the person
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
             Set<Tag> tags) {
+        this(name, company, role, phone, email, linkedin, tags, new HashSet<>());
+    }
+
+    /**
+     * Constructs a {@code Person} with the given events.
+     *
+     * @param name name of the person
+     * @param company company of the person
+     * @param role role of the person
+     * @param phone phone number of the person
+     * @param email email of the person
+     * @param linkedin LinkedIn profile of the person
+     * @param tags tags associated with the person
+     * @param events events associated with the person
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, Set<Event> events) {
         requireNonNull(name);
         requireNonNull(tags);
+        requireNonNull(events);
+
         this.name = name;
         this.company = company;
         this.role = role;
@@ -45,6 +71,7 @@ public class Person {
         this.email = email;
         this.linkedin = linkedin;
         this.tags.addAll(tags);
+        this.events.addAll(events);
     }
 
     public Name getName() {
@@ -72,16 +99,41 @@ public class Person {
     }
 
     /**
-     * Returns an immutable tag set, which throws {@code UnsupportedOperationException}
-     * if modification is attempted.
+     * Returns an immutable tag set.
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
     }
 
     /**
+     * Returns an immutable event set.
+     */
+    public Set<Event> getEvents() {
+        return Collections.unmodifiableSet(events);
+    }
+
+    /**
+     * Returns true if this person is associated with the given event.
+     */
+    public boolean hasEvent(Event event) {
+        requireNonNull(event);
+        return events.contains(event);
+    }
+
+    /**
+     * Returns a copy of this person with the given event added.
+     */
+    public Person withEvent(Event event) {
+        requireNonNull(event);
+
+        Set<Event> updatedEvents = new HashSet<>(events);
+        updatedEvents.add(event);
+
+        return new Person(name, company, role, phone, email, linkedin, tags, updatedEvents);
+    }
+
+    /**
      * Returns true if both persons have the same name and both have an email or both do not.
-     * This defines a weaker notion of equality between two persons.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -95,7 +147,6 @@ public class Person {
 
     /**
      * Returns true if both persons have the same phone.
-     * Phone number is normalised before checking
      */
     public boolean hasSamePhone(Person otherPerson) {
         if (otherPerson == this) {
@@ -117,12 +168,12 @@ public class Person {
         return otherPerson != null
                 && getEmail().isPresent()
                 && otherPerson.getEmail().isPresent()
-                && otherPerson.getEmail().orElseThrow().value.equalsIgnoreCase(getEmail().orElseThrow().value);
+                && otherPerson.getEmail().orElseThrow().value
+                        .equalsIgnoreCase(getEmail().orElseThrow().value);
     }
 
     /**
      * Returns true if both persons have the same identity and data fields.
-     * This defines a stronger notion of equality between two persons.
      */
     @Override
     public boolean equals(Object other) {
@@ -130,7 +181,6 @@ public class Person {
             return true;
         }
 
-        // instanceof handles nulls
         if (!(other instanceof Person otherPerson)) {
             return false;
         }
@@ -141,13 +191,13 @@ public class Person {
                 && Objects.equals(phone, otherPerson.phone)
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && events.equals(otherPerson.events);
     }
 
     @Override
     public int hashCode() {
-        // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags);
+        return Objects.hash(name, company, role, phone, email, linkedin, tags, events);
     }
 
     @Override
@@ -160,7 +210,7 @@ public class Person {
                 .add("email", email)
                 .add("linkedin", linkedin)
                 .add("tags", tags)
+                .add("events", events)
                 .toString();
     }
-
 }
