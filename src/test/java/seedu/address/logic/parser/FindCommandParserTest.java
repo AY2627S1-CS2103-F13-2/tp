@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
@@ -58,6 +59,27 @@ public class FindCommandParserTest {
     }
 
     @Test
+    public void parse_validCompany_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(new ContactFieldPredicate(Field.COMPANY, "Google"));
+
+        assertParseSuccess(parser, "/company Google", expectedFindCommand);
+    }
+
+    @Test
+    public void parse_validRole_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(new ContactFieldPredicate(Field.ROLE, "Engineer"));
+
+        assertParseSuccess(parser, "/role Engineer", expectedFindCommand);
+    }
+
+    @Test
+    public void parse_companyAndRole_doesNotThrowParseException() {
+        assertDoesNotThrow(() -> parser.parse("/company Google /role Engineer"));
+    }
+
+    @Test
     public void parse_missingPhone_throwsParseException() {
         assertParseFailure(parser, "/contact", Phone.MESSAGE_CONSTRAINTS);
     }
@@ -79,7 +101,7 @@ public class FindCommandParserTest {
 
     @Test
     public void parse_unknownSelector_throwsParseException() {
-        assertParseFailure(parser, "/company Google",
+        assertParseFailure(parser, "/unknown Google",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
     }
 }
