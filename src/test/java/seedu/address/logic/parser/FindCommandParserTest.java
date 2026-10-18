@@ -80,6 +80,12 @@ public class FindCommandParserTest {
     }
 
     @Test
+    public void parse_companyAndRoleWithMultipleWords_doesNotThrowParseException() {
+        assertDoesNotThrow(() ->
+                parser.parse("/company Google Singapore /role Software Engineer"));
+    }
+
+    @Test
     public void parse_missingPhone_throwsParseException() {
         assertParseFailure(parser, "/contact", Phone.MESSAGE_CONSTRAINTS);
     }
@@ -100,8 +106,38 @@ public class FindCommandParserTest {
     }
 
     @Test
+    public void parse_missingCompany_throwsParseException() {
+        assertParseFailure(parser, "/company",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_missingRole_throwsParseException() {
+        assertParseFailure(parser, "/role",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_duplicateCompany_throwsParseException() {
+        assertParseFailure(parser, "/company Google /company Apple",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_duplicateRole_throwsParseException() {
+        assertParseFailure(parser, "/role Engineer /role Manager",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
     public void parse_unknownSelector_throwsParseException() {
         assertParseFailure(parser, "/unknown Google",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_unknownSelectorAfterCompany_throwsParseException() {
+        assertParseFailure(parser, "/company Google /unknown value",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
     }
 }
