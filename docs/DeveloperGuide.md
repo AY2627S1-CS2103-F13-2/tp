@@ -668,6 +668,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+**Use case: UC21 - Star and retrieve important contacts**
+
+**MSS**
+
+1. User requests to star a contact.
+2. Astra marks the contact as starred and saves the change.
+3. User later requests the starred contact list.
+4. Astra displays all starred contacts.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The contact is already starred.
+    * 1a1. Astra reports that the contact is already starred and makes no changes.
+
+      Use case ends.
+
+* 1b. User requests to remove a contact's star.
+    * 1b1. Astra removes the star, saves the change and displays the updated status.
+
+      Use case ends.
+
+* 4a. No contacts are starred.
+    * 4a1. Astra reports that there are no starred contacts.
+
+      Use case ends.
+
 *{More to be added}*
 
 ### Non-Functional Requirements
