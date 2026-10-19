@@ -217,6 +217,17 @@ canonical value. Email matching uses `Email#matches` and ignores letter case.
 Find, duplicate checks, and startup recovery share these comparisons. Missing
 phone/email values are not shared keys. Existing contact identity is preserved.
 
+### Pending requests
+
+`CommandResult` can carry a `PendingRequest`. Logic retains it with the snapshot
+from before the initial command. `ConfirmationRequest` executes its retained
+command only for y. Logic handles n/cancel, restores the original view, and
+clears pending state on completion, cancellation, or failed confirmed saving.
+Invalid replies repeat the prompt; unrelated commands do not execute while a
+response is pending. Clear uses this mechanism now; delete will adopt it in the
+next package. `PersonSelectionRequest` supplies reusable numbered selection for
+that upcoming workflow. Future UC16 can reuse confirmation, but is deferred.
+
 ### Transactional contact saves
 
 `ModelSnapshot` copies contact contents and retains the original predicate.
@@ -484,7 +495,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Deferred to a later version**
 
 * Confirming before the contact is deleted. v1.3 deletes immediately; the prompt arrives with the
-  pending-command layer, which UC05 will share.
+  pending-command layer already used by UC05.
 * Deleting by email or contact number, and deleting several contacts in one command. These wait on the
   matching for those fields so that it is shared with `find` rather than written twice.
 
@@ -602,37 +613,24 @@ Command-save rollback is implemented through Logic and Storage and applies to ed
 
 **MSS**
 
-1. User requests to clear all contacts.
-2. Astra saves an empty contact list and shows how many contacts it cleared and that 0 remain.
+1. User enters clear with no arguments.
+2. Astra displays the total stored contact count and asks for y/n confirmation.
+3. User replies y.
+4. Astra saves the empty list once and reports how many contacts were cleared
+   and that 0 remain. The full empty list is displayed.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to clear.
-
-      Use case ends.
-
-* 1b. The command has extra arguments.
-    * 1b1. Astra shows the command usage.
-
-      Use case ends.
-
-**Deferred to a later version**
-
-* Confirming before the list is cleared, together with UC02's prompt and sharing the same
-  pending-command layer.
-
-* 3b. User enters a response other than y or n.
-    * 3b1. Astra asks the user to enter y or n.
-
-      Use case resumes at step 3.
-
-* 4a. Saving fails.
-    * 4a1. Astra shows a save error. The contact list and file are unchanged.
-
-      Use case ends.
+* 1a. No contacts are stored: report that there is nothing to clear.
+* 1b. Extra arguments are supplied: show usage and change nothing.
+* 2a. A filter is active: the preview still counts every stored contact.
+* 3a. User replies n/cancel: leave data/file unchanged, restore the pre-request
+  view, and discard the request.
+* 3b. Any other reply: repeat the prompt without mutation or saving.
+* 4a. Saving fails: report the error, restore the original model/filter, retain
+  the old active file, and discard the pending request.
 
 **Use case: UC06 - Start Astra and restore saved contacts**
 
@@ -826,18 +824,16 @@ testers are expected to do more *exploratory* testing.
 
 ### Clearing all entries
 
-1. Clearing a list that has contacts in it
-
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
-
-   1. Test case: `clear`<br>
-      Expected: Every contact is removed. The status message reports how many were cleared and that 0 remain.
-
-   1. Test case: `clear` again, on the now empty list<br>
-      Expected: Nothing changes. The status message reports that there are no contacts to clear.
-
-   1. Test case: `clear 3`<br>
-      Expected: Nothing is cleared. The status message shows the command usage, since `clear` takes no parameters.
+1. With several contacts stored, run `find Alice`, then `clear`: expect the
+   total stored count, not the filtered count, and no changes before `y`.
+2. Enter `n` or `cancel`: expect every contact intact and the original filtered
+   results restored. Invalid replies repeat the prompt.
+3. Repeat `clear`, then `y`: expect every contact removed, the cleared count and
+   0 remaining reported, and an empty full list. Restart and verify it stays empty.
+4. Run `clear` again: expect nothing to clear. Run `clear 3`: expect usage and no
+   mutation. Neither command should save.
+5. Simulate failed saving with the storage test doubles: confirmed clear must preserve the old file bytes, original contacts, original order,
+   and filter. A later y must not replay a failed request.
 
 ### Saving data
 
