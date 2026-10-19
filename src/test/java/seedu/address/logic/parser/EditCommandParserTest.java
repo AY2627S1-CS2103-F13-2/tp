@@ -38,7 +38,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
-import seedu.address.model.person.Company;
+import seedu.address.logic.commands.EditCommand.RemovableField;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
@@ -85,6 +85,26 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_emptyOptionalField_removesField() {
+        EditPersonDescriptor removeCompany = new EditPersonDescriptor();
+        removeCompany.removeField(RemovableField.COMPANY);
+        assertParseSuccess(parser, "1 c/", new EditCommand(INDEX_FIRST_PERSON, removeCompany));
+
+        EditPersonDescriptor removeRoleAndLinkedin = new EditPersonDescriptor();
+        removeRoleAndLinkedin.removeField(RemovableField.ROLE);
+        removeRoleAndLinkedin.removeField(RemovableField.LINKEDIN);
+        assertParseSuccess(parser, "1 r/ l/", new EditCommand(INDEX_FIRST_PERSON, removeRoleAndLinkedin));
+
+        EditPersonDescriptor removePhoneAndEmail = new EditPersonDescriptor();
+        removePhoneAndEmail.removeField(RemovableField.PHONE);
+        removePhoneAndEmail.removeField(RemovableField.EMAIL);
+        assertParseSuccess(parser, "1 p/ e/", new EditCommand(INDEX_FIRST_PERSON, removePhoneAndEmail));
+
+        // the name is required, so it cannot be removed
+        assertParseFailure(parser, "1 n/", Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_nameInsteadOfIndex_success() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build();
         EditCommand expectedCommand = new EditCommand(VALID_NAME_AMY, descriptor);
@@ -98,7 +118,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
-        assertParseFailure(parser, "1" + INVALID_COMPANY_DESC, Company.MESSAGE_CONSTRAINTS); // invalid company
+        // an empty company removes the company instead (see parse_emptyOptionalField_removesField)
         assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS); // invalid tag
 
         // invalid phone followed by valid email

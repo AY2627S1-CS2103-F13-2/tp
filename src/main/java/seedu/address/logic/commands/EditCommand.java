@@ -12,6 +12,7 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -240,15 +241,32 @@ public class EditCommand extends Command {
         assert personToEdit != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
-        Company updatedCompany = editPersonDescriptor.getCompany().or(personToEdit::getCompany).orElse(null);
-        Role updatedRole = editPersonDescriptor.getRole().or(personToEdit::getRole).orElse(null);
-        Phone updatedPhone = editPersonDescriptor.getPhone().or(personToEdit::getPhone).orElse(null);
-        Email updatedEmail = editPersonDescriptor.getEmail().or(personToEdit::getEmail).orElse(null);
-        Linkedin updatedLinkedin = editPersonDescriptor.getLinkedin().or(personToEdit::getLinkedin).orElse(null);
+        Company updatedCompany = updatedValue(editPersonDescriptor, RemovableField.COMPANY,
+                editPersonDescriptor.getCompany(), personToEdit.getCompany());
+        Role updatedRole = updatedValue(editPersonDescriptor, RemovableField.ROLE,
+                editPersonDescriptor.getRole(), personToEdit.getRole());
+        Phone updatedPhone = updatedValue(editPersonDescriptor, RemovableField.PHONE,
+                editPersonDescriptor.getPhone(), personToEdit.getPhone());
+        Email updatedEmail = updatedValue(editPersonDescriptor, RemovableField.EMAIL,
+                editPersonDescriptor.getEmail(), personToEdit.getEmail());
+        Linkedin updatedLinkedin = updatedValue(editPersonDescriptor, RemovableField.LINKEDIN,
+                editPersonDescriptor.getLinkedin(), personToEdit.getLinkedin());
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
         return new Person(updatedName, updatedCompany, updatedRole, updatedPhone, updatedEmail, updatedLinkedin,
                 updatedTags, personToEdit.isStarred());
+    }
+
+    /**
+     * Returns the value an optional field should have after the edit: null if the edit removes the field,
+     * otherwise the new value if one is given, or else the current value (which may be absent, i.e. null).
+     */
+    private static <T> T updatedValue(EditPersonDescriptor editPersonDescriptor, RemovableField field,
+            Optional<T> newValue, Optional<T> currentValue) {
+        if (editPersonDescriptor.isRemoved(field)) {
+            return null;
+        }
+        return newValue.or(() -> currentValue).orElse(null);
     }
 
     @Override
@@ -277,6 +295,13 @@ public class EditCommand extends Command {
     }
 
     /**
+     * Optional person fields that an edit can remove.
+     */
+    public enum RemovableField {
+        COMPANY, ROLE, PHONE, EMAIL, LINKEDIN
+    }
+
+    /**
      * Stores the details to edit the person with. Each non-empty field value will replace the
      * corresponding field value of the person.
      */
@@ -288,6 +313,7 @@ public class EditCommand extends Command {
         private Email email;
         private Linkedin linkedin;
         private Set<Tag> tags;
+        private final Set<RemovableField> fieldsToRemove = EnumSet.noneOf(RemovableField.class);
 
         public EditPersonDescriptor() {}
 
@@ -303,13 +329,29 @@ public class EditCommand extends Command {
             setEmail(toCopy.email);
             setLinkedin(toCopy.linkedin);
             setTags(toCopy.tags);
+            fieldsToRemove.addAll(toCopy.fieldsToRemove);
         }
 
         /**
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, company, role, phone, email, linkedin, tags);
+            return CollectionUtil.isAnyNonNull(name, company, role, phone, email, linkedin, tags)
+                    || !fieldsToRemove.isEmpty();
+        }
+
+        /**
+         * Marks {@code field} to be removed from the person by this edit.
+         */
+        public void removeField(RemovableField field) {
+            fieldsToRemove.add(field);
+        }
+
+        /**
+         * Returns true if this edit removes {@code field} from the person.
+         */
+        public boolean isRemoved(RemovableField field) {
+            return fieldsToRemove.contains(field);
         }
 
         public void setName(Name name) {
@@ -394,7 +436,8 @@ public class EditCommand extends Command {
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
                     && Objects.equals(linkedin, otherEditPersonDescriptor.linkedin)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && fieldsToRemove.equals(otherEditPersonDescriptor.fieldsToRemove);
         }
 
         @Override
@@ -407,6 +450,7 @@ public class EditCommand extends Command {
                     .add("email", email)
                     .add("linkedin", linkedin)
                     .add("tags", tags)
+                    .add("fieldsToRemove", fieldsToRemove)
                     .toString();
         }
     }

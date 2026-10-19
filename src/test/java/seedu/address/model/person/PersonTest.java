@@ -82,6 +82,53 @@ public class PersonTest {
     }
 
     @Test
+    public void hasSamePhone() {
+        // same object -> returns true
+        assertTrue(ALICE.hasSamePhone(ALICE));
+
+        // null -> returns false
+        assertFalse(ALICE.hasSamePhone(null));
+
+        // different phone -> returns false
+        Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).build();
+        assertFalse(ALICE.hasSamePhone(editedAlice));
+
+        // same phone, different other fields -> returns true
+        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
+        assertTrue(ALICE.hasSamePhone(editedAlice));
+    }
+
+    @Test
+    public void hasSameEmail() {
+        // same object -> returns true
+        assertTrue(ALICE.hasSameEmail(ALICE));
+
+        // null -> returns false
+        assertFalse(ALICE.hasSameEmail(null));
+
+        // different email -> returns false
+        Person editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
+        assertFalse(ALICE.hasSameEmail(editedAlice));
+
+        // same email, different other fields -> returns true
+        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
+        assertTrue(ALICE.hasSameEmail(editedAlice));
+
+        // same email with different letter case -> returns true
+        editedAlice = new PersonBuilder(ALICE).withEmail(ALICE.getEmail().orElseThrow().value.toUpperCase()).build();
+        assertTrue(ALICE.hasSameEmail(editedAlice));
+
+        // both emails absent -> returns false
+        Person personWithoutEmail = new PersonBuilder().withName(VALID_NAME_BOB).withEmail(null).build();
+        Person anotherPersonWithoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
+        assertFalse(personWithoutEmail.hasSameEmail(anotherPersonWithoutEmail));
+
+        // one email absent -> returns false
+        assertFalse(personWithoutEmail.hasSameEmail(ALICE));
+        assertFalse(ALICE.hasSameEmail(personWithoutEmail));
+    }
+
+    @Test
     public void equals() {
         // same values -> returns true
         Person aliceCopy = new PersonBuilder(ALICE).build();
@@ -147,6 +194,13 @@ public class PersonTest {
         // identity is still the name, so two contacts with no other details still clash
         Person otherNameOnly = new PersonBuilder(NAME_ONLY).build();
         assertTrue(NAME_ONLY.isSamePerson(otherNameOnly));
+    }
+
+    @Test
+    public void isSamePerson_otherPersonHasNoEmail_returnsFalse() {
+        Person withEmail = new PersonBuilder(ALICE).build();
+        Person withoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
+        assertFalse(withEmail.isSamePerson(withoutEmail));
     }
 
     @Test

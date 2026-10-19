@@ -337,7 +337,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
 | `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
 | `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
-| `* * *`  | user                                       | clear all contacts after confirming | start over when I no longer need the list                              |
+| `* * *`  | user                                       | clear all contacts | start over when I no longer need the list                              |
+| `* *`    | careless user                              | be asked to confirm before contacts are deleted or cleared | avoid wiping out contacts by a mistyped command                  |
 | `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data   
 | `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
 | `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
@@ -514,7 +515,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters an edit command with a contact's name and the new values of one or more fields.
+1. User enters an edit command, identifying the contact either by its index in the displayed list or by name, with the new values of one or more fields.
 2. Astra finds the contact and validates the new values.
 3. Astra updates the contact, saves the contact list and lists every updated field.
 
@@ -527,47 +528,54 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 1b. A prefix is unsupported or repeated, a required value is empty, or a value is malformed.
-    * 1b1. Astra shows the relevant error message and the edit command format.
+* 1b. The command format is invalid, a prefix is repeated, or a value is malformed.
+    * 1b1. Astra shows the relevant error message, with the command usage if the format is invalid.
 
       Use case ends.
 
-* 2a. No contact matches the name.
-    * 2a1. Astra shows that the contact was not found.
-
-      Use case ends.
-
-* 2b. Several contacts match the name.
-    * 2b1. Astra shows a ranked, numbered list of matching contacts.
-    * 2b2. User selects a contact by index.
+* 1c. A company, role, contact number, email or LinkedIn prefix is given with no value, e.g. `c/`.
+    * 1c1. Astra treats it as removing that field from the contact.
 
       Use case resumes at step 2.
 
-* 2c. The new contact number or email already belongs to another contact.
-    * 2c1. Astra rejects the whole edit and changes nothing.
+* 2a. The given index is not in the displayed list.
+    * 2a1. Astra shows that the index is invalid.
 
       Use case ends.
 
-* 2d. The new name or LinkedIn URL matches another contact.
-    * 2d1. Astra warns the user and asks for confirmation.
-    * 2d2. User confirms.
-
-      Use case resumes at step 3.
-
-* 2e. Every new value is identical to the current one.
-    * 2e1. Astra shows that there are no changes to apply and does not save.
+* 2b. The given name matches no contact.
+    * 2b1. Astra shows that no contact of that name was found, and changes nothing.
 
       Use case ends.
 
-* 3a. Saving fails.
-    * 3a1. Astra shows a save error. The contact list and file are unchanged.
+* 2c. Several contacts match the given name.
+    * 2c1. Astra shows a numbered list of the matching contacts with their names, companies and emails, and changes nothing.
+    * 2c2. User enters the command again with the index of the contact they meant.
+
+      Use case resumes at step 2.
+
+* 2d. The new contact number or email already belongs to another contact.
+    * 2d1. Astra rejects the whole edit, names the other contact, and changes nothing.
 
       Use case ends.
 
-* *a. At any prompt, the user enters cancel or n.
-    * *a1. Astra shows that the edit was cancelled.
+* 2e. The new name is exactly the name of another contact.
+    * 2e1. Astra rejects the edit and changes nothing.
 
       Use case ends.
+
+* 2f. Every new value is identical to the current one.
+    * 2f1. Astra shows that there are no changes to apply and does not save.
+
+      Use case ends.
+
+**Deferred to a later version**
+* Choosing one of several matching contacts at a prompt instead of entering the command again, and cancelling at
+  any prompt. These arrive with the pending-command layer that UC02 and UC05 will share.
+* Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
+  rejecting an identical name outright. This also needs the pending-command layer.
+* Reporting a failed save and leaving the contact list and file unchanged. As for UC02, this needs atomic saves in
+  `Storage` to be meaningful.
 
 **Use case: UC05 - Clear all contacts**
 
@@ -717,7 +725,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Contact**: A record of one person, made up of a name, one or more companies, roles, contact numbers and emails, and optionally LinkedIn URLs 
+* **Contact**: A record of one person. Only the name is required; a company, a role, a contact number, an email address, a LinkedIn URL and any number of tags are each optional, and the single-valued ones hold at most one value apiece
 * **Contact number**: A phone number made up of at least three digits, which may also use spaces, hyphens, a leading plus sign for a country code, and balanced parentheses
 * **Prefix**: A field marker in a command, such as `c/` for a company or `e/` for an email. Prefixes are case-sensitive
 * **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field

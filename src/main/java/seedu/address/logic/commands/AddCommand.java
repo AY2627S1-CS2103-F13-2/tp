@@ -23,7 +23,7 @@ public class AddCommand extends Command {
     public static final String COMMAND_WORD = "add";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the contact file. "
-            + "Only the name is required.\n"
+            + "Only the name is required; every other detail is optional.\n"
             + "Parameters: "
             + PREFIX_NAME + "NAME "
             + "[" + PREFIX_COMPANY + "COMPANY] "
@@ -44,6 +44,10 @@ public class AddCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the contact file.";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "A person with the same "
+                                                           + "email already exist in the contact file.";
+    public static final String MESSAGE_DUPLICATE_PHONE = "A person with the same "
+                                                            + "phone already exist in the contact file";
 
     private final Person toAdd;
 
@@ -58,11 +62,18 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-
+        //TODO:If same name exist in the contact prompt user if he/she wants to update that contact
         if (model.hasPerson(toAdd)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
+        if (model.hasEmail(toAdd)) {
+            throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
+        }
+
+        if (model.hasPhone(toAdd)) {
+            throw new CommandException(MESSAGE_DUPLICATE_PHONE);
+        }
         model.addPerson(toAdd);
         return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
     }

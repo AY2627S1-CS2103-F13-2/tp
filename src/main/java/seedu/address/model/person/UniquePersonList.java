@@ -10,7 +10,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.address.model.person.exceptions.DuplicatePersonException;
 import seedu.address.model.person.exceptions.PersonNotFoundException;
-
 /**
  * A list of persons that enforces uniqueness between its elements and does not allow nulls.
  * A person is considered unique by comparing using {@code Person#isSamePerson(Person)}. As such, adding and updating of
@@ -37,11 +36,32 @@ public class UniquePersonList implements Iterable<Person> {
     }
 
     /**
+     * Returns true if the list contains an equivalent email as the given argument.
+     */
+    public boolean containsEmail(Person toCheck) {
+        if (toCheck.getEmail().isEmpty()) {
+            return false;
+        }
+        return internalList.stream().anyMatch(toCheck::hasSameEmail);
+    }
+
+    /**
+     * Returns true if the list contains an equivalent phone as the given argument.
+     */
+    public boolean containsPhone(Person toCheck) {
+        if (toCheck.getPhone().isEmpty()) {
+            return false;
+        }
+        return internalList.stream().anyMatch(toCheck::hasSamePhone);
+    }
+
+    /**
      * Adds a person to the list.
      * The person must not already exist in the list.
      */
     public void add(Person toAdd) {
         requireNonNull(toAdd);
+        //TODO: Name does not uniquely identify a person so do not throw error
         if (contains(toAdd)) {
             throw new DuplicatePersonException();
         }
