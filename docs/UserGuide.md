@@ -30,7 +30,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 
    * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Contact File.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
    * `clear`, then `y`: Deletes all contacts.
 
@@ -203,33 +203,47 @@ naming the person instead of giving an index, as `delete` and `edit` allow.
 
 ### Deleting a person: `delete`
 
-Deletes the specified person from the contact file.
+Previews the selected contacts and asks for confirmation before deleting them.
 
-Format: `delete INDEX` or `delete NAME`
+Formats:
 
-* Deletes the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
-* Instead of an index, you can give all or part of the person's name, e.g. `delete John Lim`. Letter case is ignored, and names are matched the same way `find` matches them.
-  * If exactly one person's name contains it, that person is deleted.
-  * If several do, they are listed with numbers and **nothing is deleted**. Enter the command again with the person's number from that list in place of the name.
-  * Deleting by name searches every contact, not just the ones currently on display, so naming someone reaches them even while a `find` filter is hiding them. Once the person is deleted, the full list is shown again.
-* If the first word of your input is a number, it is read as an index rather than as a name. `delete 3` therefore always means "the 3rd person on display".
-* If the contact file is empty, Astra reports that there are no contacts to delete and changes nothing.
+```text
+delete INDEX
+delete NAME
+delete /contact PHONE_NUMBER
+delete /email EMAIL [EMAIL]...
+```
+
+* `INDEX` is a positive integer referring to the currently displayed list.
+* A name can be partial and is matched without regard to letter case. Names,
+  phone numbers, and emails search every stored contact, even when filtered.
+* If a name matches several contacts, Astra displays numbered candidates. Enter
+  the candidate's number by itself. Astra then previews that contact and asks
+  for confirmation; selection alone never deletes anything.
+* Phone numbers match the complete number, ignoring spaces, hyphens, and
+  parentheses. A leading plus remains significant. Emails match complete
+  addresses without regard to letter case.
+* An email batch is validated and resolved in full before confirmation. One
+  malformed or missing address rejects the entire request. Repeated addresses
+  select a contact once.
+* After reviewing the preview, enter `y` to delete or `n`/`cancel` to stop.
+  Invalid replies repeat the prompt. To run another command, cancel first.
+* Successful deletion shows all remaining contacts in their stored order and
+  reports the deleted details and remaining count. Cancellation restores your
+  previous view. A failed save preserves the contact file, contacts, and view.
+* If no contacts are stored, Astra reports that there is nothing to delete.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the contact file.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
-* `delete John Lim` deletes John Lim, if he is the only person whose name contains `John Lim`.
-* `delete Meier`, with both `Benson Meier` and `Daniel Meier` stored, deletes neither and instead reports:
 
-  ```
-  2 contacts found:
-  1. Benson Meier — GovTech — johnd@example.com
-  2. Daniel Meier — DBS — cornelia@example.com
-  To delete one of them, enter the command again with its index in place of the name.
-  ```
+* `find Betsy`, then `delete 1`, then `y` deletes the first displayed result.
+* `delete John Lim`, then `y` deletes him if exactly one contact matches.
+* `delete Meier`, then `2`, then `y` deletes the second numbered candidate.
+* `delete /contact +65 (9123)-4567`, then `n` previews and cancels deletion.
+* `delete /email alice@example.com bob@example.com`, then `y` deletes both
+  contacts in one save if every address resolves successfully.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-`delete` cannot be undone. A confirmation prompt is planned for a later version.
+Confirmed deletion cannot be undone. Check the preview before entering `y`.
 </div>
 
 ### Clearing all entries: `clear`
@@ -305,7 +319,7 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
-**Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
+**Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`

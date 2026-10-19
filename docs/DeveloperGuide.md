@@ -51,9 +51,10 @@ The bulk of the app's work is done by the following four components:
 
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user issues the command `delete 1`.
+The *Sequence Diagram* below shows `delete 1` followed by `y`, including the
+preview before mutation and the atomic save after confirmation.
 
-<img src="images/ArchitectureSequenceDiagram.png" width="574" />
+<img src="images/ArchitectureSequenceDiagram.svg" width="100%" />
 
 Each of the four main components (also shown in the diagram above),
 
@@ -91,12 +92,10 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <img src="images/LogicClassDiagram.png" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below shows how Logic resolves `delete 1`, waits for `y`,
+then mutates and saves. Parsing is omitted from this diagram.
 
-![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</div>
+![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.svg)
 
 How the `Logic` component works:
 
@@ -105,6 +104,9 @@ How the `Logic` component works:
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
+1. A result carrying a `PendingRequest` is retained by Logic until the user
+   answers or cancels. Replies go to that request before normal command parsing.
+   Completed data changes are saved transactionally; read-only results are not.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -157,83 +159,42 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Identifying a contact by name
+### Shared contact matching
 
-`find`, `edit` and `delete` all let the user refer to a contact by name instead of by its index in the
-displayed list. Left to themselves, each command would need its own answer to what naming a contact
-means: how much of the name has to be given, whether case matters, and what to do when a name fits more
-than one contact. Three answers that are meant to agree but are written three times are three answers
-that will eventually disagree, and a user who is told `find Meier` matches two contacts but
-`delete Meier` deletes one would be right to call that a bug.
-
-So there is one answer, in two pieces:
-
-* `NameContainsKeywordsPredicate` (in `model.person`) decides whether a contact's name matches a query.
-  Both sides are trimmed, their runs of whitespace collapsed and their case folded, and the query must
-  then appear in the name as a contiguous run. `find` applies this predicate directly.
-* `PersonNameResolver` (in `logic.commands`) turns a name into the single contact it refers to, by
-  applying that predicate and looking at how many contacts came back. `edit` and `delete` go through it.
-
-`PersonNameResolver#resolve` returns a sealed `Outcome` of either `Unique`, carrying the one contact
-that matched, or `Several`, carrying a numbered list of the matches for the command to show. A name
-matching nothing is a `CommandException` instead, since there is no contact for the caller to act on.
-Making the ambiguous case a value rather than an error is what stops a command from quietly picking the
-first match: there is no `Person` to reach for until the user has narrowed it down.
-
-Two consequences are worth noting:
-
-* **Resolving a name searches every contact, not only the ones on display.** Naming someone therefore
-  reaches them even while a `find` filter is hiding them, which is what a user who has just typed a
-  full name expects. As a side effect the displayed list is narrowed to the matches, so that the
-  contacts under discussion are the contacts on screen; a command that goes on to change the address
-  book restores the full list once it is done.
-* **The resolver is told which command word to name in its message**, so the list of matches ends with
-  "To delete one of them…" or "To edit one of them…" as appropriate. This is the only thing the
-  resolver needs to know about its caller, which keeps the dependency pointing one way: commands depend
-  on the resolver, and the resolver depends on nothing but `Model` and the predicate.
-
-Deciding *whether* the user typed an index or a name happens earlier, in the parsers, and is shared the
-same way: `ParserUtil#isIndexInput` reports whether the first word of the argument is a number.
-`EditCommandParser` and `DeleteCommandParser` both consult it, so no input can be read as an index by
-one command and as a name by another.
-
-#### Alternatives considered
-
-* **Matching full names exactly, instead of reusing `find`'s partial matching.** An earlier draft of
-  `delete` did this, on the grounds that an irreversible command should not act on a fuzzy match. It was
-  dropped because it gave Astra two meanings for the same gesture, and because the ambiguous case is
-  handled by *refusing to delete* and asking the user to pick, which is just as safe and far less
-  surprising than `delete Meier` reporting that nobody is called that.
-* **A `PersonSelector` type with index and name implementations**, which commands would hold instead of
-  a nullable index and a nullable name. This removes the remaining nullable-field pair from `EditCommand`
-  and `DeleteCommand` and would let `view` gain name support for free. It is the natural next step once
-  a third command needs it; it was not done here to keep the change to `edit` small.
-
-### Normalized contact keys
+`NameContainsKeywordsPredicate` supplies the existing contiguous, partial,
+case-insensitive name matching used by find, edit, and delete.
+`PersonNameResolver#resolve` keeps edit's existing numbered-retry behavior.
+`PersonNameResolver#findMatches` performs the same full-file lookup without
+changing the displayed list; delete uses it before creating a pending request.
+Ambiguous delete names display candidates and require a numeric reply followed
+by a separate y/n confirmation. A name never implicitly selects the first match.
 
 Phone matching uses `Phone#matches`, which removes spaces, hyphens, and
 parentheses but preserves a leading plus. Equality and hashing use that same
 canonical value. Email matching uses `Email#matches` and ignores letter case.
-Find, duplicate checks, and startup recovery share these comparisons. Missing
-phone/email values are not shared keys. Existing contact identity is preserved.
+`ContactFieldPredicate`, duplicate checks, delete, and startup recovery share
+these comparisons. Missing phone/email values are not shared keys.
 
-### Pending requests
+### Pending requests and transactional commands
 
-`CommandResult` can carry a `PendingRequest`. Logic retains it with the snapshot
-from before the initial command. `ConfirmationRequest` executes its retained
-command only for y. Logic handles n/cancel, restores the original view, and
-clears pending state on completion, cancellation, or failed confirmed saving.
-Invalid replies repeat the prompt; unrelated commands do not execute while a
-response is pending. Clear uses this mechanism now; delete will adopt it in the
-next package. `PersonSelectionRequest` supplies reusable numbered selection for
-that upcoming workflow. Future UC16 can reuse confirmation, but is deferred.
+`CommandResult` can carry a `PendingRequest`. `LogicManager` retains it together
+with a `ModelSnapshot` captured before the initial command. `ConfirmationRequest`
+executes its resolved command only for y. `PersonSelectionRequest` turns a
+numbered candidate selection into the next request; it retains contact
+references rather than resolving a displayed index again later.
 
-### Transactional contact saves
+Logic handles n/cancel centrally, restores the pre-request filter, and discards
+the request. Invalid replies repeat the current prompt; unrelated commands are
+not executed while a reply is pending. A completed or failed confirmed request
+clears pending state, so a stale y cannot replay the mutation. The shared API
+can support future duplicate follow-up confirmation; UC16 is not implemented
+in this delivery.
 
 `ModelSnapshot` copies contact contents and retains the original predicate.
 Logic compares the completed model with the snapshot and saves only changed
-contact data. Queries, ambiguity results, and no-ops perform no contact-file
-write. On an exception, data and the original filter are restored without replacing the observable lists bound to the UI.
+contact data. Queries, ambiguity results, prompts, selections, cancellations,
+and no-ops perform no contact-file write. On an exception, data and the original
+filter are restored without replacing the observable lists bound to the UI.
 
 `JsonContactFileStorage` serializes to a sibling temporary file, reloads and
 compares the candidate, then uses atomic replacement. Failures before
@@ -459,47 +420,30 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters a delete command, identifying the contact either by its index in the displayed list or by name.
-2. Astra deletes the contact, saves the contact list and shows the details of the contact it deleted.
+1. User identifies a contact by displayed index, name, phone, or a batch of emails.
+2. Astra validates and resolves the entire request and displays every deletion target.
+3. User confirms with y.
+4. Astra deletes the targets in one transaction, saves once, displays their details
+   and the remaining count, and restores the full list in stored order.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to delete.
-
-      Use case ends.
-
-* 1b. The input is empty, is a malformed index, or is not a valid name.
-    * 1b1. Astra shows the command usage.
-
-      Use case ends.
-
-* 1c. The given index is not in the displayed list.
-    * 1c1. Astra shows that the index is invalid.
-
-      Use case ends.
-
-* 1d. The given name matches no contact.
-    * 1d1. Astra shows that no contact of that name was found, and deletes nothing.
-
-      Use case ends.
-
-* 1e. Several contacts match the given name.
-    * 1e1. Astra shows a numbered list of the matching contacts with their names, companies and emails, and deletes nothing.
-    * 1e2. User enters the command again with the index of the contact they meant.
-
-      Use case resumes at step 2.
-
-**Deferred to a later version**
-
-* Confirming before the contact is deleted. v1.3 deletes immediately; the prompt arrives with the
-  pending-command layer already used by UC05.
-* Deleting by email or contact number, and deleting several contacts in one command. These wait on the
-  matching for those fields so that it is shared with `find` rather than written twice.
-
-Command-save rollback is implemented: failed saving preserves contacts, the active file, and the pre-command filter.
+* 1a. The contact file is empty: report that there are no contacts to delete.
+* 1b. Input is malformed, an index is outside the displayed results, or any
+  name/phone/email has no unique target: explain the error and delete nothing.
+  A malformed or unresolved email invalidates the entire batch.
+* 2a. A name matches several contacts: show numbered candidates, accept a valid
+  numeric reply, and resume at step 2 with the selected contact. No deletion
+  occurs during selection. Invalid selections repeat the prompt.
+* 2b. A batch repeats an address or identifies the same contact several times:
+  show and delete that contact only once.
+* 3a. User replies n/cancel: discard the request without saving and restore the
+  pre-request display. Other replies repeat the prompt; unrelated commands do
+  not execute until the user answers or cancels.
+* 4a. Saving fails: report the error and preserve the file, contacts, contact
+  order, and pre-request filter. Discard the pending request.
 
 **Use case: UC03 - Find and view a contact**
 
@@ -603,11 +547,13 @@ Command-save rollback is implemented: failed saving preserves contacts, the acti
 
 **Deferred to a later version**
 * Choosing one of several matching contacts at a prompt instead of entering the command again, and cancelling at
-  any prompt. These arrive with the pending-command layer that UC02 and UC05 will share.
+  an edit prompt. Delete and clear already use the shared pending-request layer;
+  edit retains its existing numbered command-retry behavior.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
   rejecting an identical name outright. This also needs the pending-command layer.
 
-Command-save rollback is implemented through Logic and Storage and applies to edit as well.
+Command-save rollback is implemented through Logic and Storage and applies to
+edit as well as delete and clear. Add merge/replace remains separate work.
 
 **Use case: UC05 - Clear all contacts**
 
@@ -767,60 +713,35 @@ testers are expected to do more *exploratory* testing.
 
 ### Deleting a person
 
-1. Deleting a person by index while all persons are being shown
+Use a fresh copy of sample data for destructive tests.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
-
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
-
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows the command usage.
-
-   1. Other incorrect delete commands to try: `delete`, `delete 1 abc`, `delete x` (where x is larger than the list size)<br>
-      Expected: No person is deleted. The status message shows error details.
-
-1. Deleting a person by index while the list is filtered
-
-   1. Prerequisites: Filter the list with `find Meier`, so that fewer persons are shown than are stored.
-
-   1. Test case: `delete 1`<br>
-      Expected: The first contact *of the filtered results* is deleted. The remaining results stay on display.
-
-   1. Test case: `delete x` (where x is larger than the number of results but no larger than the number stored)<br>
-      Expected: No person is deleted. The status message says the index is invalid, since the index refers to what is displayed.
-
-1. Deleting a person by name
-
-   1. Prerequisites: List all persons using the `list` command. The sample data has one `Alice Pauline`, and both a `Benson Meier` and a `Daniel Meier`.
-
-   1. Test case: `delete Alice Pauline`<br>
-      Expected: Alice Pauline is deleted. The status message shows her details, and every remaining contact is shown again.
-
-   1. Test case: `delete alice pauline`<br>
-      Expected: As above; letter case is ignored.
-
-   1. Test case: `delete Pauline`<br>
-      Expected: As above; a partial name is enough when only one contact matches it.
-
-   1. Test case: `delete Meier`<br>
-      Expected: **Nothing is deleted.** The status message lists both Meiers, numbered, with their companies and emails, and asks for the command to be entered again with an index. Following it with `delete 2` deletes the second one listed.
-
-   1. Test case: `delete Zed`<br>
-      Expected: No person is deleted. The status message says no contact named Zed was found, and the full list is still shown.
-
-   1. Test case: `find Alice` followed by `delete Carl Kurz`<br>
-      Expected: Carl Kurz is deleted even though he was not among the displayed results, since naming a contact searches every contact.
-
-   1. Other invalid names to try: `delete @#$`, `delete -Alice`<br>
-      Expected: No person is deleted. The status message shows the command usage.
-
-1. Deleting from an empty contact file
-
-   1. Prerequisites: Remove every contact with the `clear` command.
-
-   1. Test case: `delete 1`, and `delete Alice Pauline`<br>
-      Expected: No person is deleted. Both report that there are no contacts to delete, rather than complaining about the index or the name.
+1. Run `delete 1`: expect a preview and no deletion. Enter `y`: expect the first
+   displayed contact removed, its details and remaining count reported, and the
+   full survivor list shown in stored order.
+2. Run `find Meier`, then `delete 1`: expect the first filtered result in the
+   preview. Enter `cancel`: expect all contacts intact and the original filtered
+   list restored. Repeat and enter `y`: expect the full survivor list.
+3. Run `delete Meier`: expect numbered candidates and no mutation. Enter `99`,
+   then `delete 1`: expect the selection prompt again. Enter `2`: expect the
+   second candidate's preview. Enter `n`: expect no mutation. Repeat the request,
+   select `2`, then enter `y`: only the selected candidate is removed.
+4. Run `find Alice`, then `delete Carl Kurz`, then `y`: Carl is found outside
+   the filter and removed. Partial names and different letter case also work.
+5. Run `delete /contact NUMBER` using a stored number with different spaces,
+   hyphens, or parentheses: expect the same complete-number target. Partial
+   numbers and a different leading-plus form must not match.
+6. Run `delete /email ALICE_EMAIL BENSON_EMAIL ALICE_EMAIL` using real sample
+   addresses: expect two unique targets and no changes before `y`. Confirm:
+   expect both removed and survivor order preserved. Use an upper-case email
+   to verify case-insensitive matching.
+7. Repeat the batch with one malformed or missing email: expect no deletion and
+   no pending request. Try `delete`, `delete 0`, `delete 1 abc`, and an out-of-range
+   filtered index: expect an error without changes.
+8. During a confirmation, enter `maybe`, `list`, and an empty reply: expect the
+   prompt again and no changes. Enter `n` or `cancel`: expect no save. A following
+   `y` must be an unknown command rather than replaying the deletion.
+9. After a confirmed clear, try deletion by index/name/phone/email: valid forms
+   report an empty file and never create a pending mutation.
 
 ### Clearing all entries
 
@@ -832,7 +753,8 @@ testers are expected to do more *exploratory* testing.
    0 remaining reported, and an empty full list. Restart and verify it stays empty.
 4. Run `clear` again: expect nothing to clear. Run `clear 3`: expect usage and no
    mutation. Neither command should save.
-5. Simulate failed saving with the storage test doubles: confirmed clear must preserve the old file bytes, original contacts, original order,
+5. Simulate failed saving with the storage test doubles: confirmed clear and
+   delete must preserve the old file bytes, original contacts, original order,
    and filter. A later y must not replay a failed request.
 
 ### Saving data
