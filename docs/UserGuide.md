@@ -152,9 +152,9 @@ Examples:
 
 ### Locating persons: `find`
 
-Finds persons by name, phone number or email, and shows the matches in the list.
+Finds persons by name, phone number, email, or the notes of their logged interactions, and shows the matches in the list.
 
-Format: `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`
+Format: `find NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, or `find /notes KEYWORDS`
 
 Searching by name:
 
@@ -172,11 +172,19 @@ Searching by phone number or email:
 
 If nothing matches, Astra reports `Contact not found.` and the list is left as it was.
 
+Searching interaction notes:
+
+* `find /notes KEYWORDS` finds persons with a logged interaction (see `log`) whose note contains **any** of the keywords.
+* Letter case is ignored, and part of a word is enough: `intern` matches `internships`.
+* Under each person, the matching notes are listed with their dates. Long notes are shortened to the part around the match.
+* If no note matches, Astra reports `No matching notes were found.` and the list is left as it was.
+
 Examples:
 * `find Alex Yeoh` returns `Alex Yeoh`.
 * `find Yeo` returns `Alex Yeoh`, since part of a name is enough.
 * `find /contact 87438807` returns the person with that exact number.
 * `find /email berniceyu@example.com` returns `Bernice Yu`.
+* `find /notes internship coffee` returns everyone whose notes mention an internship or coffee.
 
 <div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
 searching several keywords at once (`find alex david` returning both `Alex Yeoh` and `David Li`),
@@ -314,7 +322,7 @@ Action | Format, Examples
 **Clear** | `clear`
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
-**Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
+**Find** | `find NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /notes internship`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`

@@ -9,10 +9,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FindCommand;
+import seedu.address.logic.commands.FindNotesCommand;
 import seedu.address.model.person.ContactFieldPredicate;
 import seedu.address.model.person.ContactFieldPredicate.Field;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.NoteContainsKeywordsPredicate;
 import seedu.address.model.person.Phone;
 
 public class FindCommandParserTest {
@@ -81,5 +83,17 @@ public class FindCommandParserTest {
     public void parse_unknownSelector_throwsParseException() {
         assertParseFailure(parser, "/company Google",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_notesKeywords_returnsFindNotesCommand() {
+        assertParseSuccess(parser, "/notes  internship   coffee ",
+                new FindNotesCommand(new NoteContainsKeywordsPredicate(List.of("internship", "coffee"))));
+    }
+
+    @Test
+    public void parse_notesWithoutKeywords_throwsParseException() {
+        assertParseFailure(parser, "/notes", FindCommandParser.MESSAGE_NO_NOTE_KEYWORDS);
+        assertParseFailure(parser, "/notes   ", FindCommandParser.MESSAGE_NO_NOTE_KEYWORDS);
     }
 }
