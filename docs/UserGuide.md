@@ -166,7 +166,7 @@ Searching by name:
 
 Searching by phone number or email:
 
-* `find /contact PHONE_NUMBER` matches a phone number **exactly**; partial numbers do not match.
+* `find /contact PHONE_NUMBER` matches the complete phone number, ignoring spaces, hyphens, and parentheses; partial numbers do not match. A leading plus remains significant.
 * `find /email EMAIL` matches an email exactly, ignoring letter case, so `ALEX@example.com` finds `alex@example.com`.
 * The value has to be a valid phone number or email, or Astra reports the problem instead of searching.
 
