@@ -14,8 +14,8 @@ import seedu.address.model.tag.Tag;
 /**
  * Represents a Person in the contact file.
  * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
- * Contact detail fields other than the name and tags are optional and may be absent.
- * Starred status defaults to false.
+ * Every other field is optional and may be absent.
+ * This optionality applies to contact details; starred status is a boolean flag that defaults to false.
  */
 public class Person {
 
