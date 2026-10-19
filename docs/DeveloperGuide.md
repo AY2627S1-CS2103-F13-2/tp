@@ -217,6 +217,19 @@ canonical value. Email matching uses `Email#matches` and ignores letter case.
 Find, duplicate checks, and startup recovery share these comparisons. Missing
 phone/email values are not shared keys. Existing contact identity is preserved.
 
+### Transactional contact saves
+
+`ModelSnapshot` copies contact contents and retains the original predicate.
+Logic compares the completed model with the snapshot and saves only changed
+contact data. Queries, ambiguity results, and no-ops perform no contact-file
+write. On an exception, data and the original filter are restored without replacing the observable lists bound to the UI.
+
+`JsonContactFileStorage` serializes to a sibling temporary file, reloads and
+compares the candidate, then uses atomic replacement. Failures before
+replacement preserve the previous active file. Temporary-file cleanup never
+turns an already successful replacement into a reported transaction failure.
+No unsafe in-place fallback is used when atomic replacement is unavailable.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -474,8 +487,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   pending-command layer, which UC05 will share.
 * Deleting by email or contact number, and deleting several contacts in one command. These wait on the
   matching for those fields so that it is shared with `find` rather than written twice.
-* Reporting a failed save and leaving the contact list and file unchanged. This needs atomic saves in
-  `Storage` to be meaningful, since a half-written file is worse than a reported failure.
+
+Command-save rollback is implemented: failed saving preserves contacts, the active file, and the pre-command filter.
 
 **Use case: UC03 - Find and view a contact**
 
@@ -582,8 +595,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   any prompt. These arrive with the pending-command layer that UC02 and UC05 will share.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
   rejecting an identical name outright. This also needs the pending-command layer.
-* Reporting a failed save and leaving the contact list and file unchanged. As for UC02, this needs atomic saves in
-  `Storage` to be meaningful.
+
+Command-save rollback is implemented through Logic and Storage and applies to edit as well.
 
 **Use case: UC05 - Clear all contacts**
 

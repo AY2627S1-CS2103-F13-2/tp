@@ -9,7 +9,6 @@ import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ROLE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
-import static seedu.address.testutil.TypicalPersons.AMY;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -29,11 +28,9 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.UserPrefs;
-import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
-import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -170,9 +167,7 @@ public class LogicManagerTest {
         // Triggers the saveContactFile method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY
                 + PHONE_DESC_AMY + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
         ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
     }
 }

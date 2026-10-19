@@ -231,7 +231,8 @@ public class AddCommandTest {
 
         @Override
         public boolean hasPhone(Person person) {
-            throw new AssertionError("This method should not be called"); }
+            throw new AssertionError("This method should not be called.");
+        }
 
         @Override
         public void deletePerson(Person target) {
@@ -245,6 +246,11 @@ public class AddCommandTest {
 
         @Override
         public ObservableList<Person> getFilteredPersonList() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Predicate<Person> getPersonFilter() {
             throw new AssertionError("This method should not be called.");
         }
 

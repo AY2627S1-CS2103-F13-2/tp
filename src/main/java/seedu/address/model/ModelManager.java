@@ -35,6 +35,9 @@ public class ModelManager implements Model {
         filteredPersons = new FilteredList<>(this.contactFile.getPersonList());
     }
 
+    /**
+     * Creates an empty model with default preferences.
+     */
     public ModelManager() {
         this(new ContactFile(), new UserPrefs());
     }
@@ -112,6 +115,12 @@ public class ModelManager implements Model {
     @Override
     public ObservableList<Person> getFilteredPersonList() {
         return filteredPersons;
+    }
+
+    @Override
+    public Predicate<Person> getPersonFilter() {
+        Predicate<? super Person> predicate = filteredPersons.getPredicate();
+        return predicate == null ? null : predicate::test;
     }
 
     @Override
