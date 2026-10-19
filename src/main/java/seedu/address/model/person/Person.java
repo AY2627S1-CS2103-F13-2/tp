@@ -14,7 +14,8 @@ import seedu.address.model.tag.Tag;
 /**
  * Represents a Person in the contact file.
  * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
- * Every other field is optional and may be absent.
+ * Contact detail fields other than the name and tags are optional and may be absent.
+ * Starred status defaults to false.
  */
 public class Person {
 
@@ -28,6 +29,7 @@ public class Person {
     private final Email email;
     private final Linkedin linkedin;
     private final Set<Tag> tags = new HashSet<>();
+    private final boolean starred;
 
     /**
      * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
@@ -36,6 +38,15 @@ public class Person {
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
             Set<Tag> tags) {
+        this(name, company, role, phone, email, linkedin, tags, false);
+    }
+
+    /**
+     * Constructs a {@code Person} with the given details and starred status.
+     * Only {@code name} and {@code tags} are required; optional contact details may be null.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, boolean starred) {
         requireNonNull(name);
         requireNonNull(tags);
         this.name = name;
@@ -45,6 +56,7 @@ public class Person {
         this.email = email;
         this.linkedin = linkedin;
         this.tags.addAll(tags);
+        this.starred = starred;
     }
 
     public Name getName() {
@@ -77,6 +89,10 @@ public class Person {
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    public boolean isStarred() {
+        return starred;
     }
 
     /**
@@ -113,13 +129,14 @@ public class Person {
                 && Objects.equals(phone, otherPerson.phone)
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && starred == otherPerson.starred;
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags);
+        return Objects.hash(name, company, role, phone, email, linkedin, tags, starred);
     }
 
     @Override
@@ -132,6 +149,7 @@ public class Person {
                 .add("email", email)
                 .add("linkedin", linkedin)
                 .add("tags", tags)
+                .add("starred", starred)
                 .toString();
     }
 

@@ -32,6 +32,7 @@ public class PersonBuilder {
     private Email email;
     private Linkedin linkedin;
     private Set<Tag> tags;
+    private boolean starred;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -57,6 +58,7 @@ public class PersonBuilder {
         email = personToCopy.getEmail().orElse(null);
         linkedin = personToCopy.getLinkedin().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
+        starred = personToCopy.isStarred();
     }
 
     /**
@@ -120,8 +122,16 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the starred status of the {@code Person} that we are building.
+     */
+    public PersonBuilder withStarred(boolean starred) {
+        this.starred = starred;
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, tags);
+        return new Person(name, company, role, phone, email, linkedin, tags, starred);
     }
 
 }
