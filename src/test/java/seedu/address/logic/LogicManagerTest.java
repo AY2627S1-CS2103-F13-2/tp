@@ -23,6 +23,8 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -72,6 +74,24 @@ public class LogicManagerTest {
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+    }
+
+    @Test
+    public void execute_starAndUnstar_persistsStatusThroughSaveFlow() throws Exception {
+        model.addPerson(AMY);
+        JsonContactFileStorage savedContacts =
+                new JsonContactFileStorage(temporaryFolder.resolve("contactFile.json"));
+        Person starredAmy = new PersonBuilder(AMY).withStarred(true).build();
+
+        assertEquals(String.format(StarCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("star 1").getFeedbackToUser());
+        assertEquals(starredAmy, model.getFilteredPersonList().getFirst());
+        assertEquals(starredAmy, savedContacts.readContactFile().orElseThrow().getPersonList().getFirst());
+
+        assertEquals(String.format(UnstarCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("unstar 1").getFeedbackToUser());
+        assertEquals(AMY, model.getFilteredPersonList().getFirst());
+        assertEquals(AMY, savedContacts.readContactFile().orElseThrow().getPersonList().getFirst());
     }
 
     @Test

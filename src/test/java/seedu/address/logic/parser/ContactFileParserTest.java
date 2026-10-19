@@ -22,6 +22,8 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -33,6 +35,32 @@ import seedu.address.testutil.PersonUtil;
 public class ContactFileParserTest {
 
     private final ContactFileParser parser = new ContactFileParser();
+
+    @Test
+    public void parseCommand_star() throws Exception {
+        assertEquals(new StarCommand(INDEX_FIRST_PERSON), parser.parseCommand("star 1"));
+    }
+
+    @Test
+    public void parseCommand_unstar() throws Exception {
+        assertEquals(new UnstarCommand(INDEX_FIRST_PERSON), parser.parseCommand("unstar 1"));
+    }
+
+    @Test
+    public void parseCommand_starInvalidArguments_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, StarCommand.MESSAGE_USAGE);
+        for (String input : List.of("star", "star 0", "star 1 2")) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
+    public void parseCommand_unstarInvalidArguments_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, UnstarCommand.MESSAGE_USAGE);
+        for (String input : List.of("unstar", "unstar 0", "unstar 1 2")) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+        }
+    }
 
     @Test
     public void parseCommand_add() throws Exception {
