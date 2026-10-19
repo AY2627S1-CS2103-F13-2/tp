@@ -34,6 +34,8 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
 
+   * `order name phone email company role tags linkedin followups`: Changes the field order for every contact.
+
    * `clear`, then `y`: Deletes all contacts.
 
    * `exit` : Exits the app.
@@ -296,6 +298,46 @@ Examples:
 Confirmed clearing cannot be undone. Check the count before entering `y`.
 </div>
 
+### Reordering contact fields: `order`
+
+Changes the order of information within every contact card and in full details.
+The order of the contacts themselves stays the same.
+
+Formats:
+
+```text
+order
+order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
+```
+
+* `order` shows the current global field order.
+* To change it, supply each of these eight field names **exactly once**:
+  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`.
+  Field names ignore letter case. An unknown, repeated, or missing field is
+  rejected with the accepted fields; your existing preference and view remain.
+* The default is `name tags company role phone email linkedin followups`,
+  matching the original cards with follow-ups last. Contacts without optional
+  values omit those rows, even when an absent field appears early in the order.
+* A successful change immediately refreshes existing cards. If you are viewing
+  a contact's details, they are redisplayed in the new order alongside the
+  confirmation. Later `view INDEX` output uses the same order.
+* The preference applies to every contact and survives restart. Earlier
+  preference files without an order use the default.
+* Querying the order or setting the same order performs no save. A changed
+  order saves preferences once and does not write contact data. Your current
+  search/filter and contact order remain in place.
+* If saving fails, Astra reports the error and restores the previous field
+  order in preferences, cards, and any displayed contact details. The previous
+  preference file remains intact.
+
+Examples:
+
+* `order` shows the active order.
+* `order name phone email company role tags linkedin followups` puts phone and
+  email near the top while retaining all fields.
+* `order followups name tags company role phone email linkedin` puts follow-up
+  history first on contacts that have it.
+
 ### Exiting the program: `exit`
 
 Exits the program.
@@ -306,7 +348,8 @@ Format: `exit`
 
 Astra automatically saves successful contact changes. You do not need to save
 manually. Viewing, searching, pending prompts, cancellation, and commands that
-change nothing do not rewrite the contact file. If saving fails, Astra reports
+change nothing do not rewrite the contact file. Display-field order is saved
+separately in `preferences.json`. If saving fails, Astra reports
 the error and keeps the previous file, contact data, and displayed view.
 
 ### Editing the data file
@@ -350,4 +393,5 @@ Action | Format, Examples
 **Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
+**Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
 **Help** | `help`
