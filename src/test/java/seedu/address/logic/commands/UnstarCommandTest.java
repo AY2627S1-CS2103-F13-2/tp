@@ -1,7 +1,10 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -82,5 +85,34 @@ public class UnstarCommandTest {
     public void execute_emptyContactFile_failureWithoutChanges() {
         assertCommandFailure(new UnstarCommand(INDEX_FIRST_PERSON), new ModelManager(),
                 MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void constructor_nullIndex_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new UnstarCommand(null));
+    }
+
+    @Test
+    public void execute_nullModel_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new UnstarCommand(INDEX_FIRST_PERSON).execute(null));
+    }
+
+    @Test
+    public void equals() {
+        UnstarCommand command = new UnstarCommand(INDEX_FIRST_PERSON);
+
+        assertTrue(command.equals(command));
+        assertTrue(command.equals(new UnstarCommand(INDEX_FIRST_PERSON)));
+        assertFalse(command.equals(new UnstarCommand(INDEX_SECOND_PERSON)));
+        assertFalse(command.equals(null));
+        assertFalse(command.equals(new StarCommand(INDEX_FIRST_PERSON)));
+    }
+
+    @Test
+    public void toStringMethod() {
+        UnstarCommand command = new UnstarCommand(INDEX_FIRST_PERSON);
+        String expected = UnstarCommand.class.getCanonicalName() + "{targetIndex=" + INDEX_FIRST_PERSON + "}";
+
+        assertEquals(expected, command.toString());
     }
 }
