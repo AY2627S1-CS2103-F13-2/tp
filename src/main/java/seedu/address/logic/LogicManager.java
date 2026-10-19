@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -45,11 +46,16 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         CommandResult commandResult;
-        Command command = contactFileParser.parseCommand(commandText);
+        Map<String, String> aliasesBefore = Map.copyOf(model.getCommandAliases());
+        Command command = contactFileParser.parseCommand(commandText, aliasesBefore);
         commandResult = command.execute(model);
 
         try {
             storage.saveContactFile(model.getContactFile());
+            // Shortcuts live in the preferences file; save them now rather than only when the app closes.
+            if (!aliasesBefore.equals(model.getCommandAliases())) {
+                storage.saveUserPrefs(model.getUserPrefs());
+            }
         } catch (AccessDeniedException e) {
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
         } catch (IOException ioe) {

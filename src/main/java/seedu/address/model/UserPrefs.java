@@ -2,7 +2,10 @@ package seedu.address.model;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import seedu.address.commons.core.GuiSettings;
 
@@ -12,6 +15,7 @@ import seedu.address.commons.core.GuiSettings;
 public class UserPrefs implements ReadOnlyUserPrefs {
 
     private GuiSettings guiSettings = new GuiSettings();
+    private Map<String, String> commandAliases = new TreeMap<>();
 
     /**
      * Creates a {@code UserPrefs} with default values.
@@ -24,6 +28,7 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     public UserPrefs(ReadOnlyUserPrefs userPrefs) {
         requireNonNull(userPrefs);
         setGuiSettings(userPrefs.getGuiSettings());
+        setCommandAliases(userPrefs.getCommandAliases());
     }
 
     public GuiSettings getGuiSettings() {
@@ -33,6 +38,41 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     public void setGuiSettings(GuiSettings guiSettings) {
         requireNonNull(guiSettings);
         this.guiSettings = guiSettings;
+    }
+
+    @Override
+    public Map<String, String> getCommandAliases() {
+        // A preferences file with "commandAliases": null is treated as having no shortcuts.
+        return commandAliases == null ? Map.of() : Collections.unmodifiableMap(commandAliases);
+    }
+
+    /**
+     * Replaces all command shortcuts with those in {@code commandAliases}.
+     */
+    public void setCommandAliases(Map<String, String> commandAliases) {
+        requireNonNull(commandAliases);
+        this.commandAliases = new TreeMap<>(commandAliases);
+    }
+
+    /**
+     * Saves {@code command} as the expansion of the shortcut {@code shortcut}, replacing any earlier expansion.
+     */
+    public void setCommandAlias(String shortcut, String command) {
+        requireNonNull(shortcut);
+        requireNonNull(command);
+        Map<String, String> updated = new TreeMap<>(getCommandAliases());
+        updated.put(shortcut, command);
+        commandAliases = updated;
+    }
+
+    /**
+     * Removes the shortcut {@code shortcut}. Does nothing if there is no such shortcut.
+     */
+    public void removeCommandAlias(String shortcut) {
+        requireNonNull(shortcut);
+        Map<String, String> updated = new TreeMap<>(getCommandAliases());
+        updated.remove(shortcut);
+        commandAliases = updated;
     }
 
     @Override
@@ -46,17 +86,18 @@ public class UserPrefs implements ReadOnlyUserPrefs {
             return false;
         }
 
-        return guiSettings.equals(otherUserPrefs.guiSettings);
+        return guiSettings.equals(otherUserPrefs.guiSettings)
+                && getCommandAliases().equals(otherUserPrefs.getCommandAliases());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(guiSettings);
+        return Objects.hash(guiSettings, getCommandAliases());
     }
 
     @Override
     public String toString() {
-        return "Gui Settings : " + guiSettings;
+        return "Gui Settings : " + guiSettings + "\nCommand Aliases : " + getCommandAliases();
     }
 
 }

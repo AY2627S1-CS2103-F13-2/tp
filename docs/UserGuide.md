@@ -249,6 +249,26 @@ Examples:
 `clear` cannot be undone. A confirmation prompt is planned for a later version.
 </div>
 
+### Creating command shortcuts: `alias`
+
+Saves a short word that stands for a command you type often. Entering the shortcut then runs that command, followed by anything you type after the shortcut.
+
+Format: `alias SHORTCUT COMMAND…​`
+
+* `SHORTCUT` must be one word of letters and digits that starts with a letter, e.g. `fe`. Letter case does not matter: `FE` and `fe` are the same shortcut.
+* `COMMAND` must start with one of Astra's commands (`add`, `edit`, `delete`, `view`, `clear`, `find`, `list`, `exit` or `help`), and can include part of its parameters.
+* A shortcut cannot have the same name as one of Astra's commands, and cannot stand for another shortcut or for `alias`.
+* When you use a shortcut, the command runs exactly as if you had typed it in full, with the same checks and confirmations.
+* If the shortcut already exists, Astra shows what it currently runs and changes nothing. To replace it, use `alias /replace SHORTCUT COMMAND…​`.
+* `alias` on its own lists your shortcuts. `alias /remove SHORTCUT` removes one.
+* Shortcuts are saved in `preferences.json` as soon as you create them, so they are still there the next time you start Astra.
+
+Examples:
+* `alias fe find /email` saves the shortcut. Entering `fe john.lim@example.com` then runs `find /email john.lim@example.com`.
+* `alias fe find /contact` when `fe` already exists reports `Shortcut fe already runs: find /email` and tells you how to replace it.
+* `alias /replace fe find /contact` replaces it.
+* `alias list find` is rejected, because `list` is already a command.
+
 ### Exiting the program: `exit`
 
 Exits the program.
@@ -293,6 +313,7 @@ _Details coming soon ..._
 Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
+**Alias** | `alias SHORTCUT COMMAND…​`, `alias /replace SHORTCUT COMMAND…​`, `alias /remove SHORTCUT`, or `alias` (lists shortcuts)<br> e.g., `alias fe find /email`
 **Clear** | `clear`
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)

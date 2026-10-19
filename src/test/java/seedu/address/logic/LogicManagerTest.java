@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.COMPANY_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
@@ -14,6 +15,7 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +74,22 @@ public class LogicManagerTest {
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+    }
+
+    @Test
+    public void execute_shortcut_savedToPrefsFileAndExpanded() throws Exception {
+        Path prefsPath = temporaryFolder.resolve("userPrefs.json");
+        logic.execute("alias ls list");
+
+        UserPrefs savedPrefs = new JsonUserPrefsStorage(prefsPath).readUserPrefs().get();
+        assertEquals(Map.of("ls", "list"), savedPrefs.getCommandAliases());
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("LS").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_commandWithoutShortcutChange_prefsFileNotWritten() throws Exception {
+        logic.execute(ListCommand.COMMAND_WORD);
+        assertFalse(temporaryFolder.resolve("userPrefs.json").toFile().exists());
     }
 
     @Test

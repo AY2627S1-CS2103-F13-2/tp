@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
@@ -201,6 +202,21 @@ public class AddCommandTest {
 
         @Override
         public void setGuiSettings(GuiSettings guiSettings) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Map<String, String> getCommandAliases() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void setCommandAlias(String shortcut, String command) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void removeCommandAlias(String shortcut) {
             throw new AssertionError("This method should not be called.");
         }
 
