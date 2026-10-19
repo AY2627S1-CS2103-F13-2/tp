@@ -47,7 +47,11 @@ public class ViewCommand extends Command {
         }
 
         Person personToView = lastShownList.get(targetIndex.getZeroBased());
-        return new CommandResult(Messages.format(personToView));
+        String details = Messages.format(personToView);
+        if (!personToView.getInteractions().isEmpty()) {
+            details += "\nInteraction history:\n" + LogCommand.formatHistory(personToView.getInteractions());
+        }
+        return new CommandResult(details);
     }
 
     @Override

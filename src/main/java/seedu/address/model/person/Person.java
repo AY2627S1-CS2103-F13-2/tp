@@ -2,8 +2,11 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +31,7 @@ public class Person {
     private final Email email;
     private final Linkedin linkedin;
     private final Set<Tag> tags = new HashSet<>();
+    private final List<Interaction> interactions = new ArrayList<>();
 
     /**
      * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
@@ -45,6 +49,17 @@ public class Person {
         this.email = email;
         this.linkedin = linkedin;
         this.tags.addAll(tags);
+    }
+
+    /**
+     * Constructs a copy of {@code source} whose interaction history is {@code interactions},
+     * kept in date order. Interactions on the same date keep their given order.
+     */
+    private Person(Person source, List<Interaction> interactions) {
+        this(source.name, source.company, source.role, source.phone, source.email, source.linkedin, source.tags);
+        requireNonNull(interactions);
+        this.interactions.addAll(interactions);
+        this.interactions.sort(Comparator.comparing(interaction -> interaction.date));
     }
 
     public Name getName() {
@@ -77,6 +92,37 @@ public class Person {
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    /**
+     * Returns the interaction history in date order, oldest first, as an unmodifiable list.
+     */
+    public List<Interaction> getInteractions() {
+        return Collections.unmodifiableList(interactions);
+    }
+
+    /**
+     * Returns a copy of this person with {@code interactions} as the interaction history.
+     */
+    public Person withInteractions(List<Interaction> interactions) {
+        return new Person(this, interactions);
+    }
+
+    /**
+     * Returns a copy of this person with {@code interaction} added to the interaction history.
+     */
+    public Person withInteraction(Interaction interaction) {
+        requireNonNull(interaction);
+        List<Interaction> updatedInteractions = new ArrayList<>(interactions);
+        updatedInteractions.add(interaction);
+        return new Person(this, updatedInteractions);
+    }
+
+    /**
+     * Returns true if this person already has an interaction with the same date and note as {@code interaction}.
+     */
+    public boolean hasInteraction(Interaction interaction) {
+        return interactions.stream().anyMatch(existing -> existing.isSameInteraction(interaction));
     }
 
     /**
@@ -141,13 +187,14 @@ public class Person {
                 && Objects.equals(phone, otherPerson.phone)
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && interactions.equals(otherPerson.interactions);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags);
+        return Objects.hash(name, company, role, phone, email, linkedin, tags, interactions);
     }
 
     @Override
@@ -160,6 +207,7 @@ public class Person {
                 .add("email", email)
                 .add("linkedin", linkedin)
                 .add("tags", tags)
+                .add("interactions", interactions)
                 .toString();
     }
 

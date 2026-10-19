@@ -188,7 +188,8 @@ public class PersonTest {
                 + ", phone=" + ALICE.getPhone().orElse(null)
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
-                + ", tags=" + ALICE.getTags() + "}";
+                + ", tags=" + ALICE.getTags()
+                + ", interactions=" + ALICE.getInteractions() + "}";
         assertEquals(expected, ALICE.toString());
     }
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -33,15 +34,27 @@ class JsonAdaptedPerson {
     private final String email;
     private final String linkedin;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    private final List<JsonAdaptedInteraction> interactions = new ArrayList<>();
 
     /**
-     * Constructs a {@code JsonAdaptedPerson} with the given person details.
+     * Constructs a {@code JsonAdaptedPerson} with the given person details and no interactions.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email,
+            String linkedin, List<JsonAdaptedTag> tags) {
+        this(name, company, role, phone, email, linkedin, tags, null);
+    }
+
+    /**
+     * Constructs a {@code JsonAdaptedPerson} with the given person details and interactions.
+     * A contact file written before interactions were recorded has no {@code interactions} field,
+     * which is read as an empty history.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("company") String company,
             @JsonProperty("role") String role, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("linkedin") String linkedin,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("tags") List<JsonAdaptedTag> tags,
+            @JsonProperty("interactions") List<JsonAdaptedInteraction> interactions) {
         this.name = name;
         this.company = company;
         this.role = role;
@@ -50,6 +63,9 @@ class JsonAdaptedPerson {
         this.linkedin = linkedin;
         if (tags != null) {
             this.tags.addAll(tags);
+        }
+        if (interactions != null) {
+            this.interactions.addAll(interactions);
         }
     }
 
@@ -65,6 +81,9 @@ class JsonAdaptedPerson {
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
+                .collect(Collectors.toList()));
+        interactions.addAll(source.getInteractions().stream()
+                .map(JsonAdaptedInteraction::new)
                 .collect(Collectors.toList()));
     }
 
@@ -135,7 +154,14 @@ class JsonAdaptedPerson {
         }
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin, modelTags);
+
+        final List<Interaction> modelInteractions = new ArrayList<>();
+        for (JsonAdaptedInteraction interaction : interactions) {
+            modelInteractions.add(interaction.toModelType());
+        }
+
+        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin, modelTags)
+                .withInteractions(modelInteractions);
     }
 
 }

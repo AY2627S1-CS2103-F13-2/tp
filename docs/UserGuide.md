@@ -201,6 +201,24 @@ Examples:
 naming the person instead of giving an index, as `delete` and `edit` allow.
 </div>
 
+### Logging an interaction: `log`
+
+Records a conversation or meeting with a person, so you can look back at what you discussed before you next meet.
+
+Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
+
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`.
+* `DATE` is when the interaction happened, in the format `YYYY-MM-DD`. If you leave it out, today's date is used.
+* The date cannot be in the future, since the interaction has already happened.
+* `NOTE` is what was discussed, and cannot be blank.
+* Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
+* Logging the same note on the same date twice is rejected, so an accidental repeat does not add a second copy. Letter case is ignored when comparing notes.
+* `view` shows a person's interaction history after their other details.
+
+Examples:
+* `log John Lim nt/Discussed backend internships` logs today's conversation with John Lim.
+* `log 2 d/2026-10-01 nt/Met at the career fair` logs an earlier meeting with the 2nd person in the list.
+
 ### Deleting a person: `delete`
 
 Deletes the specified person from the contact file.
@@ -297,6 +315,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
+**Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`

@@ -22,6 +22,7 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.LogCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -88,6 +89,12 @@ public class ContactFileParserTest {
         FindCommand command = (FindCommand) parser.parseCommand(
                 FindCommand.COMMAND_WORD + " " + query);
         assertEquals(new FindCommand(new NameContainsKeywordsPredicate(List.of(query))), command);
+    }
+
+    @Test
+    public void parseCommand_log() throws Exception {
+        assertTrue(parser.parseCommand(LogCommand.COMMAND_WORD + " 1 d/2026-10-01 nt/Coffee chat")
+                instanceof LogCommand);
     }
 
     @Test

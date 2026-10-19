@@ -6,6 +6,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,8 +16,10 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Role;
 
@@ -128,4 +131,19 @@ public class JsonAdaptedPersonTest {
         assertThrows(IllegalValueException.class, person::toModelType);
     }
 
+
+    @Test
+    public void toModelType_personWithInteractions_keepsInteractions() throws Exception {
+        Person person = BENSON.withInteraction(new Interaction(LocalDate.of(2026, 10, 15), "Coffee chat"))
+                .withInteraction(new Interaction(LocalDate.of(2026, 10, 1), "Career fair chat"));
+        assertEquals(person, new JsonAdaptedPerson(person).toModelType());
+    }
+
+    @Test
+    public void toModelType_invalidInteraction_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
+                VALID_EMAIL, VALID_LINKEDIN, VALID_TAGS,
+                List.of(new JsonAdaptedInteraction("not a date", "Coffee chat")));
+        assertThrows(IllegalValueException.class, Interaction.MESSAGE_DATE_CONSTRAINTS, person::toModelType);
+    }
 }
