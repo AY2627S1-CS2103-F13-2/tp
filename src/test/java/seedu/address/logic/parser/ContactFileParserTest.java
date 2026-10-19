@@ -23,6 +23,7 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -35,6 +36,21 @@ import seedu.address.testutil.PersonUtil;
 public class ContactFileParserTest {
 
     private final ContactFileParser parser = new ContactFileParser();
+
+    @Test
+    public void parseCommand_starred() throws Exception {
+        assertTrue(parser.parseCommand(StarredCommand.COMMAND_WORD) instanceof StarredCommand);
+    }
+
+    @Test
+    public void parseCommand_starredWithWhitespace_returnsStarredCommand() throws Exception {
+        assertTrue(parser.parseCommand("  starred  ") instanceof StarredCommand);
+    }
+
+    @Test
+    public void parseCommand_starredWithArguments_ignoresArgumentsLikeList() throws Exception {
+        assertTrue(parser.parseCommand(StarredCommand.COMMAND_WORD + " 3") instanceof StarredCommand);
+    }
 
     @Test
     public void parseCommand_star() throws Exception {
