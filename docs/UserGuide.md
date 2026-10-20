@@ -150,6 +150,23 @@ Examples:
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
 *  `edit 3 c/ r/` Removes the company and role of the 3rd person.
 
+### Removing selected details: `drop`
+
+Removes only the explicitly selected detail values from a contact, after confirmation.
+
+Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`
+
+* `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them and makes no changes.
+* Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
+* Astra first displays the proposed removal. Repeat the command with `--confirm` to apply it. Until confirmed, the contact file is unchanged and not saved.
+* Repeating `t/TAG` removes only those selected tags; all other tags and contact details are retained.
+
+Examples:
+* `drop 1 t/outdated` Shows the selected tag removal for the 1st contact.
+* `drop 1 t/outdated --confirm` Removes that tag while keeping the contact's other tags.
+* `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
+* `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
+
 ### Recording who introduced a person: `record`
 
 Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.

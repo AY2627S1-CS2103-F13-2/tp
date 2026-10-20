@@ -19,13 +19,24 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
+    /** Whether the contact file should be saved after this command. */
+    private final boolean saveContactFile;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+        this(feedbackToUser, showHelp, exit, true);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified fields and save behavior.
+     */
+    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.saveContactFile = saveContactFile;
     }
 
     /**
@@ -48,6 +59,10 @@ public class CommandResult {
         return exit;
     }
 
+    public boolean shouldSaveContactFile() {
+        return saveContactFile;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -61,12 +76,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && saveContactFile == otherCommandResult.saveContactFile;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, showHelp, exit, saveContactFile);
     }
 
     @Override
@@ -75,6 +91,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("saveContactFile", saveContactFile)
                 .toString();
     }
 

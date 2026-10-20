@@ -14,6 +14,7 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.ContactFileBuilder;
 import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
@@ -84,6 +86,28 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_dropWithoutConfirmation_doesNotSaveContactFile() throws Exception {
+        Person person = new PersonBuilder().withTags("outdated", "keep").build();
+        model = new ModelManager(new ContactFileBuilder().withPerson(person).build(), new UserPrefs());
+        AtomicInteger saveCount = new AtomicInteger();
+        JsonContactFileStorage countingStorage = new JsonContactFileStorage(temporaryFolder.resolve("contacts.json")) {
+            @Override
+            public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+                saveCount.incrementAndGet();
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(countingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        CommandResult result = logic.execute("drop 1 t/outdated");
+
+        assertEquals(0, saveCount.get());
+        assertEquals(person, model.getContactFile().getPersonList().getFirst());
+        assertEquals("Remove the following detail(s) from " + person.getName() + "?\n"
+                + "- tag: outdated\nTo confirm, run: drop 1 t/outdated --confirm", result.getFeedbackToUser());
     }
 
     @Test

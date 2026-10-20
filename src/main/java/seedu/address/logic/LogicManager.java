@@ -48,12 +48,14 @@ public class LogicManager implements Logic {
         Command command = contactFileParser.parseCommand(commandText);
         commandResult = command.execute(model);
 
-        try {
-            storage.saveContactFile(model.getContactFile());
-        } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        if (commandResult.shouldSaveContactFile()) {
+            try {
+                storage.saveContactFile(model.getContactFile());
+            } catch (AccessDeniedException e) {
+                throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+            } catch (IOException ioe) {
+                throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+            }
         }
 
         return commandResult;
