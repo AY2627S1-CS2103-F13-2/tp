@@ -43,11 +43,8 @@ public class IntroduceCommandParser implements Parser<IntroduceCommand> {
         }
 
         String targetInput = argMultimap.getPreamble();
-        if (targetInput.isEmpty()) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
-        }
-
         Name parsedIntroducer = ParserUtil.parseName(introducerInput);
+
         if (ParserUtil.isIndexInput(targetInput)) {
             try {
                 Index targetIndex = ParserUtil.parseIndex(targetInput);
