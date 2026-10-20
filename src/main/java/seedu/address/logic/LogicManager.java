@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -29,6 +30,7 @@ public class LogicManager implements Logic {
 
     private final Model model;
     private final Storage storage;
+    private final UndoManager undoManager;
     private final ContactFileParser contactFileParser;
 
     /**
@@ -37,7 +39,8 @@ public class LogicManager implements Logic {
     public LogicManager(Model model, Storage storage) {
         this.model = model;
         this.storage = storage;
-        contactFileParser = new ContactFileParser();
+        undoManager = new UndoManager();
+        contactFileParser = new ContactFileParser(undoManager);
     }
 
     @Override
@@ -46,6 +49,7 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult;
         Command command = contactFileParser.parseCommand(commandText);
+        List<Person> personsBeforeCommand = List.copyOf(model.getContactFile().getPersonList());
         commandResult = command.execute(model);
 
         if (commandResult.shouldSaveContactFile()) {
@@ -58,6 +62,8 @@ public class LogicManager implements Logic {
             }
         }
 
+        undoManager.recordChange(command, personsBeforeCommand, model.getContactFile().getPersonList(),
+                commandResult.getFeedbackToUser());
         return commandResult;
     }
 

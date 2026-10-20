@@ -262,9 +262,31 @@ Examples:
   To delete one of them, enter the command again with its index in place of the name.
   ```
 
-<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-`delete` cannot be undone. A confirmation prompt is planned for a later version.
-</div>
+### Undoing an edit or deletion: `undo`
+
+Reverses the most recent successful edit or deletion in the current Astra session.
+
+Format: `undo [--confirm]`
+
+* Run `undo` to see which edit or deletion will be reversed. Nothing changes until you confirm.
+* Run `undo --confirm` to restore the contact information. Astra displays the restored contact and saves the contact file.
+* Only edits and deletions can be undone. Adding, clearing, or otherwise changing contact data after an edit or deletion makes that earlier change unavailable to undo.
+* If restoring the information would violate contact uniqueness rules, Astra reports the conflict and makes no changes.
+* Undo history is kept only for the current session and is cleared when Astra closes.
+
+Examples:
+* `edit 1 p/91234567`, followed by `undo`, previews the edit that would be reversed.
+* `undo --confirm` restores the previous phone number after the preview.
+* `delete John Lim`, followed by `undo` and `undo --confirm`, restores John Lim.
+
+### Viewing edit and deletion history: `history`
+
+Shows the edit and deletion history recorded during the current Astra session, including changes that have been undone.
+
+Format: `history`
+
+* The history is cleared when Astra closes.
+* Only edits and deletions are included.
 
 ### Clearing all entries: `clear`
 
@@ -332,6 +354,8 @@ Action | Format, Examples
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
+**Undo** | `undo` to preview the most recent edit or deletion; `undo --confirm` to restore it
+**History** | `history`
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
