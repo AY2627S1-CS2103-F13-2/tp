@@ -21,88 +21,96 @@ public class DropCommandParser implements Parser<DropCommand> {
         CliSyntax.PREFIX_EMAIL, CliSyntax.PREFIX_LINKEDIN, CliSyntax.PREFIX_TAG,
         CliSyntax.PREFIX_INTRODUCER
     };
+    private static final Prefix[] SELECTION_PREFIXES = createSelectionPrefixes();
 
     @Override
     public DropCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String trimmedArgs = args.trim();
-        boolean confirmed = trimmedArgs.endsWith(" " + DropCommand.CONFIRM_OPTION);
-        if (confirmed) {
-            trimmedArgs = trimmedArgs.substring(0,
-                    trimmedArgs.length() - DropCommand.CONFIRM_OPTION.length()).trim();
-        }
+        ParsedArguments parsed = removeConfirmationOption(args.trim());
+        Target target = parseTarget(parsed.arguments());
+        List<DropCommand.FieldValue> values = parseValues(parsed.arguments().substring(target.fieldsStart()));
+        return target.index() == null
+                ? new DropCommand(target.name(), values, parsed.confirmed())
+                : new DropCommand(target.index(), values, parsed.confirmed());
+    }
 
-        int fieldsStart = findFirstFieldPrefix(trimmedArgs);
+    private static ParsedArguments removeConfirmationOption(String args) {
+        String suffix = " " + DropCommand.CONFIRM_OPTION;
+        boolean confirmed = args.endsWith(suffix);
+        String arguments = confirmed ? args.substring(0, args.length() - suffix.length()).trim() : args;
+        return new ParsedArguments(arguments, confirmed);
+    }
+
+    private static Target parseTarget(String args) throws ParseException {
+        int fieldsStart = findFirstSelectionPrefix(args);
         if (fieldsStart < 0) {
             throw invalidFormat();
         }
-        String identity = trimmedArgs.substring(0, fieldsStart).trim();
-        String fieldArgs = trimmedArgs.substring(fieldsStart).trim();
+        String identity = args.substring(0, fieldsStart).trim();
         if (identity.isEmpty()) {
             throw invalidFormat();
         }
-
-        Index index = null;
-        String name = null;
         if (ParserUtil.isIndexInput(identity)) {
-            try {
-                index = ParserUtil.parseIndex(identity);
-            } catch (ParseException pe) {
-                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DropCommand.MESSAGE_USAGE), pe);
-            }
-        } else {
-            if (!Name.isValidName(identity)) {
-                throw invalidFormat();
-            }
-            name = StringUtil.normalise(identity);
+            return new Target(parseIndex(identity), null, fieldsStart);
         }
+        if (!Name.isValidName(identity)) {
+            throw invalidFormat();
+        }
+        return new Target(null, StringUtil.normalise(identity), fieldsStart);
+    }
 
-        Prefix[] allPrefixes = new Prefix[FIELD_PREFIXES.length + 1];
-        System.arraycopy(FIELD_PREFIXES, 0, allPrefixes, 0, FIELD_PREFIXES.length);
-        allPrefixes[FIELD_PREFIXES.length] = CliSyntax.PREFIX_NAME;
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + fieldArgs, allPrefixes);
+    private static Index parseIndex(String identity) throws ParseException {
+        try {
+            return ParserUtil.parseIndex(identity);
+        } catch (ParseException pe) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DropCommand.MESSAGE_USAGE), pe);
+        }
+    }
+
+    private static List<DropCommand.FieldValue> parseValues(String args) throws ParseException {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, SELECTION_PREFIXES);
         if (!argMultimap.getPreamble().isEmpty()) {
             throw invalidFormat();
         }
         if (!argMultimap.getAllValues(CliSyntax.PREFIX_NAME).isEmpty()) {
             throw new ParseException("The contact name cannot be removed.");
         }
+        return parseFieldValues(argMultimap);
+    }
 
+    private static List<DropCommand.FieldValue> parseFieldValues(ArgumentMultimap argMultimap)
+            throws ParseException {
         List<DropCommand.FieldValue> values = new ArrayList<>();
         for (DropCommand.Field field : DropCommand.Field.values()) {
-            List<String> fieldValues = argMultimap.getAllValues(field.getPrefix());
-            if (field != DropCommand.Field.TAG && fieldValues.size() > 1) {
+            if (field != DropCommand.Field.TAG) {
                 argMultimap.verifyNoDuplicatePrefixesFor(field.getPrefix());
             }
-            for (String value : fieldValues) {
+            for (String value : argMultimap.getAllValues(field.getPrefix())) {
                 if (value.isEmpty()) {
                     throw invalidFormat();
                 }
                 values.add(parseValue(field, value));
             }
         }
-        if (values.isEmpty()) {
-            throw invalidFormat();
-        }
-
-        return index == null
-                ? new DropCommand(name, values, confirmed)
-                : new DropCommand(index, values, confirmed);
+        return values;
     }
 
-    private static int findFirstFieldPrefix(String args) {
+    private static int findFirstSelectionPrefix(String args) {
         int first = -1;
-        for (Prefix prefix : FIELD_PREFIXES) {
+        for (Prefix prefix : SELECTION_PREFIXES) {
             int current = args.indexOf(" " + prefix);
             if (current >= 0 && (first < 0 || current < first)) {
                 first = current + 1;
             }
         }
-        int namePrefix = args.indexOf(" " + CliSyntax.PREFIX_NAME);
-        if (namePrefix >= 0 && (first < 0 || namePrefix < first)) {
-            first = namePrefix + 1;
-        }
         return first;
+    }
+
+    private static Prefix[] createSelectionPrefixes() {
+        Prefix[] prefixes = new Prefix[FIELD_PREFIXES.length + 1];
+        System.arraycopy(FIELD_PREFIXES, 0, prefixes, 0, FIELD_PREFIXES.length);
+        prefixes[FIELD_PREFIXES.length] = CliSyntax.PREFIX_NAME;
+        return prefixes;
     }
 
     private static DropCommand.FieldValue parseValue(DropCommand.Field field, String value) throws ParseException {
@@ -121,4 +129,8 @@ public class DropCommandParser implements Parser<DropCommand> {
     private static ParseException invalidFormat() {
         return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DropCommand.MESSAGE_USAGE));
     }
+
+    private record ParsedArguments(String arguments, boolean confirmed) {}
+
+    private record Target(Index index, String name, int fieldsStart) {}
 }
