@@ -219,6 +219,22 @@ Examples:
 * `log John Lim nt/Discussed backend internships` logs today's conversation with John Lim.
 * `log 2 d/2026-10-01 nt/Met at the career fair` logs an earlier meeting with the 2nd person in the list.
 
+### Removing a logged interaction: `unlog`
+
+Removes an interaction you logged by mistake, e.g. one with the wrong date or for the wrong person.
+
+Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
+
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `log`.
+* `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
+* After removing it, Astra shows what was removed and the person's remaining history, renumbered.
+* If the person has fewer interactions than `ENTRY`, nothing is removed.
+* To correct an interaction, remove it with `unlog` and then log it again with `log`.
+
+Examples:
+* `unlog John Lim i/2` removes the 2nd interaction in John Lim's history.
+* `unlog 1 i/1` removes the earliest interaction with the 1st person in the list.
+
 ### Deleting a person: `delete`
 
 Deletes the specified person from the contact file.
@@ -316,6 +332,7 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
+**Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`<br> e.g., `unlog John Lim i/2`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`

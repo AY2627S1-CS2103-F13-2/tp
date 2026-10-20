@@ -23,6 +23,7 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.LogCommand;
+import seedu.address.logic.commands.UnlogCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -95,6 +96,12 @@ public class ContactFileParserTest {
     public void parseCommand_log() throws Exception {
         assertTrue(parser.parseCommand(LogCommand.COMMAND_WORD + " 1 d/2026-10-01 nt/Coffee chat")
                 instanceof LogCommand);
+    }
+
+    @Test
+    public void parseCommand_unlog() throws Exception {
+        assertEquals(new UnlogCommand(INDEX_FIRST_PERSON, Index.fromOneBased(2)),
+                parser.parseCommand(UnlogCommand.COMMAND_WORD + " 1 i/2"));
     }
 
     @Test
