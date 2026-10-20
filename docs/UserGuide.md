@@ -106,9 +106,10 @@ Format: `help`
 
 Adds a person to the contact file.
 
-Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
+Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​`
 
-* Only the name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -116,6 +117,7 @@ A person can have any number of tags, including zero.
 
 Examples:
 * `add n/John Doe c/Acme r/Software Engineer p/98765432 e/johnd@example.com l/linkedin.com/in/johndoe`
+* `add n/John Doe i/O'Brien-Smith` Adds John Doe and records O'Brien-Smith as the introducer.
 * `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`
 * `add n/Hans Gruber` — just a name, when that is all you got before the conversation moved on.
 
@@ -307,7 +309,7 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
+**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com i/Jane Smith t/colleague`
 **Clear** | `clear`
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
