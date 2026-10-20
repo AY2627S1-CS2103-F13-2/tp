@@ -188,18 +188,27 @@ in one piece. Searching by company, role or tag is also planned for a later vers
 
 Shows everything Astra has stored about one person, including details the contact list does not show.
 
-Format: `view INDEX`
+Format: `view INDEX` or `view NAME`
 
-* Shows the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
-* Details the person does not have are left out rather than shown as empty.
+* `INDEX` is a positive integer from the **displayed list**, including filtered results.
+* `NAME` searches every stored contact, even if the current filter hides it. Matching ignores letter case,
+  trims and collapses whitespace, and accepts a contiguous part of a name, just like `find`, `edit`, and `delete`.
+* A unique name match shows the contact's full details and narrows the list to that contact.
+* Several matches show a numbered list with names, companies, and emails where present, in stored order.
+  Run `view INDEX` using those new numbers to choose one. There is no confirmation prompt.
+* A missing contact or invalid index shows an error and keeps the previous displayed list.
+* Details the person does not have are omitted. Viewing never changes contacts or saves the contact file.
+  Use `list` to show everyone again.
+* An argument beginning with an integer is treated as an index. `view 0`, `view -1`, and `view 1 Alice`
+  are invalid. Name queries use the same allowed characters as contact names; prefixes such as `n/`
+  are not supported.
 
 Examples:
-* `list` followed by `view 2` shows the full details of the 2nd person in the contact file.
+* `list` followed by `view 2` shows the full details of the 2nd stored person.
 * `find Yeo` followed by `view 1` shows the full details of the first search result.
-
-<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
-naming the person instead of giving an index, as `delete` and `edit` allow.
-</div>
+* `view alice pauline` or `view Pauline` shows Alice Pauline when she is the only match.
+* `view Meier` lists matching Meiers; `view 2` then shows the second match's full details.
+* `find Alice` followed by `view Carl Kurz` still finds Carl, because name lookup searches all contacts.
 
 ### Deleting a person: `delete`
 
@@ -301,5 +310,5 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`
-**View** | `view INDEX`<br> e.g., `view 2`
+**View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Help** | `help`

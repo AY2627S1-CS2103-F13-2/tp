@@ -172,7 +172,7 @@ So there is one answer, in two pieces:
   Both sides are trimmed, their runs of whitespace collapsed and their case folded, and the query must
   then appear in the name as a contiguous run. `find` applies this predicate directly.
 * `PersonNameResolver` (in `logic.commands`) turns a name into the single contact it refers to, by
-  applying that predicate and looking at how many contacts came back. `edit` and `delete` go through it.
+  applying that predicate and looking at how many contacts came back. `edit`, `delete`, and `view` go through it.
 
 `PersonNameResolver#resolve` returns a sealed `Outcome` of either `Unique`, carrying the one contact
 that matched, or `Several`, carrying a numbered list of the matches for the command to show. A name
@@ -188,13 +188,13 @@ Two consequences are worth noting:
   contacts under discussion are the contacts on screen; a command that goes on to change the address
   book restores the full list once it is done.
 * **The resolver is told which command word to name in its message**, so the list of matches ends with
-  "To delete one of them…" or "To edit one of them…" as appropriate. This is the only thing the
+  "To delete one of them…", "To edit one of them…", or "To view one of them…" as appropriate. This is the only thing the
   resolver needs to know about its caller, which keeps the dependency pointing one way: commands depend
   on the resolver, and the resolver depends on nothing but `Model` and the predicate.
 
 Deciding *whether* the user typed an index or a name happens earlier, in the parsers, and is shared the
 same way: `ParserUtil#isIndexInput` reports whether the first word of the argument is a number.
-`EditCommandParser` and `DeleteCommandParser` both consult it, so no input can be read as an index by
+`EditCommandParser`, `DeleteCommandParser`, and `ViewCommandParser` consult it, so no input can be read as an index by
 one command and as a name by another.
 
 #### Alternatives considered
@@ -206,8 +206,25 @@ one command and as a name by another.
   surprising than `delete Meier` reporting that nobody is called that.
 * **A `PersonSelector` type with index and name implementations**, which commands would hold instead of
   a nullable index and a nullable name. This removes the remaining nullable-field pair from `EditCommand`
-  and `DeleteCommand` and would let `view` gain name support for free. It is the natural next step once
-  a third command needs it; it was not done here to keep the change to `edit` small.
+  and `DeleteCommand`. `ViewCommand` keeps the existing two-selector pattern so this feature does not
+  require a wider refactor of edit/delete; all three still share matching and index classification.
+
+### Viewing contacts by name or displayed index
+
+`ViewCommandParser` normalizes whitespace and uses `ParserUtil#isIndexInput` to classify the selector.
+A numeric first token must form one valid positive index; otherwise the complete input must be a valid
+name. Prefix syntax is rejected. `ViewCommand` resolves a name with `PersonNameResolver` and sends a
+unique contact to the same `Messages#format` path as index selection. Absent optional fields are omitted.
+Several matches return the resolver's numbered candidates and a command-specific retry instruction.
+There is no pending request or y/n prompt: the next `view INDEX` simply selects from the current list.
+
+Index selection keeps the current filter, while name resolution searches all contacts and replaces the
+filter with the matching names. `LogicManager` restores the pre-command snapshot on lookup/parse failure,
+including the original dynamic predicate and existing observable-list binding. Successful unique and
+ambiguous lookups change no contact data, so the transactional save boundary performs zero writes.
+`list` restores the full list. No matching, formatting, or persistence rule is duplicated in the view command.
+
+![View workflow](images/ViewActivityDiagram.svg)
 
 ### Normalized contact keys
 
@@ -494,31 +511,33 @@ Command-save rollback is implemented: failed saving preserves contacts, the acti
 
 **MSS**
 
-1. User enters a find command with a name, a contact number or an email.
-2. Astra finds exactly one matching contact and shows all of its stored information.
+1. User enters `view INDEX` from the displayed list (optionally narrowed with `find`), or `view NAME`.
+2. Astra resolves the displayed index or searches all contacts by partial, case-insensitive name and shows
+   the selected contact's full stored information, omitting absent optional fields. No contact data is saved.
 
    Use case ends.
 
 **Extensions**
 
 * 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to view.
+    * 1a1. Astra reports an invalid displayed index or a missing named contact, without changing data.
 
       Use case ends.
 
-* 1b. The search value is missing, or the contact number or email is malformed.
-    * 1b1. Astra shows the relevant error message.
+* 1b. The selector is missing or malformed, or the displayed index is out of range.
+    * 1b1. Astra shows usage or an index error and preserves the previous filter.
 
       Use case ends.
 
 * 2a. No contact matches.
-    * 2a1. Astra shows that the contact was not found.
+    * 2a1. Astra shows that the contact was not found and restores the previous filter.
 
       Use case ends.
 
 * 2b. Several contacts match.
-    * 2b1. Astra shows the number of matches and a ranked, numbered list with names, companies and emails.
-    * 2b2. User selects a contact by index.
+    * 2b1. Astra narrows the displayed list to matches in stored order and shows numbered names,
+      companies, and emails where present. No contact is chosen automatically.
+    * 2b2. User enters `view INDEX` using a candidate's displayed number.
     * 2b3. Astra shows all stored information of the selected contact.
 
       Use case ends.
@@ -766,6 +785,33 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Viewing contacts
+
+Use sample contacts Alice Pauline, Benson Meier, and Daniel Meier. Record the contact file's contents
+and modification time before each sequence; every view success, ambiguous result, and failure must leave
+them unchanged. No view command should ask for y/n.
+
+1. Run `view alice pauline`, `view Pauline`, and `view   ALICE   Pauline`.<br>
+   Expected: Alice's full details, including company, role, phone, email, LinkedIn, and tags when present.
+   The list contains Alice alone. Try a contact with only a name; no empty labels should appear.
+2. Run `find Alice`, then `view Carl Kurz`.<br>
+   Expected: Carl's details and a list containing Carl, even though the previous filter hid him.
+3. Run `view Meier`.<br>
+   Expected: numbered Benson/Daniel candidates in stored order with available companies/emails. Run
+   `view 3`; expect an index error and unchanged candidates. Run `view 2`; expect Daniel's details.
+   Run `list`; expect all contacts again.
+4. Run `find Meier`, then `view 1`.<br>
+   Expected: Benson's full details, using his displayed index rather than his stored position. The filter remains.
+5. With a filter active, try `view Zed`, `view`, `view 0`, `view -1`, `view 1 Alice`, and `view n/Alice`.<br>
+   Expected: missing-name/index/usage errors, unchanged contact data, and the same displayed filter.
+   Repeat name/index lookup on an empty file; expect a missing-name/index error without any save.
+
+After the team integrates the sibling feature PRs, also check `filter t/owesMoney` followed by `view 1`,
+then `view Meier` and `view 2`: indices must follow the newly displayed results. View a contact with
+pending/completed follow-ups by name and index; both paths must show every stored ID/status/description.
+Change field order and view the same person by name; retain the active order and immediate detail refresh
+from UC26. These combined cases require #142/#144/#146 and are not claimed as tested on this PR's #132 base.
 
 ### Deleting a person
 

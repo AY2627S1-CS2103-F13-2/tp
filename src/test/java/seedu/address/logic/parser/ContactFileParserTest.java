@@ -107,6 +107,7 @@ public class ContactFileParserTest {
         assertEquals(
                 new ViewCommand(Index.fromOneBased(1)),
                 parser.parseCommand(ViewCommand.COMMAND_WORD + " 1"));
+        assertEquals(new ViewCommand("Alice Pauline"), parser.parseCommand("view Alice Pauline"));
     }
 
     @Test
