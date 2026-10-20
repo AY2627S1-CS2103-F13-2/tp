@@ -26,6 +26,9 @@ public class LogicManager implements Logic {
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
 
+    /** Shown before the result of a command entered through a shortcut, so the user can see what ran. */
+    public static final String MESSAGE_SHORTCUT_EXPANDED = "Ran: %s\n";
+
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
@@ -47,8 +50,24 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult;
         Map<String, String> aliasesBefore = Map.copyOf(model.getCommandAliases());
-        Command command = contactFileParser.parseCommand(commandText, aliasesBefore);
-        commandResult = command.execute(model);
+        String expandedText = ContactFileParser.expandShortcut(commandText, aliasesBefore);
+        String shortcutNote = expandedText.equals(commandText)
+                ? ""
+                : String.format(MESSAGE_SHORTCUT_EXPANDED, expandedText.trim());
+
+        // Errors from a shortcut also say what it expanded to, since the user never typed that command.
+        try {
+            Command command = contactFileParser.parseCommand(expandedText);
+            commandResult = command.execute(model);
+        } catch (ParseException pe) {
+            throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
+        } catch (CommandException ce) {
+            throw shortcutNote.isEmpty() ? ce : new CommandException(shortcutNote + ce.getMessage(), ce);
+        }
+        if (!shortcutNote.isEmpty()) {
+            commandResult = new CommandResult(shortcutNote + commandResult.getFeedbackToUser(),
+                    commandResult.isShowHelp(), commandResult.isExit());
+        }
 
         try {
             storage.saveContactFile(model.getContactFile());
