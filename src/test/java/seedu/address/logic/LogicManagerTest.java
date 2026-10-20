@@ -114,6 +114,29 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_historyRecordsDataChangesAndOmitsViewCommands() throws Exception {
+        logic.execute("add n/Alice Smith p/12345678 t/outdated");
+        logic.execute("view 1");
+        logic.execute("drop 1 t/outdated");
+        assertFalse(logic.execute("history").getFeedbackToUser().contains("drop:"));
+        logic.execute("drop 1 t/outdated --confirm");
+        logic.execute("edit 1 p/87654321");
+        logic.execute("introduce 1 i/Jane Doe");
+        logic.execute("delete 1");
+        logic.execute("add n/Bob Jones");
+        logic.execute("clear");
+
+        String history = logic.execute("history").getFeedbackToUser();
+        assertTrue(history.contains("addition:"));
+        assertTrue(history.contains("deletion:"));
+        assertTrue(history.contains("drop:"));
+        assertTrue(history.contains("clear:"));
+        assertTrue(history.contains("edit:"));
+        assertTrue(history.contains("introduce:"));
+        assertFalse(history.contains("view:"));
+    }
+
+    @Test
     public void execute_undoEdit_requiresConfirmationAndRestoresContact() throws Exception {
         Person original = new PersonBuilder().withName("Alice Smith").withPhone("12345678")
                 .withEmail(null).build();
