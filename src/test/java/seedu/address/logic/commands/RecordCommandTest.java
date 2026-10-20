@@ -1,5 +1,8 @@
 package seedu.address.logic.commands;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
@@ -70,5 +73,36 @@ public class RecordCommandTest {
                 new Name("Jane Doe"), false);
 
         assertCommandFailure(command, model, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void equals() {
+        Index firstIndex = Index.fromOneBased(1);
+        Index secondIndex = Index.fromOneBased(2);
+        Name janeDoe = new Name("Jane Doe");
+        Name johnDoe = new Name("John Doe");
+
+        RecordCommand command = new RecordCommand(firstIndex, janeDoe, false);
+
+        assertTrue(command.equals(command));
+        assertTrue(command.equals(new RecordCommand(firstIndex, janeDoe, false)));
+        assertFalse(command.equals(new RecordCommand(secondIndex, janeDoe, false)));
+        assertFalse(command.equals(new RecordCommand(firstIndex, johnDoe, false)));
+        assertFalse(command.equals(new RecordCommand(firstIndex, janeDoe, true)));
+        assertFalse(command.equals(null));
+        assertFalse(command.equals(1));
+    }
+
+    @Test
+    public void toStringMethod() {
+        Index index = Index.fromOneBased(1);
+        Name introducer = new Name("Jane Doe");
+        RecordCommand command = new RecordCommand(index, introducer, true);
+
+        String expected = RecordCommand.class.getCanonicalName()
+                + "{targetIndex=" + index
+                + ", introducer=" + introducer
+                + ", confirmed=true}";
+        assertEquals(expected, command.toString());
     }
 }

@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
@@ -34,8 +35,30 @@ public class RecordCommandParserTest {
     public void parse_missingOrInvalidName_fails() {
         assertParseFailure(parser, "1", RecordCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "1 i/ --confirm", RecordCommand.MESSAGE_NAME_REQUIRED);
-        assertParseFailure(parser, "1 Jane Doe", String.format(
-                seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT, RecordCommand.MESSAGE_USAGE));
+        assertParseFailure(parser, "1 Jane Doe",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, RecordCommand.MESSAGE_USAGE));
         assertParseFailure(parser, "1 i/Jane& Doe", Name.MESSAGE_CONSTRAINTS);
     }
+
+    @Test
+    public void parse_invalidIndex_fails() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, RecordCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, "0 i/Jane Doe", expectedMessage);
+        assertParseFailure(parser, "abc i/Jane Doe", expectedMessage);
+    }
+
+    @Test
+    public void parse_missingOrUnexpectedPrefix_fails() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, RecordCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, "1 Jane Doe", expectedMessage);
+        assertParseFailure(parser, "1 n/Jane Doe", expectedMessage);
+        assertParseFailure(parser, "1 extra i/Jane Doe", expectedMessage);
+    }
+
+    @Test
+    public void parse_duplicateIntroducerPrefix_fails() {
+        assertParseFailure(parser, "1 i/Jane Doe i/John Smith",
+                seedu.address.logic.Messages.MESSAGE_DUPLICATE_FIELDS + "i/");
+    }
+
 }
