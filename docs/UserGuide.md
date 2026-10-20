@@ -129,7 +129,7 @@ Format: `list`
 
 Marks a contact as important so you can retrieve it later with `starred`.
 
-Format: `star INDEX`
+Format: `star INDEX` or `star QUERY`
 
 * `INDEX` must be a positive integer from the currently displayed list.
 * If the contact is already starred, Astra reports that status without changing contact data.
@@ -137,11 +137,22 @@ Format: `star INDEX`
 
 Example: `find Betsy` followed by `star 1` stars the 1st search result.
 
+Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`](#locating-persons-find): a name, `/contact PHONE_NUMBER`, or `/email EMAIL`.
+
+* Queries search all contacts and replace the current displayed filter with the search results.
+* One match: the contact's starred status is updated. If it already has the requested status, Astra reports this without changing contact data.
+* Multiple matches: Astra displays the results without changing any contacts and asks you to retry with `star INDEX` or `unstar INDEX`.
+* No matches: Astra displays an empty list and reports `Contact not found.`
+* Numeric input is treated as an index. As with other index commands, input beginning with an integer must be a single positive index.
+
+Examples: `star Alex`, `star /contact 87438807`, and `unstar /email alex@example.com`.
+
+
 ### Removing a contact's star: `unstar`
 
 Removes a contact's starred status.
 
-Format: `unstar INDEX`
+Format: `unstar INDEX` or `unstar QUERY`
 
 * `INDEX` must be a positive integer from the currently displayed list.
 * If the contact is not starred, Astra reports that status without changing contact data.
@@ -331,8 +342,8 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`
-**Star** | `star INDEX`<br> e.g., `star 2`
-**Unstar** | `unstar INDEX`<br> e.g., `unstar 1`
+**Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
+**Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`
 **View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`
