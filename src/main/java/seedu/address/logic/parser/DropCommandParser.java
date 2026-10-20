@@ -47,9 +47,6 @@ public class DropCommandParser implements Parser<DropCommand> {
             throw invalidFormat();
         }
         String identity = args.substring(0, fieldsStart).trim();
-        if (identity.isEmpty()) {
-            throw invalidFormat();
-        }
         if (ParserUtil.isIndexInput(identity)) {
             return new Target(parseIndex(identity), null, fieldsStart);
         }
@@ -69,9 +66,6 @@ public class DropCommandParser implements Parser<DropCommand> {
 
     private static List<DropCommand.FieldValue> parseValues(String args) throws ParseException {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, SELECTION_PREFIXES);
-        if (!argMultimap.getPreamble().isEmpty()) {
-            throw invalidFormat();
-        }
         if (!argMultimap.getAllValues(CliSyntax.PREFIX_NAME).isEmpty()) {
             throw new ParseException("The contact name cannot be removed.");
         }

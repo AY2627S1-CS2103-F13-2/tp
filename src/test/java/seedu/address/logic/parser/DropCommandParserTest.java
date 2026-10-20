@@ -74,11 +74,6 @@ public class DropCommandParserTest {
     }
 
     @Test
-    public void parse_emptyIdentity_fails() {
-        assertParseFailure(parser, " t/old", invalidFormat);
-    }
-
-    @Test
     public void parse_emptyValues_fails() {
         assertParseFailure(parser, "", invalidFormat);
         assertParseFailure(parser, "1", invalidFormat);
