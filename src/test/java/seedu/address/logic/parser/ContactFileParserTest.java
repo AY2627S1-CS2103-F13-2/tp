@@ -114,7 +114,7 @@ public class ContactFileParserTest {
     @Test
     public void parseCommand_record() throws Exception {
         assertEquals(new RecordCommand(INDEX_FIRST_PERSON, new Name("Jane Doe"), false),
-                parser.parseCommand(RecordCommand.COMMAND_WORD + " 1 n/Jane Doe"));
+                parser.parseCommand(RecordCommand.COMMAND_WORD + " 1 i/Jane Doe"));
     }
 
     @Test

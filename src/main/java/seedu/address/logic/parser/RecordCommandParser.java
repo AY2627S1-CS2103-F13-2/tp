@@ -1,7 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_INTRODUCER;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.RecordCommand;
@@ -36,13 +36,13 @@ public class RecordCommandParser implements Parser<RecordCommand> {
                     introducerArgs.length() - confirmationSuffix.length()).trim();
         }
 
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + introducerArgs, PREFIX_NAME);
-        if (!argMultimap.getPreamble().isEmpty() || argMultimap.getValue(PREFIX_NAME).isEmpty()) {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + introducerArgs, PREFIX_INTRODUCER);
+        if (!argMultimap.getPreamble().isEmpty() || argMultimap.getValue(PREFIX_INTRODUCER).isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, RecordCommand.MESSAGE_USAGE));
         }
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_INTRODUCER);
 
-        String introducerInput = argMultimap.getValue(PREFIX_NAME).orElseThrow();
+        String introducerInput = argMultimap.getValue(PREFIX_INTRODUCER).orElseThrow();
         if (introducerInput.isEmpty()) {
             throw new ParseException(RecordCommand.MESSAGE_NAME_REQUIRED);
         }

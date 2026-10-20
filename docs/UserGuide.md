@@ -156,16 +156,16 @@ Examples:
 
 Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
 
-Format: `record INDEX n/NAME [--confirm]`
+Format: `record INDEX i/INTRODUCER [--confirm]`
 
 * `INDEX` is the positive index of the contact in the displayed person list.
-* Enter the introducer's full name after `n/`. A name is required and follows the same name validation as `add`.
+* Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * If an introducer is already recorded, Astra displays that name and asks before replacing it. Confirm by repeating the command with `--confirm` at the end.
 * Astra displays the updated contact after recording the introducer.
 
 Examples:
-* `record 1 n/Jane Doe` Records Jane Doe as the person who introduced the 1st contact.
-* `record 1 n/Jane Doe --confirm` Confirms replacing the 1st contact's existing introducer with Jane Doe.
+* `record 1 i/Jane Doe` Records Jane Doe as the person who introduced the 1st contact.
+* `record 1 i/Jane Doe --confirm` Confirms replacing the 1st contact's existing introducer with Jane Doe.
 
 ### Locating persons: `find`
 

@@ -1,7 +1,7 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_INTRODUCER;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
@@ -25,12 +25,12 @@ public class RecordCommand extends Command {
     public static final String MESSAGE_RECORDED = "Recorded introducer for contact:\n%1$s";
     public static final String MESSAGE_CONFIRM_REPLACEMENT =
             "The existing introducer for %1$s is %2$s. To replace it with %3$s, run: "
-                    + COMMAND_WORD + " %4$d " + PREFIX_NAME + "%3$s " + CONFIRM_OPTION;
+                    + COMMAND_WORD + " %4$d " + PREFIX_INTRODUCER + "%3$s " + CONFIRM_OPTION;
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Records who introduced a contact.\n"
-            + "Parameters: INDEX " + PREFIX_NAME + "NAME [" + CONFIRM_OPTION + "]\n"
+            + "Parameters: INDEX " + PREFIX_INTRODUCER + "INTRODUCER [" + CONFIRM_OPTION + "]\n"
             + "Use " + CONFIRM_OPTION + " to confirm replacing an existing introducer.\n"
-            + "Example: " + COMMAND_WORD + " 1 " + PREFIX_NAME + "Jane Doe";
+            + "Example: " + COMMAND_WORD + " 1 " + PREFIX_INTRODUCER + "Jane Doe";
 
     private final Index targetIndex;
     private final Name introducer;
