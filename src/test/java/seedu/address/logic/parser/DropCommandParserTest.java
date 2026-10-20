@@ -74,10 +74,19 @@ public class DropCommandParserTest {
     }
 
     @Test
-    public void parse_invalidOrMissingSelection_fails() {
+    public void parse_emptyIdentity_fails() {
+        assertParseFailure(parser, " t/old", invalidFormat);
+    }
+
+    @Test
+    public void parse_emptyValues_fails() {
         assertParseFailure(parser, "", invalidFormat);
-        assertParseFailure(parser, "   ", invalidFormat);
         assertParseFailure(parser, "1", invalidFormat);
+    }
+
+    @Test
+    public void parse_invalidOrMissingSelection_fails() {
+        assertParseFailure(parser, "   ", invalidFormat);
         assertParseFailure(parser, "1 malformed", invalidFormat);
         assertParseFailure(parser, "Jane& Doe t/old", invalidFormat);
         assertParseFailure(parser, "t/old", invalidFormat);

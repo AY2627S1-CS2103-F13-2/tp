@@ -58,9 +58,13 @@ public class IntroduceCommandParserTest {
                 MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
         assertParseFailure(parser, "Jane Smith i/ --confirm", IntroduceCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "Jane Smith i/   ", IntroduceCommand.MESSAGE_NAME_REQUIRED);
+        assertParseFailure(parser, "Jane Smith i/Jane& Doe", Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_emptyTargetInput_fails() {
         assertParseFailure(parser, "i/Jane Doe",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
-        assertParseFailure(parser, "Jane Smith i/Jane& Doe", Name.MESSAGE_CONSTRAINTS);
     }
 
     @Test
