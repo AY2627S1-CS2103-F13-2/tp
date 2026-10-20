@@ -57,14 +57,22 @@ public class UndoManager {
             return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
         }
         if (!confirmed) {
-            pendingEntry = undoableEntry;
-            return new CommandResult(String.format(MESSAGE_CONFIRM_UNDO,
-                    undoableEntry.action, undoableEntry.feedback), false, false, false);
+            return previewUndo();
         }
         if (pendingEntry != undoableEntry) {
             return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
         }
 
+        return confirmUndo(model);
+    }
+
+    private CommandResult previewUndo() {
+        pendingEntry = undoableEntry;
+        return new CommandResult(String.format(MESSAGE_CONFIRM_UNDO,
+                undoableEntry.action, undoableEntry.feedback), false, false, false);
+    }
+
+    private CommandResult confirmUndo(Model model) {
         Person restored = undoableEntry.getRestoredPerson();
         Person personToReplace = undoableEntry.getPersonToReplace();
         List<Person> currentPersons = new ArrayList<>(model.getContactFile().getPersonList());
@@ -74,24 +82,33 @@ public class UndoManager {
             return new CommandResult(MESSAGE_UNDO_CONFLICT, false, false, false);
         }
 
-        if (personToReplace == null) {
-            currentPersons.add(Math.min(undoableEntry.getOriginalIndex(), currentPersons.size()), restored);
-        } else {
-            currentPersons.set(replaceIndex, restored);
-        }
+        restorePerson(currentPersons, restored, replaceIndex);
         if (violatesUniqueness(currentPersons)) {
             pendingEntry = null;
             return new CommandResult(MESSAGE_UNDO_CONFLICT, false, false, false);
         }
-        ContactFile restoredContactFile = new ContactFile();
-        restoredContactFile.setPersons(currentPersons);
-        model.setContactFile(restoredContactFile);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+
+        updateModel(model, currentPersons);
         HistoryEntry undoneEntry = undoableEntry;
         pendingEntry = null;
         undoableEntry = null;
         undoneEntry.isUndone = true;
         return new CommandResult(String.format(MESSAGE_UNDO_SUCCESS, Messages.format(restored)));
+    }
+
+    private void restorePerson(List<Person> currentPersons, Person restored, int replaceIndex) {
+        if (replaceIndex < 0) {
+            currentPersons.add(Math.min(undoableEntry.getOriginalIndex(), currentPersons.size()), restored);
+        } else {
+            currentPersons.set(replaceIndex, restored);
+        }
+    }
+
+    private void updateModel(Model model, List<Person> persons) {
+        ContactFile restoredContactFile = new ContactFile();
+        restoredContactFile.setPersons(persons);
+        model.setContactFile(restoredContactFile);
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
     /**
