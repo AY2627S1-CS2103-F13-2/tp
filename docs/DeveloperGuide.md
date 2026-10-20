@@ -226,8 +226,7 @@ clears pending state on completion, cancellation, or failed confirmed saving.
 Invalid replies repeat the prompt; unrelated commands do not execute while a
 response is pending. Clear uses this mechanism now; delete will adopt it in the
 next package. `PersonSelectionRequest` supplies reusable numbered selection for
-that upcoming workflow. UC16 reuses confirmation with an "Add another?" question
-for duplicate pending actions; it does not introduce another response mechanism.
+that upcoming workflow. Future UC16 can reuse confirmation, but is deferred.
 
 ### Transactional contact saves
 
@@ -241,44 +240,6 @@ compares the candidate, then uses atomic replacement. Failures before
 replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
-
-### Follow-up actions (UC16)
-
-`Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
-ID unique within that contact, a stripped non-blank description, and a
-`PENDING` or `COMPLETED` status. IDs are allocated as one greater than the
-maximum existing ID, including completed history, rather than the list size or
-last element. Existing IDs and order never change; ID exhaustion is rejected
-without mutation. This version does not remove actions or implement completion.
-
-`FollowUpCommandParser` requires a positive displayed index and exactly one
-`a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
-rejected instead of being silently stored as description text. Exact trimmed,
-case-sensitive description equality defines duplicates, and only pending
-actions trigger confirmation. The command retains the resolved contact and
-description in the shared request. A later displayed index cannot redirect a
-confirmed action; a changed or missing target invalidates the request.
-
-Strong `Person` equality/hash include ordered follow-ups so Logic detects and
-saves an action change. Contact identity and phone/email duplicate checks do
-not include actions. `EditCommand` carries existing history into the replacement
-contact, and `PersonBuilder` preserves history when copying a contact in tests.
-Model replacement updates bound cards immediately; cards and full details show
-each action's stable ID and status, with no blank action row for empty history.
-
-`JsonAdaptedPerson` defaults a missing/null `followUps` property to an empty
-list for old files. `JsonAdaptedFollowUp` validates raw JSON field types,
-positive integer IDs, non-blank descriptions, and supported status values;
-duplicate IDs and null actions invalidate the entire contact. Startup recovery
-uses the same conversion and reports/skips the affected record, preserving its
-original bytes in the existing recovery archive. Valid histories retain their
-order, status, and IDs through normal saves and recovery. Failed immediate or
-confirmed saves restore the original action history, model, and predicate.
-
-The following activity diagram shows the command and transaction boundaries.
-Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
-
-![Recording a follow-up](images/FollowUpActivityDiagram.svg)
 
 ### \[Proposed\] Undo/redo feature
 
@@ -736,40 +697,6 @@ Command-save rollback is implemented through Logic and Storage and applies to ed
 
 *{More to be added}*
 
-**Use case: UC16 - Record a follow-up action**
-
-**MSS**
-
-1. User enters `followup INDEX a/DESCRIPTION` for a displayed contact.
-2. Astra validates and trims the description, resolves the displayed contact,
-   and checks its pending actions for the identical description.
-3. Astra appends a new action with the next stable ID and `PENDING` status.
-4. Astra saves once and displays the updated ordered action list in feedback
-   and the contact card, preserving the active contact filter.
-
-   Use case ends.
-
-**Extensions**
-
-* 1a. The index or format is invalid, the description is blank, or an unsupported
-  prefix is supplied: report the error without modifying or saving contacts.
-* 2a. An identical pending action exists: show it and ask "Add another?".
-    * 2a1. User replies y: resume at step 3 with the retained contact/description.
-    * 2a2. User replies n/cancel: discard the request and preserve data/view.
-    * 2a3. Any other reply: repeat the prompt and perform no save or command.
-* 2b. Only a completed action has that description: proceed without a prompt.
-* 3a. No further positive integer IDs are available: report the error without
-  renumbering or changing the history.
-* 4a. Saving fails: restore previous file/model/history/view, clear any pending
-  request, and report the failure. A retry requires a new request.
-
-**Scope decisions**
-
-Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
-proposed confirmation suffix by user decision. IDs, completed status, and
-history storage support future UC17; completion commands, due dates, and
-links to events remain outside UC16.
-
 ### Non-Functional Requirements
 
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
@@ -907,35 +834,6 @@ testers are expected to do more *exploratory* testing.
    mutation. Neither command should save.
 5. Simulate failed saving with the storage test doubles: confirmed clear must preserve the old file bytes, original contacts, original order,
    and filter. A later y must not replay a failed request.
-
-### Recording follow-ups
-
-Use a fresh copy of sample data.
-
-1. Run `followup 1 a/  Send portfolio  `: expect `#1 [PENDING] Send portfolio`
-   in feedback and the card. Run `view 1`: expect the same ordered action list.
-2. Repeat `followup 1 a/Send portfolio`: expect the existing action and "Add
-   another?" without mutation. Try `maybe`, `list`, and `yes`: expect the same
-   prompt and unchanged data. Enter `n`: expect cancellation. Repeat and enter
-   `y`: expect a second action with ID 2 and one save.
-3. Run `find Benson`, then `followup 1 a/Call`: only Benson changes and the
-   filtered view remains. Repeat and enter `cancel`: the original view/history
-   remain. A later `y` must be unknown rather than replaying the request.
-4. Edit that contact's name, phone, tags, or remove an optional field. Expect
-   all actions retained. Restart: actions and IDs remain. Add a different action:
-   expect the next ID, without renumbering existing actions.
-5. Try index 0, an out-of-range index, a blank description, repeated `a/`, and
-   `followup 1 a/Call confirm/yes`: expect an error and no changes or save.
-6. Load an old contact file without `followUps`: expect an empty history.
-   Using a backed-up test file, include completed action #9 and pending action
-   #3, in that order; add the completed description again: expect pending #10
-   without a prompt. The stored action order remains 9, 3, 10.
-7. Load a test file containing one contact with duplicate/invalid action IDs
-   and another valid contact with actions: expect recovery to report the bad
-   record, preserve the original backup, and retain the valid history.
-8. Simulate failed saving using the storage test double for both a new action
-   and a confirmed duplicate: expect unchanged file bytes, actions, order,
-   filtered view, and observable-list binding. A later y must not replay it.
 
 ### Saving data
 

@@ -2,10 +2,8 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -15,8 +13,8 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the contact file.
- * Guarantees: the name, tag set, and ordered action list are present and immutable.
- * Contact details other than the name are optional; all field values are validated.
+ * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
+ * Every other field is optional and may be absent.
  */
 public class Person {
 
@@ -30,7 +28,6 @@ public class Person {
     private final Email email;
     private final Linkedin linkedin;
     private final Set<Tag> tags = new HashSet<>();
-    private final List<FollowUp> followUps;
 
     /**
      * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
@@ -39,21 +36,6 @@ public class Person {
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
             Set<Tag> tags) {
-        this(name, company, role, phone, email, linkedin, tags, List.of());
-    }
-
-    /**
-     * Creates a contact with an ordered immutable action list whose IDs are unique.
-     */
-    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
-            Set<Tag> tags, List<FollowUp> followUps) {
-        this.followUps = List.copyOf(followUps);
-        Set<Integer> actionIds = new HashSet<>();
-        for (FollowUp action : this.followUps) {
-            if (!actionIds.add(action.getId())) {
-                throw new IllegalArgumentException("Follow-up IDs must be unique within a contact.");
-            }
-        }
         requireNonNull(name);
         requireNonNull(tags);
         this.name = name;
@@ -95,19 +77,6 @@ public class Person {
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
-    }
-
-    public List<FollowUp> getFollowUps() {
-        return followUps;
-    }
-
-    /**
-     * Returns a copy with the action appended, retaining all existing fields and action order.
-     */
-    public Person appendFollowUp(FollowUp action) {
-        List<FollowUp> updatedActions = new ArrayList<>(followUps);
-        updatedActions.add(requireNonNull(action));
-        return new Person(name, company, role, phone, email, linkedin, tags, updatedActions);
     }
 
     /**
@@ -165,14 +134,13 @@ public class Person {
                 && Objects.equals(phone, otherPerson.phone)
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
-                && tags.equals(otherPerson.tags)
-                && followUps.equals(otherPerson.followUps);
+                && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags, followUps);
+        return Objects.hash(name, company, role, phone, email, linkedin, tags);
     }
 
     @Override
@@ -185,7 +153,6 @@ public class Person {
                 .add("email", email)
                 .add("linkedin", linkedin)
                 .add("tags", tags)
-                .add("followUps", followUps)
                 .toString();
     }
 
