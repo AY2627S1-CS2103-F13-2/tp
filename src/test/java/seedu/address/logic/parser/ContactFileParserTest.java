@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import seedu.address.commons.core.index.Index;
+import seedu.address.logic.Messages;
+import seedu.address.logic.UndoManager;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
@@ -21,10 +23,16 @@ import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.ContactFile;
+import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
+import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
@@ -115,6 +123,49 @@ public class ContactFileParserTest {
     public void parseCommand_introduce() throws Exception {
         assertEquals(new IntroduceCommand("Jane Smith", new Name("Jane Doe"), false),
                 parser.parseCommand(IntroduceCommand.COMMAND_WORD + " Jane Smith i/Jane Doe"));
+    }
+
+    @Test
+    public void parseCommand_undoWithoutArgumentsAndWithConfirmOption() throws Exception {
+        UndoManager undoManager = new UndoManager();
+        ContactFileParser parserWithUndoManager = new ContactFileParser(undoManager);
+        Person person = new PersonBuilder().build();
+        String feedback = "Deleted contact.";
+        undoManager.recordChange(new DeleteCommand(Index.fromOneBased(1)), List.of(person), List.of(), feedback);
+        Model model = new ModelManager(new ContactFile(), new UserPrefs());
+
+        UndoCommand previewCommand = (UndoCommand) parserWithUndoManager.parseCommand(UndoCommand.COMMAND_WORD);
+        assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "deletion", feedback),
+                previewCommand.execute(model).getFeedbackToUser());
+
+        UndoCommand confirmCommand = (UndoCommand) parserWithUndoManager.parseCommand(
+                UndoCommand.COMMAND_WORD + " " + UndoCommand.CONFIRM_OPTION);
+        assertEquals(String.format(UndoManager.MESSAGE_UNDO_SUCCESS, Messages.format(person)),
+                confirmCommand.execute(model).getFeedbackToUser());
+    }
+
+    @Test
+    public void parseCommand_undoWithInvalidArguments_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE);
+        Executable invalidUndoOption = () -> parser.parseCommand(UndoCommand.COMMAND_WORD + " invalid");
+        Executable extraUndoArgument = () -> parser.parseCommand(
+                UndoCommand.COMMAND_WORD + " " + UndoCommand.CONFIRM_OPTION + " extra");
+        assertThrows(ParseException.class, expectedMessage, invalidUndoOption);
+        assertThrows(ParseException.class, expectedMessage, extraUndoArgument);
+    }
+
+    @Test
+    public void parseCommand_historyWithoutArguments() throws Exception {
+        HistoryCommand command = (HistoryCommand) parser.parseCommand(HistoryCommand.COMMAND_WORD);
+        Model model = new ModelManager(new ContactFile(), new UserPrefs());
+        assertEquals(UndoManager.MESSAGE_HISTORY_EMPTY, command.execute(model).getFeedbackToUser());
+    }
+
+    @Test
+    public void parseCommand_historyWithArguments_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, HistoryCommand.MESSAGE_USAGE);
+        Executable historyWithArguments = () -> parser.parseCommand(HistoryCommand.COMMAND_WORD + " extra");
+        assertThrows(ParseException.class, expectedMessage, historyWithArguments);
     }
 
     @Test
