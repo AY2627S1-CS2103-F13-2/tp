@@ -21,8 +21,8 @@ import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
-import seedu.address.logic.commands.RecordCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Name;
@@ -112,9 +112,9 @@ public class ContactFileParserTest {
     }
 
     @Test
-    public void parseCommand_record() throws Exception {
-        assertEquals(new RecordCommand(INDEX_FIRST_PERSON, new Name("Jane Doe"), false),
-                parser.parseCommand(RecordCommand.COMMAND_WORD + " 1 n/Jane Doe"));
+    public void parseCommand_introduce() throws Exception {
+        assertEquals(new IntroduceCommand("Jane Smith", new Name("Jane Doe"), false),
+                parser.parseCommand(IntroduceCommand.COMMAND_WORD + " Jane Smith i/Jane Doe"));
     }
 
     @Test
@@ -128,5 +128,6 @@ public class ContactFileParserTest {
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("record 1 i/Jane Doe"));
     }
 }

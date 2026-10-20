@@ -1,10 +1,11 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_INTRODUCER;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
+import java.util.Objects;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
@@ -17,37 +18,57 @@ import seedu.address.model.person.Person;
 /**
  * Records the name of the person who introduced a contact.
  */
-public class RecordCommand extends Command {
+public class IntroduceCommand extends Command {
 
-    public static final String COMMAND_WORD = "record";
+    public static final String COMMAND_WORD = "introduce";
     public static final String CONFIRM_OPTION = "--confirm";
     public static final String MESSAGE_NAME_REQUIRED = "An introducer's name is required.";
     public static final String MESSAGE_RECORDED = "Recorded introducer for contact:\n%1$s";
     public static final String MESSAGE_CONFIRM_REPLACEMENT =
             "The existing introducer for %1$s is %2$s. To replace it with %3$s, run: "
-                    + COMMAND_WORD + " %4$d " + PREFIX_NAME + "%3$s " + CONFIRM_OPTION;
+                    + COMMAND_WORD + " %4$s " + PREFIX_INTRODUCER + "%3$s " + CONFIRM_OPTION;
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Records who introduced a contact.\n"
-            + "Parameters: INDEX " + PREFIX_NAME + "NAME [" + CONFIRM_OPTION + "]\n"
+            + "Parameters: NAME " + PREFIX_INTRODUCER + "INTRODUCER [" + CONFIRM_OPTION + "]\n"
+            + "Use a displayed index in place of NAME to select one of several matching contacts.\n"
             + "Use " + CONFIRM_OPTION + " to confirm replacing an existing introducer.\n"
-            + "Example: " + COMMAND_WORD + " 1 " + PREFIX_NAME + "Jane Doe";
+            + "Example: " + COMMAND_WORD + " John Doe " + PREFIX_INTRODUCER + "Jane Smith";
 
     private final Index targetIndex;
+    private final String targetName;
     private final Name introducer;
     private final boolean confirmed;
 
     /**
-     * Creates a RecordCommand.
+     * Creates an IntroduceCommand.
      *
      * @param targetIndex index of the contact in the filtered person list
      * @param introducer name of the person who introduced the contact
      * @param confirmed whether replacement of an existing introducer is confirmed
      */
-    public RecordCommand(Index targetIndex, Name introducer, boolean confirmed) {
+    public IntroduceCommand(Index targetIndex, Name introducer, boolean confirmed) {
         requireNonNull(targetIndex);
         requireNonNull(introducer);
 
         this.targetIndex = targetIndex;
+        this.targetName = null;
+        this.introducer = introducer;
+        this.confirmed = confirmed;
+    }
+
+    /**
+     * Creates an IntroduceCommand that finds the contact by name.
+     *
+     * @param targetName full or partial name of the contact to update
+     * @param introducer name of the person who introduced the contact
+     * @param confirmed whether replacement of an existing introducer is confirmed
+     */
+    public IntroduceCommand(String targetName, Name introducer, boolean confirmed) {
+        requireNonNull(targetName);
+        requireNonNull(introducer);
+
+        this.targetIndex = null;
+        this.targetName = targetName;
         this.introducer = introducer;
         this.confirmed = confirmed;
     }
@@ -56,16 +77,27 @@ public class RecordCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
-        List<Person> lastShownList = model.getFilteredPersonList();
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        Person personToUpdate;
+        if (targetName == null) {
+            List<Person> lastShownList = model.getFilteredPersonList();
+            if (targetIndex.getZeroBased() >= lastShownList.size()) {
+                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+            }
+            personToUpdate = lastShownList.get(targetIndex.getZeroBased());
+        } else {
+            switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
+                case PersonNameResolver.Outcome.Unique unique -> personToUpdate = unique.person();
+                case PersonNameResolver.Outcome.Several several -> {
+                    return new CommandResult(several.message());
+                }
+            }
         }
 
-        Person personToUpdate = lastShownList.get(targetIndex.getZeroBased());
         if (personToUpdate.getIntroducer().isPresent() && !confirmed) {
+            String target = targetName == null ? Integer.toString(targetIndex.getOneBased()) : targetName;
             return new CommandResult(String.format(MESSAGE_CONFIRM_REPLACEMENT,
                     personToUpdate.getName(), personToUpdate.getIntroducer().orElseThrow(), introducer,
-                    targetIndex.getOneBased()));
+                    target));
         }
 
         Person updatedPerson = new Person(personToUpdate.getName(),
@@ -86,18 +118,20 @@ public class RecordCommand extends Command {
         if (other == this) {
             return true;
         }
-        if (!(other instanceof RecordCommand otherRecordCommand)) {
+        if (!(other instanceof IntroduceCommand otherIntroduceCommand)) {
             return false;
         }
-        return targetIndex.equals(otherRecordCommand.targetIndex)
-                && introducer.equals(otherRecordCommand.introducer)
-                && confirmed == otherRecordCommand.confirmed;
+        return Objects.equals(targetIndex, otherIntroduceCommand.targetIndex)
+                && Objects.equals(targetName, otherIntroduceCommand.targetName)
+                && introducer.equals(otherIntroduceCommand.introducer)
+                && confirmed == otherIntroduceCommand.confirmed;
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("targetIndex", targetIndex)
+                .add("targetName", targetName)
                 .add("introducer", introducer)
                 .add("confirmed", confirmed)
                 .toString();

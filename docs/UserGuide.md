@@ -106,9 +106,10 @@ Format: `help`
 
 Adds a person to the contact file.
 
-Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
+Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​`
 
-* Only the name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -116,6 +117,7 @@ A person can have any number of tags, including zero.
 
 Examples:
 * `add n/John Doe c/Acme r/Software Engineer p/98765432 e/johnd@example.com l/linkedin.com/in/johndoe`
+* `add n/John Doe i/O'Brien-Smith` Adds John Doe and records O'Brien-Smith as the introducer.
 * `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`
 * `add n/Hans Gruber` — just a name, when that is all you got before the conversation moved on.
 
@@ -167,20 +169,20 @@ Examples:
 * `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
 * `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
 
-### Recording who introduced a person: `record`
+### Introducing a person: `introduce`
 
 Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
 
-Format: `record INDEX n/NAME [--confirm]`
+Format: `introduce NAME i/INTRODUCER [--confirm]`
 
-* `INDEX` is the positive index of the contact in the displayed person list.
-* Enter the introducer's full name after `n/`. A name is required and follows the same name validation as `add`.
+* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
+* Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * If an introducer is already recorded, Astra displays that name and asks before replacing it. Confirm by repeating the command with `--confirm` at the end.
 * Astra displays the updated contact after recording the introducer.
 
 Examples:
-* `record 1 n/Jane Doe` Records Jane Doe as the person who introduced the 1st contact.
-* `record 1 n/Jane Doe --confirm` Confirms replacing the 1st contact's existing introducer with Jane Doe.
+* `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
+* `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
 ### Locating persons: `find`
 
@@ -324,10 +326,12 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
+**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com i/Jane Smith t/colleague`
 **Clear** | `clear`
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
+**Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
+**Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
