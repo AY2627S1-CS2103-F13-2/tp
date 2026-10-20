@@ -46,7 +46,16 @@ public class Messages {
             builder.append("; Tags: ");
             person.getTags().forEach(builder::append);
         }
+        if (!person.getFollowUps().isEmpty()) {
+            builder.append("; Follow-ups:\n").append(formatFollowUps(person));
+        }
         return builder.toString();
     }
 
+    /**
+     * Formats actions in stored order with their stable IDs and statuses.
+     */
+    public static String formatFollowUps(Person person) {
+        return person.getFollowUps().stream().map(Object::toString).collect(Collectors.joining("\n"));
+    }
 }
