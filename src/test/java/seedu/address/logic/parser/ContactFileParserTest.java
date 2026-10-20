@@ -22,8 +22,10 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RecordCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
@@ -107,6 +109,12 @@ public class ContactFileParserTest {
         assertEquals(
                 new ViewCommand(Index.fromOneBased(1)),
                 parser.parseCommand(ViewCommand.COMMAND_WORD + " 1"));
+    }
+
+    @Test
+    public void parseCommand_record() throws Exception {
+        assertEquals(new RecordCommand(INDEX_FIRST_PERSON, new Name("Jane Doe"), false),
+                parser.parseCommand(RecordCommand.COMMAND_WORD + " 1 n/Jane Doe"));
     }
 
     @Test

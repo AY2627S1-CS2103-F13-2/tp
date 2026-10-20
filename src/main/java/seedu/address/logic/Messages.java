@@ -42,6 +42,7 @@ public class Messages {
         person.getPhone().ifPresent(phone -> builder.append("; Phone: ").append(phone));
         person.getEmail().ifPresent(email -> builder.append("; Email: ").append(email));
         person.getLinkedin().ifPresent(linkedin -> builder.append("; LinkedIn: ").append(linkedin));
+        person.getIntroducer().ifPresent(introducer -> builder.append("; Introduced by: ").append(introducer));
         if (!person.getTags().isEmpty()) {
             builder.append("; Tags: ");
             person.getTags().forEach(builder::append);

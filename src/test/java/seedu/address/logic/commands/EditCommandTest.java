@@ -71,6 +71,23 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_editOtherField_preservesIntroducer() {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withIntroducer("Jane Doe").build();
+        ContactFile contactFile = new ContactFile();
+        contactFile.addPerson(original);
+        model = new ModelManager(contactFile, new UserPrefs());
+        Person edited = new PersonBuilder(original).withPhone(VALID_PHONE_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withPhone(VALID_PHONE_BOB).build();
+        Model expectedModel = new ModelManager(new ContactFile(contactFile), new UserPrefs());
+        expectedModel.setPerson(original, edited);
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                EditCommand.formatUpdatedFields(original, edited), expectedModel);
+    }
+
+    @Test
     public void execute_noFieldSpecifiedUnfilteredList_failure() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
 

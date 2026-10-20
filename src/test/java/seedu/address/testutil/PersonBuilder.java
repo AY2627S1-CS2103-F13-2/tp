@@ -31,6 +31,7 @@ public class PersonBuilder {
     private Phone phone;
     private Email email;
     private Linkedin linkedin;
+    private Name introducer;
     private Set<Tag> tags;
 
     /**
@@ -56,6 +57,7 @@ public class PersonBuilder {
         phone = personToCopy.getPhone().orElse(null);
         email = personToCopy.getEmail().orElse(null);
         linkedin = personToCopy.getLinkedin().orElse(null);
+        introducer = personToCopy.getIntroducer().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
     }
 
@@ -120,8 +122,16 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the name of the person who introduced this contact.
+     */
+    public PersonBuilder withIntroducer(String introducer) {
+        this.introducer = introducer == null ? null : new Name(introducer);
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, tags);
+        return new Person(name, company, role, phone, email, linkedin, introducer, tags);
     }
 
 }

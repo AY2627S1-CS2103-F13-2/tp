@@ -32,6 +32,7 @@ class JsonAdaptedPerson {
     private final String phone;
     private final String email;
     private final String linkedin;
+    private final String introducer;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
@@ -41,13 +42,14 @@ class JsonAdaptedPerson {
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("company") String company,
             @JsonProperty("role") String role, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("linkedin") String linkedin,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("introducer") String introducer, @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         this.name = name;
         this.company = company;
         this.role = role;
         this.phone = phone;
         this.email = email;
         this.linkedin = linkedin;
+        this.introducer = introducer;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -63,6 +65,7 @@ class JsonAdaptedPerson {
         phone = source.getPhone().map(value -> value.value).orElse(null);
         email = source.getEmail().map(value -> value.value).orElse(null);
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
+        introducer = source.getIntroducer().map(value -> value.fullName).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -134,8 +137,18 @@ class JsonAdaptedPerson {
             modelLinkedin = new Linkedin(linkedin);
         }
 
+        final Name modelIntroducer;
+        if (introducer == null) {
+            modelIntroducer = null;
+        } else if (!Name.isValidName(introducer)) {
+            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
+        } else {
+            modelIntroducer = new Name(introducer);
+        }
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin, modelTags);
+        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin,
+                modelIntroducer, modelTags);
     }
 
 }

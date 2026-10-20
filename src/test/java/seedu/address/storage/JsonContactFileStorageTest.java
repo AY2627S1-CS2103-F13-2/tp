@@ -22,6 +22,7 @@ import seedu.address.commons.util.FileUtil;
 import seedu.address.model.ContactFile;
 import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonContactFileStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonContactFileStorageTest");
@@ -107,6 +108,19 @@ public class JsonContactFileStorageTest {
 
         jsonContactFileStorage.saveContactFile(original, filePath);
         ReadOnlyContactFile readBack = jsonContactFileStorage.readContactFile(filePath).get();
+        assertEquals(original, new ContactFile(readBack));
+    }
+
+    @Test
+    public void readAndSaveContactFile_personWithIntroducer_success() throws Exception {
+        Path filePath = testFolder.resolve("TempContactFile.json");
+        ContactFile original = new ContactFile();
+        original.addPerson(new PersonBuilder(NAME_ONLY).withIntroducer("Jane Doe").build());
+        JsonContactFileStorage jsonContactFileStorage = new JsonContactFileStorage(filePath);
+
+        jsonContactFileStorage.saveContactFile(original, filePath);
+        ReadOnlyContactFile readBack = jsonContactFileStorage.readContactFile(filePath).get();
+
         assertEquals(original, new ContactFile(readBack));
     }
 

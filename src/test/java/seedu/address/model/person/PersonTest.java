@@ -135,6 +135,9 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        editedAlice = new PersonBuilder(ALICE).withIntroducer("Jane Doe").build();
+        assertFalse(ALICE.equals(editedAlice));
+
         // different address -> returns false
         editedAlice = new PersonBuilder(ALICE).withCompany(VALID_COMPANY_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
@@ -163,6 +166,7 @@ public class PersonTest {
         assertEquals(Optional.empty(), NAME_ONLY.getPhone());
         assertEquals(Optional.empty(), NAME_ONLY.getEmail());
         assertEquals(Optional.empty(), NAME_ONLY.getLinkedin());
+        assertEquals(Optional.empty(), NAME_ONLY.getIntroducer());
         assertTrue(NAME_ONLY.getTags().isEmpty());
     }
 
@@ -188,6 +192,7 @@ public class PersonTest {
                 + ", phone=" + ALICE.getPhone().orElse(null)
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
+                + ", introducer=" + ALICE.getIntroducer().orElse(null)
                 + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }

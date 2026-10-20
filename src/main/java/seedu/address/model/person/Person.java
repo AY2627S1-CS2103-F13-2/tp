@@ -14,7 +14,7 @@ import seedu.address.model.tag.Tag;
 /**
  * Represents a Person in the contact file.
  * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
- * Every other field is optional and may be absent.
+ * Every other field, including the introducer, is optional and may be absent.
  */
 public class Person {
 
@@ -27,6 +27,7 @@ public class Person {
     private final Phone phone;
     private final Email email;
     private final Linkedin linkedin;
+    private final Name introducer;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
@@ -36,6 +37,14 @@ public class Person {
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
             Set<Tag> tags) {
+        this(name, company, role, phone, email, linkedin, null, tags);
+    }
+
+    /**
+     * Constructs a {@code Person} with an optional introducer name.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Name introducer, Set<Tag> tags) {
         requireNonNull(name);
         requireNonNull(tags);
         this.name = name;
@@ -44,6 +53,7 @@ public class Person {
         this.phone = phone;
         this.email = email;
         this.linkedin = linkedin;
+        this.introducer = introducer;
         this.tags.addAll(tags);
     }
 
@@ -69,6 +79,10 @@ public class Person {
 
     public Optional<Linkedin> getLinkedin() {
         return Optional.ofNullable(linkedin);
+    }
+
+    public Optional<Name> getIntroducer() {
+        return Optional.ofNullable(introducer);
     }
 
     /**
@@ -141,13 +155,14 @@ public class Person {
                 && Objects.equals(phone, otherPerson.phone)
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
+                && Objects.equals(introducer, otherPerson.introducer)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags);
+        return Objects.hash(name, company, role, phone, email, linkedin, introducer, tags);
     }
 
     @Override
@@ -159,6 +174,7 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("linkedin", linkedin)
+                .add("introducer", introducer)
                 .add("tags", tags)
                 .toString();
     }

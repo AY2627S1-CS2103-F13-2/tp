@@ -150,6 +150,21 @@ Examples:
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
 *  `edit 3 c/ r/` Removes the company and role of the 3rd person.
 
+### Recording who introduced a person: `record`
+
+Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
+
+Format: `record INDEX n/NAME [--confirm]`
+
+* `INDEX` is the positive index of the contact in the displayed person list.
+* Enter the introducer's full name after `n/`. A name is required and follows the same name validation as `add`.
+* If an introducer is already recorded, Astra displays that name and asks before replacing it. Confirm by repeating the command with `--confirm` at the end.
+* Astra displays the updated contact after recording the introducer.
+
+Examples:
+* `record 1 n/Jane Doe` Records Jane Doe as the person who introduced the 1st contact.
+* `record 1 n/Jane Doe --confirm` Confirms replacing the 1st contact's existing introducer with Jane Doe.
+
 ### Locating persons: `find`
 
 Finds persons by name, phone number or email, and shows the matches in the list.

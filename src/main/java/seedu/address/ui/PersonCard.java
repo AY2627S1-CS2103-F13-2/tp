@@ -43,6 +43,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label linkedin;
     @FXML
+    private Label introducer;
+    @FXML
     private FlowPane tags;
 
     /**
@@ -58,6 +60,7 @@ public class PersonCard extends UiPart<Region> {
         setOptionalLabel(phone, person.getPhone().map(value -> value.value).orElse(null));
         setOptionalLabel(email, person.getEmail().map(value -> value.value).orElse(null));
         setOptionalLabel(linkedin, person.getLinkedin().map(value -> value.value).orElse(null));
+        setOptionalLabel(introducer, person.getIntroducer().map(value -> "Introduced by: " + value).orElse(null));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
