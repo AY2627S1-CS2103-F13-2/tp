@@ -1,0 +1,23 @@
+digraph TagFilter {
+  graph [rankdir=TB, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.4];
+  node [shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#5271a3", fontname="Arial", fontsize=12];
+  edge [fontname="Arial", fontsize=11, color="#43536b"];
+  input [label="filter [mode/and|mode/or] t/TAG [t/TAG]..."];
+  validate [shape=diamond, label="All tags valid?\nAt most one valid mode?"];
+  reject [label="Report format/validation error\nKeep prior data and view", fillcolor="#fff4d9"];
+  mode [shape=diamond, label="Matching mode"];
+  every [label="AND (default): contact has every requested tag"];
+  any [label="OR: contact has at least one requested tag"];
+  results [label="Replace active predicate; search all stored contacts\nKeep stored order and observable-list binding"];
+  display [label="Display count and mode, or empty/no-match result\nNo contact mutation or file save", fillcolor="#e6f4ea"];
+  view [label="view INDEX uses filtered results\nlist restores all stored contacts"];
+  input -> validate;
+  validate -> reject [label="invalid"];
+  validate -> mode [label="valid"];
+  mode -> every [label="AND or absent"];
+  mode -> any [label="OR"];
+  every -> results;
+  any -> results;
+  results -> display;
+  display -> view;
+}

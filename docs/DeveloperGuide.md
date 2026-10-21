@@ -201,6 +201,37 @@ replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
 
+### Tag filtering (UC20)
+
+`FilterCommandParser` uses the shared prefix tokenizer with repeated `t/`
+values and one optional `mode/`. It validates every tag through
+`ParserUtil#parseTags` before executing the command; a missing tag, malformed
+value, unsupported mode, or repeated mode cannot change the displayed list.
+Whitespace separators are normalized locally because neither valid tag names
+nor mode values contain whitespace. Mode values use locale-independent case
+folding; prefixes and `Tag` equality remain case-sensitive.
+
+`TagFilterPredicate` copies the requested tags into an immutable non-empty set.
+AND uses `containsAll`; OR requires any requested tag to occur in a contact's
+tag set. Repeated requested tags are collapsed before matching. The command
+replaces the model's active predicate, so it searches the full stored list
+rather than intersecting the previous results. JavaFX's existing filtered list
+retains stored order and its observable binding; no contact is copied, sorted,
+or duplicated for the query.
+
+The result reports a count and mode, or a clear no-match message with an empty
+list. `view INDEX` continues to resolve the displayed list, and `list` resets
+the predicate. Filtering does not change contact contents, so Logic's existing
+transaction change detection performs no contact-file save. Parser failures
+restore the previous predicate through the same snapshot boundary.
+
+The user's approved AND/OR behavior extends the PDF's AND-only UC20. AND is
+the default, and one mode applies to the entire command. No tag/schema or
+contact identity change is needed. The following diagram's editable source
+is `docs/diagrams/TagFilterActivityDiagram.dot`.
+
+![Filtering contacts by tags](images/TagFilterActivityDiagram.svg)
+
 ### Follow-up actions (UC16)
 
 `Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
@@ -714,6 +745,38 @@ proposed confirmation suffix by user decision. IDs, completed status, and
 history storage support future UC17; completion commands, due dates, and
 links to events remain outside UC16.
 
+**Use case: UC20 - Filter contacts by tags**
+
+**Precondition:** Tags can be assigned using add/edit.
+
+**MSS**
+
+1. User enters `filter t/TAG [t/TAG]...`, optionally choosing `mode/and` or `mode/or`.
+2. Astra validates every tag and the single mode, defaulting to AND.
+3. Astra displays all stored contacts with every requested tag for AND, or at
+   least one requested tag for OR, in their original stored order.
+4. User may enter `view INDEX` to inspect a filtered result or `list` to restore
+   all contacts. These queries do not modify or save contact data.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No tag is supplied: show the accepted format and preserve the prior view.
+* 2a. A tag is invalid, a mode is empty/unknown/repeated, or the command has
+  malformed extra input: report the error and preserve data and the prior view.
+* 2b. The same tag is repeated: match it once without duplicate result entries.
+* 3a. No contacts match: display an empty list with an explicit no-match message.
+  A later filter searches all stored contacts; `list` restores everyone.
+* 4a. The index is outside the filtered results: report an invalid index and
+  preserve the filter.
+
+**Scope decisions**
+
+The user requested OR as well as the PDF's AND matching. Tag names preserve
+existing case-sensitive equality; mode values ignore case. Mixed expressions,
+contact sorting, and changing tag validation are outside this use case.
+
 ### Non-Functional Requirements
 
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
@@ -856,6 +919,33 @@ Use a fresh copy of sample data.
 8. Simulate failed saving using the storage test double for both a new action
    and a confirmed duplicate: expect unchanged file bytes, actions, order,
    filtered view, and observable-list binding. A later y must not replay it.
+
+### Filtering by tags
+
+Use a fresh sample-data copy. Assign tags so one contact has `work` and
+`friend`, a second has only `work`, a third only `friend`, and a fourth no tags.
+Keep their stored order different from alphabetical order.
+
+1. Run `filter t/work t/friend` and `filter mode/and t/friend t/work`: expect
+   only contacts with both tags, in stored order, and an AND result count.
+2. Run `filter mode/OR t/work t/friend`: expect contacts with either/both tags,
+   each once and in stored order. The untagged contact is excluded.
+3. Repeat tags, such as `filter mode/or t/work t/work t/friend`: expect the same
+   result list without duplicates. `filter t/work t/work` is a single-tag query.
+4. Run `filter t/Work` when only lower-case `work` exists: expect an empty list
+   and the no-match message. Case-insensitive mode values do not change tag case.
+5. Run `find NAME`, then `filter t/friend`: expect tag results from all stored
+   contacts. Filter for a nonexistent tag, then run `filter t/work`: matching
+   contacts must reappear. Run `list`: expect the complete original stored order.
+6. Run `filter t/friend`, then `view 1`: expect full details for the first
+   displayed result. Try an index beyond the filtered count: expect an error
+   with the current results unchanged.
+7. From a non-empty result, try `filter`, `filter mode/or`, `filter t/`,
+   `filter t/work t/bad!`, `filter mode/xor t/work`, `filter mode/ t/work`, and
+   `filter mode/and t/work mode/or`: expect errors with no data/view change.
+8. Check unchanged contact-file bytes and zero save attempts for valid,
+   invalid, repeated, and no-match filters followed by view/list. Automated
+   tests use a storage double that fails on any attempted write.
 
 ### Saving data
 

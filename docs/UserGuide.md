@@ -28,6 +28,8 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 
    * `list` : Lists all contacts.
 
+   * `filter mode/or t/work t/friend` : Lists contacts tagged with work or friend.
+
    * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Contact File.
 
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
@@ -183,8 +185,48 @@ Examples:
 <div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
 searching several keywords at once (`find alex david` returning both `Alex Yeoh` and `David Li`),
 and matching keywords in any order. For now a search is one name, one number or one email, matched
-in one piece. Searching by company, role or tag is also planned for a later version.
+in one piece. Searching by company or role is also planned for a later version.
+Use `filter` below to find contacts by tags.
 </div>
+
+### Filtering contacts by tags: `filter`
+
+Shows contacts matching the tags you request, in their stored order.
+
+Formats:
+
+```text
+filter t/TAG [t/TAG]...
+filter mode/and t/TAG [t/TAG]...
+filter mode/or t/TAG [t/TAG]...
+```
+
+| Mode | A contact is included when... | Example |
+| --- | --- | --- |
+| AND (default) | It has every requested tag. | `filter t/work t/friend` |
+| OR | It has at least one requested tag. | `filter mode/or t/work t/friend` |
+
+* Provide at least one tag, using a separate `t/` for each. Use the same
+  alphanumeric tag names you assign through `add` and `edit`.
+* Tags are case-sensitive: `work` and `Work` are different. Mode values ignore
+  case, so `mode/OR` is also accepted. The prefixes `mode/` and `t/` use lower case.
+* You may put `mode/` before, between, or after the tags, but specify it only
+  once. One mode applies to the whole request; mixed Boolean expressions are
+  not supported. Repeated tags have the same effect as requesting them once.
+* Every filter searches all stored contacts and replaces the previous search
+  or filter. Results keep their stored order; each contact appears once.
+* No matches show an empty list with `No contacts match the requested tags.`
+  Run another filter or `list` to show contacts again.
+* Invalid input, including missing/invalid tags or an empty, unknown, or
+  repeated mode, preserves your previous view. Type `filter` to see the format.
+* `view INDEX` uses the numbers in the filtered results. `list` restores all
+  contacts. Filtering and viewing do not change or save contact data.
+
+Examples:
+
+* `filter t/work t/friend` shows contacts tagged with both `work` and `friend`.
+* `filter mode/or t/work t/friend` shows contacts with either or both tags.
+* `filter t/work`, then `view 1` shows the full details of the first result.
 
 ### Viewing a person's full details: `view`
 
@@ -361,6 +403,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
+**Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
