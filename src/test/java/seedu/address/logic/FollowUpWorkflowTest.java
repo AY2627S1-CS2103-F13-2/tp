@@ -127,6 +127,66 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_createReviewSelect_preservesFilterAndFileAcrossInvalidReplies() throws Exception {
+        logic.execute("followup 1 a/Portfolio d/31 Dec 9999");
+        logic.execute("followup 2 a/Call d/29 Feb 2000");
+        logic.execute("find Alice");
+        ContactFile before = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        String prompt = logic.execute("followups").getFeedbackToUser();
+        assertTrue(prompt.indexOf("Call") < prompt.indexOf("Portfolio"));
+        storage.shouldFail = true;
+        for (String reply : List.of("0", "-1", "3", "2147483648", "y", "view 1", "")) {
+            assertTrue(logic.execute(reply).getPendingRequest().isPresent());
+            assertEquals(before, model.getContactFile());
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+        CommandResult selected = logic.execute(" 1 ");
+        assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
+        assertTrue(selected.getFeedbackToUser().startsWith(
+                "Selected follow-up:\n#1 [PENDING] Call | Due: 2000-02-29 [OVERDUE]"));
+        assertTrue(selected.getPendingRequest().isEmpty());
+        assertEquals(List.of(before.getPersonList().getFirst()), model.getFilteredPersonList());
+        assertEquals(before, model.getContactFile());
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        assertEquals(2, storage.saveCount);
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+    }
+
+    @Test
+    void execute_selectionCancellation_clearsRequestAndAllowsNewCommands() throws Exception {
+        logic.execute("followup 1 a/Call");
+        byte[] bytes = Files.readAllBytes(file);
+        for (String reply : List.of("n", "N", "cancel", " CANCEL ")) {
+            logic.execute("followups");
+            assertTrue(logic.execute(reply).getPendingRequest().isEmpty());
+            assertThrows(ParseException.class, () -> logic.execute("1"));
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+        logic.execute("followup 2 a/Portfolio d/01 Jan 1900");
+        logic.execute("followups");
+        CommandResult selected = logic.execute("1");
+        assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_restart_requiresNewListThenSelectsPersistedAction() throws Exception {
+        logic.execute("followup 1 a/Call d/29/02/2000");
+        logic.execute("followups");
+        ModelManager reloaded = new ModelManager(storage.readContactFile().orElseThrow(), new UserPrefs());
+        LogicManager restarted = new LogicManager(reloaded, new StorageManager(storage,
+                new JsonUserPrefsStorage(testFolder.resolve("prefs.json"))));
+        assertThrows(ParseException.class, () -> restarted.execute("1"));
+        restarted.execute("followups");
+        CommandResult selected = restarted.execute("1");
+        assertEquals(reloaded.getContactFile().getPersonList().getFirst(),
+                selected.getPersonForDetails().orElseThrow());
+        assertTrue(selected.getFeedbackToUser().contains("Due: 2000-02-29 [OVERDUE]"));
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
     void execute_invalidDatedAction_doesNotChangeOrSave() throws Exception {
         ContactFile before = new ContactFile(model.getContactFile());
         byte[] bytes = Files.readAllBytes(file);

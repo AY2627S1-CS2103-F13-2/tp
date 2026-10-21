@@ -822,7 +822,7 @@ today. Duplicate confirmation retains the requested date and creates a separate
 action. Completion commands, editing or deleting individual follow-ups, and
 links to events remain outside UC16.
 
-**Use case: UC12 - Review pending follow-ups (listing)**
+**Use case: UC12 - Review pending follow-ups**
 
 **MSS**
 
@@ -833,20 +833,33 @@ links to events remain outside UC16.
    description, status and due date. Dates sort ascending; equal dates retain
    contact order and stored action order. Pending actions due before today are
    marked `[OVERDUE]`.
+4. User enters a displayed row number.
+5. Astra displays the selected action's details and its associated contact.
+   Use case ends.
 
 **Extensions**
 
 * 2a. No pending actions remain: show `No pending follow-ups remain.`
 * 3a. Undated actions: list them after dated actions with `No due date`.
 * 1a. Extra arguments: reject the command and display usage instructions.
+* 4a. Invalid reply: repeat the retained list and selection instructions.
+* 4b. User enters `n` or `cancel`: clear the request without changing data.
+* 4c. Selected contact or action history changed or the contact was deleted:
+  clear the request and ask the user to run `followups` again.
 
 **Implementation and scope**
 
 `ModelManager.getPendingFollowUps()` returns an unmodifiable snapshot of
 `FollowUpEntry` records, pairing each action with its contact. The command uses
 the shared follow-up formatter, preserves the current contact filter and does
-not save data. Running it again retrieves current results. Selecting an entry
-and opening its contact remain for the next issue.
+not save data. A nonempty list returns a `FollowUpSelectionRequest`, which
+copies entries in displayed order. Logic retains it through the existing
+pending-request flow. Valid replies return `CommandResult.createPersonDetails`
+with the selected action and contact; invalid replies keep the same request.
+Selection verifies that the captured contact still exists with the same data.
+The UI displays the details in the result panel while retaining the contact
+filter. Running the list again retrieves current results. Requests are held
+only in memory and do not survive restart.
 
 **Use case: UC20 - Filter contacts by tags**
 

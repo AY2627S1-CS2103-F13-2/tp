@@ -19,7 +19,8 @@ public class HelpWindow extends UiPart<Stage> {
     public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL
             + "\nFollow-ups: followup INDEX a/DESCRIPTION [d/DATE]."
             + " Pending duplicates ask y/n; cancel stops the request."
-            + "\nReview pending follow-ups: followups. Lists all contacts' pending actions in due-date order.";
+            + "\nReview pending follow-ups: followups. Then enter a displayed number to view its details/contact,"
+            + " or n/cancel to stop.";
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
