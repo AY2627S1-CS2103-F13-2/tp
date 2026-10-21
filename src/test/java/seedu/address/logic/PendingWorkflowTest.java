@@ -2,11 +2,13 @@ package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.io.IOException;
@@ -99,13 +101,79 @@ public class PendingWorkflowTest {
     }
 
     @Test
+    public void execute_ambiguousDelete_selectsThenConfirmsAndRestoresOnCancel() throws Exception {
+        logic.execute("find Alice");
+        ContactFile original = new ContactFile(model.getContactFile());
+        logic.execute("delete Meier");
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        assertTrue(logic.execute("y").getPendingRequest().isPresent());
+        assertTrue(logic.execute("999999999999999999999").getPendingRequest().isPresent());
+        logic.execute("2");
+        assertEquals(original, model.getContactFile());
+        logic.execute("cancel");
+        assertEquals(List.of(ALICE), model.getFilteredPersonList());
+        assertEquals(0, contactStorage.saveCount);
+
+        logic.execute("delete Meier");
+        logic.execute("2");
+        logic.execute("y");
+        assertFalse(model.getContactFile().getPersonList().contains(DANIEL));
+        assertTrue(model.getContactFile().getPersonList().contains(BENSON));
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
+        assertEquals(1, contactStorage.saveCount);
+    }
+
+    @Test
+    public void execute_emailBatch_deduplicatesTargetsAndPreservesSurvivorOrder() throws Exception {
+        List<Person> original = List.copyOf(model.getContactFile().getPersonList());
+        String aliceEmail = ALICE.getEmail().orElseThrow().value;
+        String bensonEmail = BENSON.getEmail().orElseThrow().value;
+        CommandResult preview = logic.execute("delete /email " + aliceEmail + " "
+                + bensonEmail.toUpperCase(java.util.Locale.ROOT) + " " + aliceEmail);
+        assertTrue(preview.getFeedbackToUser().contains("Delete 2 contact(s)"));
+        assertEquals(original, model.getContactFile().getPersonList());
+        logic.execute("y");
+        List<Person> survivors = original.stream().filter(person -> !person.equals(ALICE)
+                && !person.equals(BENSON)).toList();
+        assertEquals(survivors, model.getContactFile().getPersonList());
+        assertEquals(survivors, contactStorage.readContactFile().orElseThrow().getPersonList());
+        assertEquals(1, contactStorage.saveCount);
+    }
+
+    @Test
+    public void execute_invalidEmailBatch_rejectsWholeRequest() throws Exception {
+        ContactFile original = new ContactFile(model.getContactFile());
+        String prefix = "delete /email " + ALICE.getEmail().orElseThrow().value + " ";
+        assertThrows(CommandException.class, () -> logic.execute(prefix + "missing@example.com"));
+        assertThrows(ParseException.class, () -> logic.execute(prefix + "invalid"));
+        assertEquals(original, model.getContactFile());
+        assertEquals(0, contactStorage.saveCount);
+        assertThrows(ParseException.class, () -> logic.execute("y"));
+    }
+
+    @Test
+    public void execute_phoneSelector_matchesGroupedNumberOutsideFilter() throws Exception {
+        Person grouped = new PersonBuilder(ALICE).withPhone("+65 (9123)-4567").build();
+        model.setPerson(ALICE, grouped);
+        logic.execute("find Meier");
+        logic.execute("delete /contact +6591234567");
+        assertTrue(model.getContactFile().getPersonList().contains(grouped));
+        logic.execute("y");
+        assertFalse(model.getContactFile().getPersonList().contains(grouped));
+        assertEquals(1, contactStorage.saveCount);
+    }
+
+    @Test
     public void execute_saveFailure_restoresDataFilterAndBindings() throws Exception {
-        for (String command : List.of("clear")) {
+        for (String command : List.of("clear", "delete Alice", "delete Meier")) {
             logic.execute("find Alice");
             ContactFile original = new ContactFile(model.getContactFile());
             byte[] originalBytes = Files.readAllBytes(activeFile);
             ObservableList<Person> binding = model.getFilteredPersonList();
             logic.execute(command);
+            if (command.equals("delete Meier")) {
+                logic.execute("2");
+            }
             contactStorage.shouldFail = true;
             assertThrows(CommandException.class, () -> logic.execute("y"));
             contactStorage.shouldFail = false;
