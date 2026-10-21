@@ -21,6 +21,7 @@ import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.FollowUpEntry;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
@@ -192,6 +193,11 @@ public class AddCommandTest {
      * A default model stub that has all of the methods failing.
      */
     private class ModelStub implements Model {
+        @Override
+        public List<FollowUpEntry> getPendingFollowUps() {
+            throw new AssertionError("This method should not be called.");
+        }
+
         @Override
         public FieldOrder getFieldOrder() {
             return FieldOrder.DEFAULT;
