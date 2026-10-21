@@ -71,7 +71,7 @@ public class ViewCommand extends Command {
             }
         }
 
-        return new CommandResult(Messages.format(personToView));
+        return CommandResult.createPersonDetails(Messages.format(personToView, model.getFieldOrder()), personToView);
     }
 
     @Override

@@ -51,9 +51,10 @@ The bulk of the app's work is done by the following four components:
 
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user issues the command `delete 1`.
+The *Sequence Diagram* below shows `delete 1` followed by `y`, including the
+preview before mutation and the atomic save after confirmation.
 
-<img src="images/ArchitectureSequenceDiagram.png" width="574" />
+<img src="images/ArchitectureSequenceDiagram.svg" width="100%" />
 
 Each of the four main components (also shown in the diagram above),
 
@@ -91,12 +92,10 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <img src="images/LogicClassDiagram.png" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below shows how Logic resolves `delete 1`, waits for `y`,
+then mutates and saves. Parsing is omitted from this diagram.
 
-![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</div>
+![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.svg)
 
 How the `Logic` component works:
 
@@ -105,6 +104,9 @@ How the `Logic` component works:
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
+1. A result carrying a `PendingRequest` is retained by Logic until the user
+   answers or cancels. Replies go to that request before normal command parsing.
+   Completed data changes are saved transactionally; read-only results are not.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -126,7 +128,7 @@ The `Model` component,
 * a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
 * `Person#isSamePerson` retains the legacy identity rule: equal names and equal email presence (both present or both absent). Email values do not participate in that rule. Add/edit separately reject shared normalized phone numbers and case-insensitive email addresses. This differs from the intended phone/email key policy; changing identity requires a separate compatibility decision.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* stores a `UserPrefs` object that represents the user’s preferences (GUI settings and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
@@ -157,64 +159,24 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Identifying a contact by name
+### Shared contact matching
 
-`find`, `edit` and `delete` all let the user refer to a contact by name instead of by its index in the
-displayed list. Left to themselves, each command would need its own answer to what naming a contact
-means: how much of the name has to be given, whether case matters, and what to do when a name fits more
-than one contact. Three answers that are meant to agree but are written three times are three answers
-that will eventually disagree, and a user who is told `find Meier` matches two contacts but
-`delete Meier` deletes one would be right to call that a bug.
-
-So there is one answer, in two pieces:
-
-* `NameContainsKeywordsPredicate` (in `model.person`) decides whether a contact's name matches a query.
-  Both sides are trimmed, their runs of whitespace collapsed and their case folded, and the query must
-  then appear in the name as a contiguous run. `find` applies this predicate directly.
-* `PersonNameResolver` (in `logic.commands`) turns a name into the single contact it refers to, by
-  applying that predicate and looking at how many contacts came back. `edit`, `delete`, and `view` go through it.
-
-`PersonNameResolver#resolve` returns a sealed `Outcome` of either `Unique`, carrying the one contact
-that matched, or `Several`, carrying a numbered list of the matches for the command to show. A name
-matching nothing is a `CommandException` instead, since there is no contact for the caller to act on.
-Making the ambiguous case a value rather than an error is what stops a command from quietly picking the
-first match: there is no `Person` to reach for until the user has narrowed it down.
-
-Two consequences are worth noting:
-
-* **Resolving a name searches every contact, not only the ones on display.** Naming someone therefore
-  reaches them even while a `find` filter is hiding them, which is what a user who has just typed a
-  full name expects. As a side effect the displayed list is narrowed to the matches, so that the
-  contacts under discussion are the contacts on screen; a command that goes on to change the address
-  book restores the full list once it is done.
-* **The resolver is told which command word to name in its message**, so the list of matches ends with
-  "To delete one of them…", "To edit one of them…", or "To view one of them…" as appropriate. This is the only thing the
-  resolver needs to know about its caller, which keeps the dependency pointing one way: commands depend
-  on the resolver, and the resolver depends on nothing but `Model` and the predicate.
-
-Deciding *whether* the user typed an index or a name happens earlier, in the parsers, and is shared the
-same way: `ParserUtil#isIndexInput` reports whether the first word of the argument is a number.
-`EditCommandParser`, `DeleteCommandParser`, and `ViewCommandParser` consult it, so no input can be read as an index by
-one command and as a name by another.
-
-#### Alternatives considered
-
-* **Matching full names exactly, instead of reusing `find`'s partial matching.** An earlier draft of
-  `delete` did this, on the grounds that an irreversible command should not act on a fuzzy match. It was
-  dropped because it gave Astra two meanings for the same gesture, and because the ambiguous case is
-  handled by *refusing to delete* and asking the user to pick, which is just as safe and far less
-  surprising than `delete Meier` reporting that nobody is called that.
-* **A `PersonSelector` type with index and name implementations**, which commands would hold instead of
-  a nullable index and a nullable name. This removes the remaining nullable-field pair from `EditCommand`
-  and `DeleteCommand`. `ViewCommand` keeps the existing two-selector pattern so this feature does not
-  require a wider refactor of edit/delete; all three still share matching and index classification.
+`NameContainsKeywordsPredicate` supplies the existing contiguous, partial,
+case-insensitive name matching used by find, edit, delete, and view.
+`PersonNameResolver#resolve` keeps edit and view's numbered-retry behavior.
+`PersonNameResolver#findMatches` performs the same full-file lookup without
+changing the displayed list; delete uses it before creating a pending request.
+Ambiguous delete names display candidates and require a numeric reply followed
+by a separate y/n confirmation. A name never implicitly selects the first match.
 
 ### Viewing contacts by name or displayed index
 
 `ViewCommandParser` normalizes whitespace and uses `ParserUtil#isIndexInput` to classify the selector.
 A numeric first token must form one valid positive index; otherwise the complete input must be a valid
 name. Prefix syntax is rejected. `ViewCommand` resolves a name with `PersonNameResolver` and sends a
-unique contact to the same `Messages#format` path as index selection. Absent optional fields are omitted.
+unique contact to the same `Messages#format` path as index selection, using the saved field order.
+Both paths retain the contact in the result so changes to field order immediately refresh viewed details.
+Absent optional fields are omitted.
 Several matches return the resolver's numbered candidates and a command-specific retry instruction.
 There is no pending request or y/n prompt: the next `view INDEX` simply selects from the current list.
 
@@ -231,21 +193,153 @@ ambiguous lookups change no contact data, so the transactional save boundary per
 Phone matching uses `Phone#matches`, which removes spaces, hyphens, and
 parentheses but preserves a leading plus. Equality and hashing use that same
 canonical value. Email matching uses `Email#matches` and ignores letter case.
-Find, duplicate checks, and startup recovery share these comparisons. Missing
-phone/email values are not shared keys. Existing contact identity is preserved.
+`ContactFieldPredicate`, duplicate checks, delete, and startup recovery share
+these comparisons. Missing phone/email values are not shared keys.
 
-### Transactional contact saves
+### Pending requests and transactional commands
+
+`CommandResult` can carry a `PendingRequest`. `LogicManager` retains it together
+with a `ModelSnapshot` captured before the initial command. `ConfirmationRequest`
+executes its resolved command only for y. `PersonSelectionRequest` turns a
+numbered candidate selection into the next request; it retains contact
+references rather than resolving a displayed index again later.
+
+Logic handles n/cancel centrally, restores the pre-request filter, and discards
+the request. Invalid replies repeat the current prompt; unrelated commands are
+not executed while a reply is pending. A completed or failed confirmed request
+clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
+shared confirmation API with an "Add another?" question for duplicate pending
+actions.
 
 `ModelSnapshot` copies contact contents and retains the original predicate.
 Logic compares the completed model with the snapshot and saves only changed
-contact data. Queries, ambiguity results, and no-ops perform no contact-file
-write. On an exception, data and the original filter are restored without replacing the observable lists bound to the UI.
+contact data. Queries, ambiguity results, prompts, selections, cancellations,
+and no-ops perform no contact-file write. On an exception, data and the original
+filter are restored without replacing the observable lists bound to the UI.
 
 `JsonContactFileStorage` serializes to a sibling temporary file, reloads and
 compares the candidate, then uses atomic replacement. Failures before
 replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
+
+### Tag filtering (UC20)
+
+`FilterCommandParser` uses the shared prefix tokenizer with repeated `t/`
+values and one optional `mode/`. It validates every tag through
+`ParserUtil#parseTags` before executing the command; a missing tag, malformed
+value, unsupported mode, or repeated mode cannot change the displayed list.
+Whitespace separators are normalized locally because neither valid tag names
+nor mode values contain whitespace. Mode values use locale-independent case
+folding; prefixes and `Tag` equality remain case-sensitive.
+
+`TagFilterPredicate` copies the requested tags into an immutable non-empty set.
+AND uses `containsAll`; OR requires any requested tag to occur in a contact's
+tag set. Repeated requested tags are collapsed before matching. The command
+replaces the model's active predicate, so it searches the full stored list
+rather than intersecting the previous results. JavaFX's existing filtered list
+retains stored order and its observable binding; no contact is copied, sorted,
+or duplicated for the query.
+
+The result reports a count and mode, or a clear no-match message with an empty
+list. `view INDEX` continues to resolve the displayed list, and `list` resets
+the predicate. Filtering does not change contact contents, so Logic's existing
+transaction change detection performs no contact-file save. Parser failures
+restore the previous predicate through the same snapshot boundary.
+
+The user's approved AND/OR behavior extends the PDF's AND-only UC20. AND is
+the default, and one mode applies to the entire command. No tag/schema or
+contact identity change is needed. The following diagram's editable source
+is `docs/diagrams/TagFilterActivityDiagram.dot`.
+
+![Filtering contacts by tags](images/TagFilterActivityDiagram.svg)
+
+### Follow-up actions (UC16)
+
+`Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
+ID unique within that contact, a stripped non-blank description, and a
+`PENDING` or `COMPLETED` status. IDs are allocated as one greater than the
+maximum existing ID, including completed history, rather than the list size or
+last element. Existing IDs and order never change; ID exhaustion is rejected
+without mutation. This version does not remove actions or implement completion.
+
+`FollowUpCommandParser` requires a positive displayed index and exactly one
+`a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
+rejected instead of being silently stored as description text. Exact trimmed,
+case-sensitive description equality defines duplicates, and only pending
+actions trigger confirmation. The command retains the resolved contact and
+description in the shared request. A later displayed index cannot redirect a
+confirmed action; a changed or missing target invalidates the request.
+
+Strong `Person` equality/hash include ordered follow-ups so Logic detects and
+saves an action change. Contact identity and phone/email duplicate checks do
+not include actions. `EditCommand` carries existing history into the replacement
+contact, and `PersonBuilder` preserves history when copying a contact in tests.
+Model replacement updates bound cards immediately; cards and full details show
+each action's stable ID and status, with no blank action row for empty history.
+
+`JsonAdaptedPerson` defaults a missing/null `followUps` property to an empty
+list for old files. `JsonAdaptedFollowUp` validates raw JSON field types,
+positive integer IDs, non-blank descriptions, and supported status values;
+duplicate IDs and null actions invalidate the entire contact. Startup recovery
+uses the same conversion and reports/skips the affected record, preserving its
+original bytes in the existing recovery archive. Valid histories retain their
+order, status, and IDs through normal saves and recovery. Failed immediate or
+confirmed saves restore the original action history, model, and predicate.
+
+The following activity diagram shows the command and transaction boundaries.
+Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
+
+![Recording a follow-up](images/FollowUpActivityDiagram.svg)
+
+### Display-field order (UC26)
+
+`FieldOrder` is an immutable permutation of all eight supported fields. Its
+constructor validates field count, case-insensitive names, and uniqueness;
+partial orders cannot hide fields. The default matches the original card order
+with follow-ups last. `UserPrefs` stores this global value and includes it in
+copy/equality/hash. JSON uses a canonical array of lower-case field names in
+`fieldOrder`; old preference files without that property retain the default.
+Malformed or null orders are rejected by preference loading, using the existing
+startup fallback to default preferences.
+
+`OrderCommandParser` accepts a no-argument query or one complete permutation.
+`OrderCommand` changes only preferences. A query or unchanged order makes no
+mutation and performs no save. `ModelSnapshot` now includes preferences as well
+as contact data and the active predicate. Logic detects preference changes
+separately from contact changes, saves the corresponding file, and restores the
+captured model/predicate on failure. The commands in this delivery change one
+persistence domain at a time; ordering never writes the contact file.
+
+`JsonUserPrefsStorage` copies the requested preferences, writes a sibling
+temporary file, reloads and compares it, then atomically replaces the active
+file. Failed writes, invalid/different/missing candidates, or replacement
+failures preserve the old file. Temporary cleanup failure after successful
+replacement is logged without reporting a false transaction failure. Startup
+and shutdown preference saves also use this path.
+
+The model exposes a read-only observable field order through Logic.
+`PersonListPanel` refreshes existing cells when it changes; `PersonCard` arranges
+its field nodes in that order. The displayed index stays with the name row.
+Absent optional values, empty tags, and empty follow-up lists are invisible and
+unmanaged, leaving no field rows behind. Contacts, selection indices, stored
+order, active predicates, and observable-list bindings are retained.
+
+`Messages#format(Person, FieldOrder)` formats full details in the same order.
+View/add/delete detail output passes the active preference. A view result also
+retains the contact as presentation metadata in `CommandResult`, so MainWindow
+can refresh the last viewed details immediately without parsing feedback or
+re-running view. An order change shows its confirmation and the refreshed
+details; an error retains details in the restored order alongside the error.
+Other successful commands replace the detail context normally. Preference
+rollback notifies observers, returning visible cards/details to the saved order.
+
+The PDF's UC26 summary mentions alphabetical sorting, whereas its detailed
+MSS specifies field ordering. This implementation follows the detailed MSS and
+the user's explicit saved choice. Contact sorting remains outside UC26.
+The editable diagram source is `docs/diagrams/FieldOrderActivityDiagram.dot`.
+
+![Changing the contact field order](images/FieldOrderActivityDiagram.svg)
 
 ### \[Proposed\] Undo/redo feature
 
@@ -465,47 +559,30 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters a delete command, identifying the contact either by its index in the displayed list or by name.
-2. Astra deletes the contact, saves the contact list and shows the details of the contact it deleted.
+1. User identifies a contact by displayed index, name, phone, or a batch of emails.
+2. Astra validates and resolves the entire request and displays every deletion target.
+3. User confirms with y.
+4. Astra deletes the targets in one transaction, saves once, displays their details
+   and the remaining count, and restores the full list in stored order.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to delete.
-
-      Use case ends.
-
-* 1b. The input is empty, is a malformed index, or is not a valid name.
-    * 1b1. Astra shows the command usage.
-
-      Use case ends.
-
-* 1c. The given index is not in the displayed list.
-    * 1c1. Astra shows that the index is invalid.
-
-      Use case ends.
-
-* 1d. The given name matches no contact.
-    * 1d1. Astra shows that no contact of that name was found, and deletes nothing.
-
-      Use case ends.
-
-* 1e. Several contacts match the given name.
-    * 1e1. Astra shows a numbered list of the matching contacts with their names, companies and emails, and deletes nothing.
-    * 1e2. User enters the command again with the index of the contact they meant.
-
-      Use case resumes at step 2.
-
-**Deferred to a later version**
-
-* Confirming before the contact is deleted. v1.3 deletes immediately; the prompt arrives with the
-  pending-command layer, which UC05 will share.
-* Deleting by email or contact number, and deleting several contacts in one command. These wait on the
-  matching for those fields so that it is shared with `find` rather than written twice.
-
-Command-save rollback is implemented: failed saving preserves contacts, the active file, and the pre-command filter.
+* 1a. The contact file is empty: report that there are no contacts to delete.
+* 1b. Input is malformed, an index is outside the displayed results, or any
+  name/phone/email has no unique target: explain the error and delete nothing.
+  A malformed or unresolved email invalidates the entire batch.
+* 2a. A name matches several contacts: show numbered candidates, accept a valid
+  numeric reply, and resume at step 2 with the selected contact. No deletion
+  occurs during selection. Invalid selections repeat the prompt.
+* 2b. A batch repeats an address or identifies the same contact several times:
+  show and delete that contact only once.
+* 3a. User replies n/cancel: discard the request without saving and restore the
+  pre-request display. Other replies repeat the prompt; unrelated commands do
+  not execute until the user answers or cancels.
+* 4a. Saving fails: report the error and preserve the file, contacts, contact
+  order, and pre-request filter. Discard the pending request.
 
 **Use case: UC03 - Find and view a contact**
 
@@ -611,47 +688,36 @@ Command-save rollback is implemented: failed saving preserves contacts, the acti
 
 **Deferred to a later version**
 * Choosing one of several matching contacts at a prompt instead of entering the command again, and cancelling at
-  any prompt. These arrive with the pending-command layer that UC02 and UC05 will share.
+  an edit prompt. Delete and clear already use the shared pending-request layer;
+  edit retains its existing numbered command-retry behavior.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
   rejecting an identical name outright. This also needs the pending-command layer.
 
-Command-save rollback is implemented through Logic and Storage and applies to edit as well.
+Command-save rollback is implemented through Logic and Storage and applies to
+edit as well as delete and clear. Add merge/replace remains separate work.
 
 **Use case: UC05 - Clear all contacts**
 
 **MSS**
 
-1. User requests to clear all contacts.
-2. Astra saves an empty contact list and shows how many contacts it cleared and that 0 remain.
+1. User enters clear with no arguments.
+2. Astra displays the total stored contact count and asks for y/n confirmation.
+3. User replies y.
+4. Astra saves the empty list once and reports how many contacts were cleared
+   and that 0 remain. The full empty list is displayed.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to clear.
-
-      Use case ends.
-
-* 1b. The command has extra arguments.
-    * 1b1. Astra shows the command usage.
-
-      Use case ends.
-
-**Deferred to a later version**
-
-* Confirming before the list is cleared, together with UC02's prompt and sharing the same
-  pending-command layer.
-
-* 3b. User enters a response other than y or n.
-    * 3b1. Astra asks the user to enter y or n.
-
-      Use case resumes at step 3.
-
-* 4a. Saving fails.
-    * 4a1. Astra shows a save error. The contact list and file are unchanged.
-
-      Use case ends.
+* 1a. No contacts are stored: report that there is nothing to clear.
+* 1b. Extra arguments are supplied: show usage and change nothing.
+* 2a. A filter is active: the preview still counts every stored contact.
+* 3a. User replies n/cancel: leave data/file unchanged, restore the pre-request
+  view, and discard the request.
+* 3b. Any other reply: repeat the prompt without mutation or saving.
+* 4a. Saving fails: report the error, restore the original model/filter, retain
+  the old active file, and discard the pending request.
 
 **Use case: UC06 - Start Astra and restore saved contacts**
 
@@ -717,6 +783,98 @@ Command-save rollback is implemented through Logic and Storage and applies to ed
       Use case ends.
 
 *{More to be added}*
+
+**Use case: UC16 - Record a follow-up action**
+
+**MSS**
+
+1. User enters `followup INDEX a/DESCRIPTION` for a displayed contact.
+2. Astra validates and trims the description, resolves the displayed contact,
+   and checks its pending actions for the identical description.
+3. Astra appends a new action with the next stable ID and `PENDING` status.
+4. Astra saves once and displays the updated ordered action list in feedback
+   and the contact card, preserving the active contact filter.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The index or format is invalid, the description is blank, or an unsupported
+  prefix is supplied: report the error without modifying or saving contacts.
+* 2a. An identical pending action exists: show it and ask "Add another?".
+    * 2a1. User replies y: resume at step 3 with the retained contact/description.
+    * 2a2. User replies n/cancel: discard the request and preserve data/view.
+    * 2a3. Any other reply: repeat the prompt and perform no save or command.
+* 2b. Only a completed action has that description: proceed without a prompt.
+* 3a. No further positive integer IDs are available: report the error without
+  renumbering or changing the history.
+* 4a. Saving fails: restore previous file/model/history/view, clear any pending
+  request, and report the failure. A retry requires a new request.
+
+**Scope decisions**
+
+Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
+proposed confirmation suffix by user decision. IDs, completed status, and
+history storage support future UC17; completion commands, due dates, and
+links to events remain outside UC16.
+
+**Use case: UC20 - Filter contacts by tags**
+
+**Precondition:** Tags can be assigned using add/edit.
+
+**MSS**
+
+1. User enters `filter t/TAG [t/TAG]...`, optionally choosing `mode/and` or `mode/or`.
+2. Astra validates every tag and the single mode, defaulting to AND.
+3. Astra displays all stored contacts with every requested tag for AND, or at
+   least one requested tag for OR, in their original stored order.
+4. User may enter `view INDEX` to inspect a filtered result or `list` to restore
+   all contacts. These queries do not modify or save contact data.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No tag is supplied: show the accepted format and preserve the prior view.
+* 2a. A tag is invalid, a mode is empty/unknown/repeated, or the command has
+  malformed extra input: report the error and preserve data and the prior view.
+* 2b. The same tag is repeated: match it once without duplicate result entries.
+* 3a. No contacts match: display an empty list with an explicit no-match message.
+  A later filter searches all stored contacts; `list` restores everyone.
+* 4a. The index is outside the filtered results: report an invalid index and
+  preserve the filter.
+
+**Scope decisions**
+
+The user requested OR as well as the PDF's AND matching. Tag names preserve
+existing case-sensitive equality; mode values ignore case. Mixed expressions,
+contact sorting, and changing tag validation are outside this use case.
+
+**Use case: UC26 - Reorder displayed contact information**
+
+**MSS**
+
+1. User enters `order` to inspect the current global field order.
+2. User supplies every supported field exactly once in the desired order.
+3. Astra validates the permutation and updates the global preference.
+4. Astra saves preferences atomically and immediately refreshes cards and any
+   viewed contact details, retaining the current contact list and filter.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. A field is unknown, repeated, or missing: show accepted fields and preserve
+  the existing preference, data, and view. Field names ignore letter case.
+* 3a. The order is unchanged: report that no changes are needed and do not save.
+* 4a. Saving fails: preserve the active preference file, restore the previous
+  preference and displayed field order, and show the error. Do not write contacts.
+* 4b. A contact lacks an optional value: omit that field's row without changing
+  the configured order or leaving a blank row.
+
+Old preference files without an order use the default card order, with
+follow-ups last. Successful orders persist across restart. UC26 changes field
+order, following its detailed PDF MSS; it does not sort contacts alphabetically.
 
 ### Non-Functional Requirements
 
@@ -807,83 +965,139 @@ them unchanged. No view command should ask for y/n.
    Expected: missing-name/index/usage errors, unchanged contact data, and the same displayed filter.
    Repeat name/index lookup on an empty file; expect a missing-name/index error without any save.
 
-After the team integrates the sibling feature PRs, also check `filter t/owesMoney` followed by `view 1`,
+For the combined workflows, also check `filter t/owesMoney` followed by `view 1`,
 then `view Meier` and `view 2`: indices must follow the newly displayed results. View a contact with
 pending/completed follow-ups by name and index; both paths must show every stored ID/status/description.
 Change field order and view the same person by name; retain the active order and immediate detail refresh
-from UC26. These combined cases require #142/#144/#146 and are not claimed as tested on this PR's #132 base.
+from UC26. Automated integration tests cover these combined workflows.
 
 ### Deleting a person
 
-1. Deleting a person by index while all persons are being shown
+Use a fresh copy of sample data for destructive tests.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
-
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
-
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows the command usage.
-
-   1. Other incorrect delete commands to try: `delete`, `delete 1 abc`, `delete x` (where x is larger than the list size)<br>
-      Expected: No person is deleted. The status message shows error details.
-
-1. Deleting a person by index while the list is filtered
-
-   1. Prerequisites: Filter the list with `find Meier`, so that fewer persons are shown than are stored.
-
-   1. Test case: `delete 1`<br>
-      Expected: The first contact *of the filtered results* is deleted. The remaining results stay on display.
-
-   1. Test case: `delete x` (where x is larger than the number of results but no larger than the number stored)<br>
-      Expected: No person is deleted. The status message says the index is invalid, since the index refers to what is displayed.
-
-1. Deleting a person by name
-
-   1. Prerequisites: List all persons using the `list` command. The sample data has one `Alice Pauline`, and both a `Benson Meier` and a `Daniel Meier`.
-
-   1. Test case: `delete Alice Pauline`<br>
-      Expected: Alice Pauline is deleted. The status message shows her details, and every remaining contact is shown again.
-
-   1. Test case: `delete alice pauline`<br>
-      Expected: As above; letter case is ignored.
-
-   1. Test case: `delete Pauline`<br>
-      Expected: As above; a partial name is enough when only one contact matches it.
-
-   1. Test case: `delete Meier`<br>
-      Expected: **Nothing is deleted.** The status message lists both Meiers, numbered, with their companies and emails, and asks for the command to be entered again with an index. Following it with `delete 2` deletes the second one listed.
-
-   1. Test case: `delete Zed`<br>
-      Expected: No person is deleted. The status message says no contact named Zed was found, and the full list is still shown.
-
-   1. Test case: `find Alice` followed by `delete Carl Kurz`<br>
-      Expected: Carl Kurz is deleted even though he was not among the displayed results, since naming a contact searches every contact.
-
-   1. Other invalid names to try: `delete @#$`, `delete -Alice`<br>
-      Expected: No person is deleted. The status message shows the command usage.
-
-1. Deleting from an empty contact file
-
-   1. Prerequisites: Remove every contact with the `clear` command.
-
-   1. Test case: `delete 1`, and `delete Alice Pauline`<br>
-      Expected: No person is deleted. Both report that there are no contacts to delete, rather than complaining about the index or the name.
+1. Run `delete 1`: expect a preview and no deletion. Enter `y`: expect the first
+   displayed contact removed, its details and remaining count reported, and the
+   full survivor list shown in stored order.
+2. Run `find Meier`, then `delete 1`: expect the first filtered result in the
+   preview. Enter `cancel`: expect all contacts intact and the original filtered
+   list restored. Repeat and enter `y`: expect the full survivor list.
+3. Run `delete Meier`: expect numbered candidates and no mutation. Enter `99`,
+   then `delete 1`: expect the selection prompt again. Enter `2`: expect the
+   second candidate's preview. Enter `n`: expect no mutation. Repeat the request,
+   select `2`, then enter `y`: only the selected candidate is removed.
+4. Run `find Alice`, then `delete Carl Kurz`, then `y`: Carl is found outside
+   the filter and removed. Partial names and different letter case also work.
+5. Run `delete /contact NUMBER` using a stored number with different spaces,
+   hyphens, or parentheses: expect the same complete-number target. Partial
+   numbers and a different leading-plus form must not match.
+6. Run `delete /email ALICE_EMAIL BENSON_EMAIL ALICE_EMAIL` using real sample
+   addresses: expect two unique targets and no changes before `y`. Confirm:
+   expect both removed and survivor order preserved. Use an upper-case email
+   to verify case-insensitive matching.
+7. Repeat the batch with one malformed or missing email: expect no deletion and
+   no pending request. Try `delete`, `delete 0`, `delete 1 abc`, and an out-of-range
+   filtered index: expect an error without changes.
+8. During a confirmation, enter `maybe`, `list`, and an empty reply: expect the
+   prompt again and no changes. Enter `n` or `cancel`: expect no save. A following
+   `y` must be an unknown command rather than replaying the deletion.
+9. After a confirmed clear, try deletion by index/name/phone/email: valid forms
+   report an empty file and never create a pending mutation.
 
 ### Clearing all entries
 
-1. Clearing a list that has contacts in it
+1. With several contacts stored, run `find Alice`, then `clear`: expect the
+   total stored count, not the filtered count, and no changes before `y`.
+2. Enter `n` or `cancel`: expect every contact intact and the original filtered
+   results restored. Invalid replies repeat the prompt.
+3. Repeat `clear`, then `y`: expect every contact removed, the cleared count and
+   0 remaining reported, and an empty full list. Restart and verify it stays empty.
+4. Run `clear` again: expect nothing to clear. Run `clear 3`: expect usage and no
+   mutation. Neither command should save.
+5. Simulate failed saving with the storage test doubles: confirmed clear and
+   delete must preserve the old file bytes, original contacts, original order,
+   and filter. A later y must not replay a failed request.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+### Recording follow-ups
 
-   1. Test case: `clear`<br>
-      Expected: Every contact is removed. The status message reports how many were cleared and that 0 remain.
+Use a fresh copy of sample data.
 
-   1. Test case: `clear` again, on the now empty list<br>
-      Expected: Nothing changes. The status message reports that there are no contacts to clear.
+1. Run `followup 1 a/  Send portfolio  `: expect `#1 [PENDING] Send portfolio`
+   in feedback and the card. Run `view 1`: expect the same ordered action list.
+2. Repeat `followup 1 a/Send portfolio`: expect the existing action and "Add
+   another?" without mutation. Try `maybe`, `list`, and `yes`: expect the same
+   prompt and unchanged data. Enter `n`: expect cancellation. Repeat and enter
+   `y`: expect a second action with ID 2 and one save.
+3. Run `find Benson`, then `followup 1 a/Call`: only Benson changes and the
+   filtered view remains. Repeat and enter `cancel`: the original view/history
+   remain. A later `y` must be unknown rather than replaying the request.
+4. Edit that contact's name, phone, tags, or remove an optional field. Expect
+   all actions retained. Restart: actions and IDs remain. Add a different action:
+   expect the next ID, without renumbering existing actions.
+5. Try index 0, an out-of-range index, a blank description, repeated `a/`, and
+   `followup 1 a/Call confirm/yes`: expect an error and no changes or save.
+6. Load an old contact file without `followUps`: expect an empty history.
+   Using a backed-up test file, include completed action #9 and pending action
+   #3, in that order; add the completed description again: expect pending #10
+   without a prompt. The stored action order remains 9, 3, 10.
+7. Load a test file containing one contact with duplicate/invalid action IDs
+   and another valid contact with actions: expect recovery to report the bad
+   record, preserve the original backup, and retain the valid history.
+8. Simulate failed saving using the storage test double for both a new action
+   and a confirmed duplicate: expect unchanged file bytes, actions, order,
+   filtered view, and observable-list binding. A later y must not replay it.
 
-   1. Test case: `clear 3`<br>
-      Expected: Nothing is cleared. The status message shows the command usage, since `clear` takes no parameters.
+### Reordering displayed fields
+
+1. Run `order`: expect `name tags company role phone email linkedin followups`
+   on a default profile. Run the same complete order: expect "unchanged" and
+   no preference-file write.
+2. Run `view 1`, then `order followups phone email name tags company role linkedin`:
+   expect existing cards to reorder immediately and the viewed details to be
+   redisplayed in that order. The displayed index moves with the name; contact
+   order, active filter, and contact-file bytes remain unchanged.
+3. Test contacts with only a name and contacts with actions/tags/all optional
+   fields. Missing values must have no visible/managed blank row in any order.
+4. Try missing `followups`, repeated `name`, an unknown field, and an extra
+   token: expect the accepted fields with unchanged preferences and display.
+   A complete upper-case order must succeed.
+5. Restart Astra: expect the saved order in cards and `view`. Load an old
+   preference file containing only GUI settings: expect default field order
+   while preserving those GUI settings.
+6. Simulate a preference write, candidate-validation, or replacement failure:
+   expect the previous preference-file bytes, model preference, cards, viewed
+   details, filter, and contact data restored/preserved. The error should be
+   visible without reporting success. Automated tests exercise real file
+   boundaries and JavaFX updates/rollback.
+7. Verify a changed order saves preferences once and never writes contacts;
+   query/unchanged/invalid requests save neither file. Add an action afterward:
+   it must save contacts without changing or rewriting the field-order preference.
+
+### Filtering by tags
+
+Use a fresh sample-data copy. Assign tags so one contact has `work` and
+`friend`, a second has only `work`, a third only `friend`, and a fourth no tags.
+Keep their stored order different from alphabetical order.
+
+1. Run `filter t/work t/friend` and `filter mode/and t/friend t/work`: expect
+   only contacts with both tags, in stored order, and an AND result count.
+2. Run `filter mode/OR t/work t/friend`: expect contacts with either/both tags,
+   each once and in stored order. The untagged contact is excluded.
+3. Repeat tags, such as `filter mode/or t/work t/work t/friend`: expect the same
+   result list without duplicates. `filter t/work t/work` is a single-tag query.
+4. Run `filter t/Work` when only lower-case `work` exists: expect an empty list
+   and the no-match message. Case-insensitive mode values do not change tag case.
+5. Run `find NAME`, then `filter t/friend`: expect tag results from all stored
+   contacts. Filter for a nonexistent tag, then run `filter t/work`: matching
+   contacts must reappear. Run `list`: expect the complete original stored order.
+6. Run `filter t/friend`, then `view 1`: expect full details for the first
+   displayed result. Try an index beyond the filtered count: expect an error
+   with the current results unchanged.
+7. From a non-empty result, try `filter`, `filter mode/or`, `filter t/`,
+   `filter t/work t/bad!`, `filter mode/xor t/work`, `filter mode/ t/work`, and
+   `filter mode/and t/work mode/or`: expect errors with no data/view change.
+8. Check unchanged contact-file bytes and zero save attempts for valid,
+   invalid, repeated, and no-match filters followed by view/list. Automated
+   tests use a storage double that fails on any attempted write.
 
 ### Saving data
 

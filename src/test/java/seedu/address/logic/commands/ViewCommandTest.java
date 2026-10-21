@@ -41,7 +41,8 @@ public class ViewCommandTest {
 
         ViewCommand command = new ViewCommand(firstIndex);
 
-        assertCommandSuccess(command, model, Messages.format(personToView), expectedModel);
+        assertCommandSuccess(command, model,
+                CommandResult.createPersonDetails(Messages.format(personToView), personToView), expectedModel);
     }
 
     @Test
@@ -54,8 +55,8 @@ public class ViewCommandTest {
 
     @Test
     public void execute_partialNameWithDifferentCaseAndWhitespace_showsFullDetails() throws Exception {
-        assertEquals("Alice Pauline; Company: Shopee; Role: Software Engineer; Phone: 94351253; "
-                + "Email: alice@example.com; LinkedIn: linkedin.com/in/alicepauline; Tags: [friends]",
+        assertEquals("Alice Pauline; Tags: [friends]; Company: Shopee; Role: Software Engineer; Phone: 94351253; "
+                + "Email: alice@example.com; LinkedIn: linkedin.com/in/alicepauline",
                 new ViewCommand("  aLiCe   pAuLiNe ").execute(model).getFeedbackToUser());
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
         assertEquals(getTypicalContactFile(), model.getContactFile());

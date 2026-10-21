@@ -5,11 +5,12 @@ import java.util.function.Predicate;
 import seedu.address.model.person.Person;
 
 /**
- * Captures contact data and the active filter before a command or pending request.
+ * Captures contact data, preferences, and the active filter before a command or pending request.
  */
 public final class ModelSnapshot {
 
     private final ContactFile contactFile;
+    private final UserPrefs userPrefs;
     private final Predicate<Person> filter;
 
     /**
@@ -17,6 +18,7 @@ public final class ModelSnapshot {
      */
     public ModelSnapshot(Model model) {
         contactFile = new ContactFile(model.getContactFile());
+        userPrefs = new UserPrefs(model.getUserPrefs());
         filter = model.getPersonFilter();
     }
 
@@ -28,11 +30,22 @@ public final class ModelSnapshot {
     }
 
     /**
-     * Restores the captured contents and filter while preserving observable-list bindings.
+     * Returns whether user preferences differ from the captured preferences.
+     */
+    public boolean hasPreferencesChanged(Model model) {
+        return !userPrefs.equals(model.getUserPrefs());
+    }
+
+    /**
+     * Restores contacts, preferences, and the filter while preserving observable-list bindings.
      */
     public void restore(Model model) {
         if (hasDataChanged(model)) {
             model.setContactFile(contactFile);
+        }
+        if (hasPreferencesChanged(model)) {
+            model.setGuiSettings(userPrefs.getGuiSettings());
+            model.setFieldOrder(userPrefs.getFieldOrder());
         }
         model.updateFilteredPersonList(filter == null ? Model.PREDICATE_SHOW_ALL_PERSONS : filter);
     }

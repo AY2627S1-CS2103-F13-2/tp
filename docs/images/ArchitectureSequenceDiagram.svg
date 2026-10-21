@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 704" role="img">
+<title>ArchitectureSequenceDiagram</title>
+<rect width="100%" height="100%" fill="white"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#334155"/></marker></defs>
+<rect x="15.0" y="15" width="130" height="36" rx="5" fill="#e2e8f0"/><text x="80.0" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-size="14">User</text><line x1="80.0" y1="51" x2="80.0" y2="639" stroke="#94a3b8" stroke-dasharray="5 5"/>
+<rect x="270.0" y="15" width="130" height="36" rx="5" fill="#e2e8f0"/><text x="335.0" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-size="14">UI</text><line x1="335.0" y1="51" x2="335.0" y2="639" stroke="#94a3b8" stroke-dasharray="5 5"/>
+<rect x="525.0" y="15" width="130" height="36" rx="5" fill="#e2e8f0"/><text x="590.0" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-size="14">Logic</text><line x1="590.0" y1="51" x2="590.0" y2="639" stroke="#94a3b8" stroke-dasharray="5 5"/>
+<rect x="780.0" y="15" width="130" height="36" rx="5" fill="#e2e8f0"/><text x="845.0" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-size="14">Model</text><line x1="845.0" y1="51" x2="845.0" y2="639" stroke="#94a3b8" stroke-dasharray="5 5"/>
+<rect x="1035.0" y="15" width="130" height="36" rx="5" fill="#e2e8f0"/><text x="1100.0" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-size="14">Storage</text><line x1="1100.0" y1="51" x2="1100.0" y2="639" stroke="#94a3b8" stroke-dasharray="5 5"/>
+<line x1="80.0" y1="88" x2="335.0" y2="88" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="207.5" y="78" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">delete 1</text>
+<line x1="335.0" y1="131" x2="590.0" y2="131" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="462.5" y="121" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">execute("delete 1")</text>
+<line x1="590.0" y1="174" x2="845.0" y2="174" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="717.5" y="164" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Snapshot and resolve displayed target</text>
+<line x1="590.0" y1="217" x2="335.0" y2="217" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="462.5" y="207" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Preview and y/n prompt (no save)</text>
+<line x1="335.0" y1="260" x2="80.0" y2="260" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="207.5" y="250" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Show preview</text>
+<line x1="80.0" y1="303" x2="335.0" y2="303" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="207.5" y="293" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">y</text>
+<line x1="335.0" y1="346" x2="590.0" y2="346" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="462.5" y="336" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">execute("y")</text>
+<line x1="590.0" y1="389" x2="845.0" y2="389" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="717.5" y="379" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Delete retained target; show full list</text>
+<line x1="590.0" y1="432" x2="1100.0" y2="432" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="845.0" y="422" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">saveContactFile(changed data)</text>
+<path d="M 1100.0 467 h 55 v 15 h -55" fill="none" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="1094.0" y="465" text-anchor="end" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Write sibling temp; validate; atomically replace</text>
+<line x1="1100.0" y1="518" x2="590.0" y2="518" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="845.0" y="508" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Saved</text>
+<line x1="590.0" y1="561" x2="335.0" y2="561" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="462.5" y="551" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Deleted details and remaining count</text>
+<line x1="335.0" y1="604" x2="80.0" y2="604" stroke="#334155" marker-end="url(#arrow)"/>
+<text x="207.5" y="594" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#0f172a">Show result</text>
+<rect x="20" y="656" width="1140" height="32" rx="4" fill="#fef3c7"/><text x="590.0" y="677" text-anchor="middle" font-family="Arial,sans-serif" font-size="13">On save failure, Logic restores contact data, stored order, and the original filter.</text></svg>

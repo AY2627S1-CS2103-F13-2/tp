@@ -2,6 +2,7 @@ package seedu.address.model;
 
 import java.util.function.Predicate;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.Person;
@@ -29,6 +30,21 @@ public interface Model {
      * Sets the user prefs' GUI settings.
      */
     void setGuiSettings(GuiSettings guiSettings);
+
+    /**
+     * Returns the global contact display order.
+     */
+    FieldOrder getFieldOrder();
+
+    /**
+     * Sets the global display order and notifies bound views.
+     */
+    void setFieldOrder(FieldOrder fieldOrder);
+
+    /**
+     * Returns the observable display order without exposing a writable property.
+     */
+    ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty();
 
     /**
      * Replaces contact file data with the data in {@code contactFile}.
