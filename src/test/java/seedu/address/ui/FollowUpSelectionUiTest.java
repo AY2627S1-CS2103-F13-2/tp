@@ -21,6 +21,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.Messages;
+import seedu.address.model.FieldOrder;
 import seedu.address.model.ModelManager;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
@@ -69,6 +71,17 @@ class FollowUpSelectionUiTest {
                 assertTrue(output.getText().contains(ALICE.getName().fullName));
                 assertTrue(output.getText().contains(ALICE.getPhone().orElseThrow().value));
                 assertEquals(List.of(BENSON), model.getFilteredPersonList());
+                FieldOrder custom = new FieldOrder(
+                        List.of("followups", "phone", "name", "tags", "company", "role", "email", "linkedin"));
+                model.setFieldOrder(custom);
+                assertEquals(Messages.formatFollowUpDetails(alice, alice.getFollowUps().getFirst(), custom),
+                        output.getText());
+                execute(input, "not-a-command");
+                assertTrue(output.getText().contains("Selected follow-up:\n#7 [PENDING] Call"));
+                execute(input, "view Benson");
+                model.setFieldOrder(FieldOrder.DEFAULT);
+                assertEquals(Messages.format(BENSON), output.getText());
+                assertFalse(output.getText().contains("Selected follow-up:"));
             } finally {
                 stage.hide();
             }

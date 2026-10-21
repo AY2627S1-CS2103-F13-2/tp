@@ -32,6 +32,11 @@ final class FollowUpSelectionRequest implements PendingRequest {
     }
 
     @Override
+    public boolean isReadOnly() {
+        return true;
+    }
+
+    @Override
     public String getPrompt() {
         String rows = IntStream.range(0, entries.size()).mapToObj(index -> {
             FollowUpEntry entry = entries.get(index);
@@ -51,9 +56,9 @@ final class FollowUpSelectionRequest implements PendingRequest {
                 if (!model.getContactFile().getPersonList().contains(selected.contact())) {
                     throw new CommandException(MESSAGE_CHANGED);
                 }
-                return CommandResult.createPersonDetails("Selected follow-up:\n"
-                        + Messages.formatFollowUp(selected.followUp()) + "\nContact:\n"
-                        + Messages.format(selected.contact(), model.getFieldOrder()), selected.contact());
+                return CommandResult.createFollowUpDetails(
+                        Messages.formatFollowUpDetails(selected.contact(), selected.followUp(), model.getFieldOrder()),
+                        selected.contact(), selected.followUp());
             }
         }
         return new CommandResult(MESSAGE_INVALID + "\n" + getPrompt(), this);

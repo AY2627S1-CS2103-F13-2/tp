@@ -861,6 +861,13 @@ The UI displays the details in the result panel while retaining the contact
 filter. Running the list again retrieves current results. Requests are held
 only in memory and do not survive restart.
 
+The selection request declares itself read-only. Logic captures the current
+model before each reply instead of reusing the pre-prompt transaction snapshot,
+so cancellation or stale-selection errors cannot undo intervening changes.
+Selection does not save those intervening changes either. The detail result
+retains both the action and contact so field-order refreshes preserve the
+selected action heading and details.
+
 **Use case: UC20 - Filter contacts by tags**
 
 **Precondition:** Tags can be assigned using add/edit.

@@ -50,6 +50,8 @@ class FollowUpSelectionRequestTest {
                 "Selected follow-up:\n#7 [PENDING] Call | Due: 2000-01-01 [OVERDUE]\nContact:\n"));
         assertTrue(first.getFeedbackToUser().contains(benson.getName().fullName));
         assertFalse(first.getPendingRequest().isPresent());
+        CommandResult middle = request.respond("2", model);
+        assertEquals(alice.getFollowUps().getFirst(), middle.getFollowUpForDetails().orElseThrow());
         CommandResult last = request.respond("3", model);
         assertEquals(alice, last.getPersonForDetails().orElseThrow());
         assertTrue(last.getFeedbackToUser().startsWith("Selected follow-up:\n#2 [PENDING] Undated | No due date"));
@@ -90,6 +92,16 @@ class FollowUpSelectionRequestTest {
     void respond_selectedActionCompleted_rejectsStaleSelection() {
         model.setPerson(benson, new PersonBuilder(benson).withFollowUps(
                 new FollowUp(7, "Call", FollowUp.Status.COMPLETED, LocalDate.of(2000, 1, 1))).build());
+        assertThrows(CommandException.class, () -> request.respond("1", model));
+    }
+
+    @Test
+    void respond_selectedActionRemovedOrDateChanged_rejectsStaleSelection() {
+        model.setPerson(benson, new PersonBuilder(benson).withFollowUps().build());
+        assertThrows(CommandException.class, () -> request.respond("1", model));
+        model.setPerson(model.getContactFile().getPersonList().getLast(),
+                new PersonBuilder(benson).withFollowUps(
+                        new FollowUp(7, "Call", FollowUp.Status.PENDING, LocalDate.of(2001, 1, 1))).build());
         assertThrows(CommandException.class, () -> request.respond("1", model));
     }
 

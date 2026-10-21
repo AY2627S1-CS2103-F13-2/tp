@@ -187,6 +187,57 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_staleSelection_doesNotResurrectDeletedContactOrSave() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("followups");
+        model.deletePerson(model.getContactFile().getPersonList().getFirst());
+        ContactFile changed = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        assertThrows(CommandException.class, () -> logic.execute("1"));
+        assertEquals(changed, model.getContactFile());
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+    }
+
+    @Test
+    void execute_readOnlyCancellation_preservesChangesMadeAfterPrompt() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("followups");
+        model.setPerson(BENSON, new PersonBuilder(BENSON).withName("Benson changed").build());
+        model.updateFilteredPersonList(person -> person.getName().fullName.equals("Benson changed"));
+        ContactFile changed = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        logic.execute("cancel");
+        assertEquals(changed, model.getContactFile());
+        assertEquals(1, model.getFilteredPersonList().size());
+        assertEquals("Benson changed", model.getFilteredPersonList().getFirst().getName().fullName);
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+    }
+
+    @Test
+    void execute_readOnlySelection_doesNotSaveUnrelatedChangesAndRetainsDisplayedOrder() throws Exception {
+        logic.execute("followup 1 a/Call d/01 Jan 2000");
+        logic.execute("followups");
+        Person updated = BENSON.appendFollowUp(
+                new FollowUp(1, "Earlier", FollowUp.Status.PENDING, LocalDate.of(1900, 1, 1)));
+        model.setPerson(BENSON, updated);
+        ContactFile changed = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        assertTrue(logic.execute("99999999999999999999").getPendingRequest().isPresent());
+        CommandResult selected = logic.execute("1");
+        assertEquals(ALICE.getName(), selected.getPersonForDetails().orElseThrow().getName());
+        assertEquals("Call", selected.getFollowUpForDetails().orElseThrow().getDescription());
+        assertEquals(changed, model.getContactFile());
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        logic.execute("followups");
+        assertEquals(updated, logic.execute("1").getPersonForDetails().orElseThrow());
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
     void execute_invalidDatedAction_doesNotChangeOrSave() throws Exception {
         ContactFile before = new ContactFile(model.getContactFile());
         byte[] bytes = Files.readAllBytes(file);

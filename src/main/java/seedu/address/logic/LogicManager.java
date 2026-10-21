@@ -51,7 +51,8 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        ModelSnapshot snapshot = pendingRequest == null ? new ModelSnapshot(model) : pendingSnapshot;
+        ModelSnapshot snapshot = pendingRequest == null || pendingRequest.isReadOnly()
+                ? new ModelSnapshot(model) : pendingSnapshot;
         try {
             CommandResult commandResult;
             if (pendingRequest != null) {
