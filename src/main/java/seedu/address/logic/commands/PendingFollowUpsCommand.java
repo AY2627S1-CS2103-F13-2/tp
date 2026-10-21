@@ -3,10 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import seedu.address.logic.Messages;
 import seedu.address.model.FollowUpEntry;
 import seedu.address.model.Model;
 
@@ -27,10 +24,7 @@ public class PendingFollowUpsCommand extends Command {
         if (entries.isEmpty()) {
             return new CommandResult(MESSAGE_EMPTY);
         }
-        String rows = IntStream.range(0, entries.size()).mapToObj(index -> {
-            FollowUpEntry entry = entries.get(index);
-            return (index + 1) + ". " + entry.contact().getName() + " | " + Messages.formatFollowUp(entry.followUp());
-        }).collect(Collectors.joining("\n"));
-        return new CommandResult("Pending follow-ups (" + entries.size() + "):\n" + rows);
+        PendingRequest request = new FollowUpSelectionRequest(entries);
+        return new CommandResult(request.getPrompt(), request);
     }
 }

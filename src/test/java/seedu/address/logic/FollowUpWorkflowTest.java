@@ -102,6 +102,7 @@ class FollowUpWorkflowTest {
         assertEquals(1, storage.saveCount);
         assertArrayEquals(bytes, Files.readAllBytes(file));
         storage.shouldFail = false;
+        logic.execute("cancel");
         logic.execute("followup 1 a/Send portfolio");
         String refreshed = logic.execute("followups").getFeedbackToUser();
         assertTrue(refreshed.startsWith("Pending follow-ups (2):"));
