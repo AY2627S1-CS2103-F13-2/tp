@@ -64,7 +64,10 @@ public class FollowUpCommand extends Command {
         Command addition = new AddFollowUpCommand(target, description, dueDate);
         if (duplicate.isPresent()) {
             PendingRequest request = new ConfirmationRequest("Pending action for " + target.getName()
-                    + " already exists:\n" + duplicate.orElseThrow(), "Add another?", addition);
+                    + " already exists:\n" + Messages.formatFollowUp(duplicate.orElseThrow())
+                    + "\nRequested due date: "
+                    + Optional.ofNullable(dueDate).map(LocalDate::toString).orElse("No due date"),
+                    "Add another?", addition);
             return new CommandResult(request.getPrompt(), request);
         }
         return addition.execute(model);
