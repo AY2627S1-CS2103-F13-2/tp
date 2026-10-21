@@ -257,7 +257,10 @@ Format: `exit`
 
 ### Saving the data
 
-Astra automatically saves data after every command. You do not need to save manually.
+Astra automatically saves successful contact changes. You do not need to save
+manually. Viewing, searching, and commands that
+change nothing do not rewrite the contact file. If saving fails, Astra reports
+the error and keeps the previous file, contact data, and displayed view.
 
 ### Editing the data file
 
