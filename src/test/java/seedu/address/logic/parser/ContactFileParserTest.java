@@ -22,6 +22,7 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -100,6 +101,16 @@ public class ContactFileParserTest {
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+    }
+
+    @Test
+    public void parseCommand_followups_acceptsOnlyNoArguments() throws Exception {
+        assertTrue(parser.parseCommand("followups") instanceof PendingFollowUpsCommand);
+        assertTrue(parser.parseCommand("  followups \t ") instanceof PendingFollowUpsCommand);
+        String error = String.format(MESSAGE_INVALID_COMMAND_FORMAT, PendingFollowUpsCommand.MESSAGE_USAGE);
+        for (String input : List.of("followups 1", "followups a/Call", "followups d/2026-10-25")) {
+            assertThrows(ParseException.class, error, () -> parser.parseCommand(input));
+        }
     }
 
     @Test

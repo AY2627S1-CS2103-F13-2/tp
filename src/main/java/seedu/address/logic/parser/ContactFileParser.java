@@ -20,6 +20,7 @@ import seedu.address.logic.commands.FollowUpCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.OrderCommand;
+import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
@@ -65,6 +66,13 @@ public class ContactFileParser {
             case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case FollowUpCommand.COMMAND_WORD -> new FollowUpCommandParser().parse(arguments);
+            case PendingFollowUpsCommand.COMMAND_WORD -> {
+                if (!arguments.isBlank()) {
+                    throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                            PendingFollowUpsCommand.MESSAGE_USAGE));
+                }
+                yield new PendingFollowUpsCommand();
+            }
             case OrderCommand.COMMAND_WORD -> new OrderCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommand();
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
