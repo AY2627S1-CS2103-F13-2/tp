@@ -162,12 +162,33 @@ This section describes some noteworthy details on how certain features are imple
 ### Shared contact matching
 
 `NameContainsKeywordsPredicate` supplies the existing contiguous, partial,
-case-insensitive name matching used by find, edit, and delete.
-`PersonNameResolver#resolve` keeps edit's existing numbered-retry behavior.
+case-insensitive name matching used by find, edit, delete, and view.
+`PersonNameResolver#resolve` keeps edit and view's numbered-retry behavior.
 `PersonNameResolver#findMatches` performs the same full-file lookup without
 changing the displayed list; delete uses it before creating a pending request.
 Ambiguous delete names display candidates and require a numeric reply followed
 by a separate y/n confirmation. A name never implicitly selects the first match.
+
+### Viewing contacts by name or displayed index
+
+`ViewCommandParser` normalizes whitespace and uses `ParserUtil#isIndexInput` to classify the selector.
+A numeric first token must form one valid positive index; otherwise the complete input must be a valid
+name. Prefix syntax is rejected. `ViewCommand` resolves a name with `PersonNameResolver` and sends a
+unique contact to the same `Messages#format` path as index selection, using the saved field order.
+Both paths retain the contact in the result so changes to field order immediately refresh viewed details.
+Absent optional fields are omitted.
+Several matches return the resolver's numbered candidates and a command-specific retry instruction.
+There is no pending request or y/n prompt: the next `view INDEX` simply selects from the current list.
+
+Index selection keeps the current filter, while name resolution searches all contacts and replaces the
+filter with the matching names. `LogicManager` restores the pre-command snapshot on lookup/parse failure,
+including the original dynamic predicate and existing observable-list binding. Successful unique and
+ambiguous lookups change no contact data, so the transactional save boundary performs zero writes.
+`list` restores the full list. No matching, formatting, or persistence rule is duplicated in the view command.
+
+![View workflow](images/ViewActivityDiagram.svg)
+
+### Normalized contact keys
 
 Phone matching uses `Phone#matches`, which removes spaces, hyphens, and
 parentheses but preserves a leading plus. Equality and hashing use that same
@@ -567,31 +588,33 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters a find command with a name, a contact number or an email.
-2. Astra finds exactly one matching contact and shows all of its stored information.
+1. User enters `view INDEX` from the displayed list (optionally narrowed with `find`), or `view NAME`.
+2. Astra resolves the displayed index or searches all contacts by partial, case-insensitive name and shows
+   the selected contact's full stored information, omitting absent optional fields. No contact data is saved.
 
    Use case ends.
 
 **Extensions**
 
 * 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to view.
+    * 1a1. Astra reports an invalid displayed index or a missing named contact, without changing data.
 
       Use case ends.
 
-* 1b. The search value is missing, or the contact number or email is malformed.
-    * 1b1. Astra shows the relevant error message.
+* 1b. The selector is missing or malformed, or the displayed index is out of range.
+    * 1b1. Astra shows usage or an index error and preserves the previous filter.
 
       Use case ends.
 
 * 2a. No contact matches.
-    * 2a1. Astra shows that the contact was not found.
+    * 2a1. Astra shows that the contact was not found and restores the previous filter.
 
       Use case ends.
 
 * 2b. Several contacts match.
-    * 2b1. Astra shows the number of matches and a ranked, numbered list with names, companies and emails.
-    * 2b2. User selects a contact by index.
+    * 2b1. Astra narrows the displayed list to matches in stored order and shows numbered names,
+      companies, and emails where present. No contact is chosen automatically.
+    * 2b2. User enters `view INDEX` using a candidate's displayed number.
     * 2b3. Astra shows all stored information of the selected contact.
 
       Use case ends.
@@ -920,6 +943,33 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Viewing contacts
+
+Use sample contacts Alice Pauline, Benson Meier, and Daniel Meier. Record the contact file's contents
+and modification time before each sequence; every view success, ambiguous result, and failure must leave
+them unchanged. No view command should ask for y/n.
+
+1. Run `view alice pauline`, `view Pauline`, and `view   ALICE   Pauline`.<br>
+   Expected: Alice's full details, including company, role, phone, email, LinkedIn, and tags when present.
+   The list contains Alice alone. Try a contact with only a name; no empty labels should appear.
+2. Run `find Alice`, then `view Carl Kurz`.<br>
+   Expected: Carl's details and a list containing Carl, even though the previous filter hid him.
+3. Run `view Meier`.<br>
+   Expected: numbered Benson/Daniel candidates in stored order with available companies/emails. Run
+   `view 3`; expect an index error and unchanged candidates. Run `view 2`; expect Daniel's details.
+   Run `list`; expect all contacts again.
+4. Run `find Meier`, then `view 1`.<br>
+   Expected: Benson's full details, using his displayed index rather than his stored position. The filter remains.
+5. With a filter active, try `view Zed`, `view`, `view 0`, `view -1`, `view 1 Alice`, and `view n/Alice`.<br>
+   Expected: missing-name/index/usage errors, unchanged contact data, and the same displayed filter.
+   Repeat name/index lookup on an empty file; expect a missing-name/index error without any save.
+
+For the combined workflows, also check `filter t/owesMoney` followed by `view 1`,
+then `view Meier` and `view 2`: indices must follow the newly displayed results. View a contact with
+pending/completed follow-ups by name and index; both paths must show every stored ID/status/description.
+Change field order and view the same person by name; retain the active order and immediate detail refresh
+from UC26. Automated integration tests cover these combined workflows.
 
 ### Deleting a person
 

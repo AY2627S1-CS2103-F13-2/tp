@@ -234,18 +234,27 @@ Examples:
 
 Shows everything Astra has stored about one person, including details the contact list does not show.
 
-Format: `view INDEX`
+Format: `view INDEX` or `view NAME`
 
-* Shows the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list, and **must be a positive integer** 1, 2, 3, …​
-* Details the person does not have are left out rather than shown as empty.
+* `INDEX` is a positive integer from the **displayed list**, including filtered results.
+* `NAME` searches every stored contact, even if the current filter hides it. Matching ignores letter case,
+  trims and collapses whitespace, and accepts a contiguous part of a name, just like `find`, `edit`, and `delete`.
+* A unique name match shows the contact's full details and narrows the list to that contact.
+* Several matches show a numbered list with names, companies, and emails where present, in stored order.
+  Run `view INDEX` using those new numbers to choose one. There is no confirmation prompt.
+* A missing contact or invalid index shows an error and keeps the previous displayed list.
+* Details the person does not have are omitted. Viewing never changes contacts or saves the contact file.
+  Use `list` to show everyone again.
+* An argument beginning with an integer is treated as an index. `view 0`, `view -1`, and `view 1 Alice`
+  are invalid. Name queries use the same allowed characters as contact names; prefixes such as `n/`
+  are not supported.
 
 Examples:
-* `list` followed by `view 2` shows the full details of the 2nd person in the contact file.
+* `list` followed by `view 2` shows the full details of the 2nd stored person.
 * `find Yeo` followed by `view 1` shows the full details of the first search result.
-
-<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
-naming the person instead of giving an index, as `delete` and `edit` allow.
-</div>
+* `view alice pauline` or `view Pauline` shows Alice Pauline when she is the only match.
+* `view Meier` lists matching Meiers; `view 2` then shows the second match's full details.
+* `find Alice` followed by `view Carl Kurz` still finds Carl, because name lookup searches all contacts.
 
 ### Deleting a person: `delete`
 
@@ -376,7 +385,7 @@ order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
   values omit those rows, even when an absent field appears early in the order.
 * A successful change immediately refreshes existing cards. If you are viewing
   a contact's details, they are redisplayed in the new order alongside the
-  confirmation. Later `view INDEX` output uses the same order.
+  confirmation. Later `view INDEX` and `view NAME` output use the same order.
 * The preference applies to every contact and survives restart. Earlier
   preference files without an order use the default.
 * Querying the order or setting the same order performs no save. A changed
@@ -449,6 +458,6 @@ Action | Format, Examples
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
 **List** | `list`
-**View** | `view INDEX`<br> e.g., `view 2`
+**View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
 **Help** | `help`

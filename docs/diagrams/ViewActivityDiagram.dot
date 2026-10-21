@@ -1,0 +1,27 @@
+digraph ViewActivity {
+    graph [rankdir=TB, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.45,
+           label="View a contact — no contact-file writes", labelloc=t, fontsize=18, fontname="Arial"];
+    node [shape=box, style="rounded,filled", fillcolor="#eef4fc", color="#53759b", fontname="Arial", fontsize=12];
+    edge [fontname="Arial", fontsize=11, color="#526477"];
+    input [label="Enter view INDEX or view NAME"];
+    valid [shape=diamond, label="Valid selector?", fillcolor="#fff4d9"];
+    kind [shape=diamond, label="Index or name?", fillcolor="#fff4d9"];
+    index [label="Select from displayed list\n(including filtered results)"];
+    search [label="Search all stored names\nPartial, case-insensitive matching"];
+    count [shape=diamond, label="Matches?", fillcolor="#fff4d9"];
+    candidates [label="Show numbered matches in stored order\nRetry with view INDEX"];
+    details [label="Show full details\nOmit absent optional fields"];
+    error [label="Show usage / index / missing-name error\nRestore prior data and filter", fillcolor="#fceceb"];
+    input -> valid;
+    valid -> kind [label="yes"];
+    valid -> error [label="no"];
+    kind -> index [label="index"];
+    kind -> search [label="name"];
+    index -> details [label="in range"];
+    index -> error [label="out of range"];
+    search -> count;
+    count -> error [label="0"];
+    count -> details [label="1"];
+    count -> candidates [label="several"];
+    candidates -> input [label="new command", style=dashed];
+}

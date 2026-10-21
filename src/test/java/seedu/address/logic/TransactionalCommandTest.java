@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.collections.ObservableList;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
@@ -61,6 +63,57 @@ public class TransactionalCommandTest {
         assertThrows(CommandException.class, () -> logic.execute("edit 1 n/Alice Pauline"));
         assertEquals(0, storage.saveCount);
         assertArrayEquals(original, Files.readAllBytes(activeFile));
+    }
+
+    @Test
+    public void execute_viewAmbiguityAndIndexRetry_neverSaves() throws Exception {
+        byte[] original = Files.readAllBytes(activeFile);
+        ObservableList<Person> binding = model.getFilteredPersonList();
+        logic.execute("find Alice");
+        assertEquals("2 contacts found:", logic.execute("view mEiEr").getFeedbackToUser().lines().findFirst().get());
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        assertThrows(CommandException.class, () -> logic.execute("view 3"));
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        assertEquals(Messages.format(DANIEL), logic.execute("view 2").getFeedbackToUser());
+        logic.execute("list");
+        assertEquals(getTypicalContactFile().getPersonList(), model.getFilteredPersonList());
+        assertEquals(getTypicalContactFile(), model.getContactFile());
+        assertSame(binding, model.getFilteredPersonList());
+        assertEquals(0, storage.saveCount);
+        assertArrayEquals(original, Files.readAllBytes(activeFile));
+    }
+
+    @Test
+    public void execute_uniqueNameOutsideFilter_showsDetailsWithoutSaving() throws Exception {
+        byte[] original = Files.readAllBytes(activeFile);
+        logic.execute("find Meier");
+        assertEquals(Messages.format(ALICE), logic.execute("view pAuLiNe").getFeedbackToUser());
+        assertEquals(List.of(ALICE), model.getFilteredPersonList());
+        assertEquals(getTypicalContactFile(), model.getContactFile());
+        assertEquals(0, storage.saveCount);
+        assertArrayEquals(original, Files.readAllBytes(activeFile));
+    }
+
+    @Test
+    public void execute_invalidViews_restorePreviousDynamicFilterWithoutSaving() throws Exception {
+        byte[] original = Files.readAllBytes(activeFile);
+        ObservableList<Person> binding = model.getFilteredPersonList();
+        logic.execute("find Alice");
+        for (String command : List.of("view Zed", "view 2")) {
+            assertThrows(CommandException.class, () -> logic.execute(command));
+            assertEquals(List.of(ALICE), model.getFilteredPersonList());
+        }
+        for (String command : List.of("view", "view 0", "view 1 Alice", "view n/Alice")) {
+            assertThrows(ParseException.class, () -> logic.execute(command));
+            assertEquals(List.of(ALICE), model.getFilteredPersonList());
+        }
+        assertSame(binding, model.getFilteredPersonList());
+        assertEquals(getTypicalContactFile(), model.getContactFile());
+        assertEquals(0, storage.saveCount);
+        assertArrayEquals(original, Files.readAllBytes(activeFile));
+        Person anotherAlice = new PersonBuilder().withName("Alice New").build();
+        model.setPerson(BENSON, anotherAlice);
+        assertEquals(List.of(ALICE, anotherAlice), model.getFilteredPersonList());
     }
 
     @Test

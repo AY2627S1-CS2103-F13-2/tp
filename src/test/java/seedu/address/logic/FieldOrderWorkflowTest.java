@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FieldOrder;
@@ -220,6 +223,42 @@ class FieldOrderWorkflowTest {
         assertEquals(1, contacts.saveCount);
         assertEquals(1, prefs.saveCount);
         assertThrows(ParseException.class, () -> logic.execute("y"));
+    }
+
+    @Test
+    void execute_hiddenNameWithActions_usesSavedOrderWithoutQueryWrites() throws Exception {
+        logic.execute("order " + CUSTOM);
+        logic.execute("followup 1 a/Send portfolio");
+        Person updated = model.getContactFile().getPersonList().getFirst();
+        byte[] savedContacts = Files.readAllBytes(contactFile);
+        byte[] savedPrefs = Files.readAllBytes(prefsFile);
+        logic.execute("filter t/owesMoney");
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+        CommandResult result = logic.execute("view pAuLiNe");
+        assertEquals(Messages.format(updated, CUSTOM), result.getFeedbackToUser());
+        assertTrue(result.getFeedbackToUser().contains("#1 [PENDING] Send portfolio"));
+        assertEquals(updated, result.getPersonForDetails().orElseThrow());
+        assertEquals(List.of(updated), model.getFilteredPersonList());
+        assertEquals(1, contacts.saveCount);
+        assertEquals(1, prefs.saveCount);
+        assertArrayEquals(savedContacts, Files.readAllBytes(contactFile));
+        assertArrayEquals(savedPrefs, Files.readAllBytes(prefsFile));
+    }
+
+    @Test
+    void execute_ambiguousNameRetry_preservesOrderedDetailsAndReadOnlyStorage() throws Exception {
+        logic.execute("order " + CUSTOM);
+        logic.execute("filter t/owesMoney");
+        CommandResult candidates = logic.execute("view Meier");
+        assertTrue(candidates.getFeedbackToUser().contains("2 contacts found:"));
+        assertTrue(candidates.getPersonForDetails().isEmpty());
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        CommandResult selected = logic.execute("view 2");
+        assertEquals(Messages.format(DANIEL, CUSTOM), selected.getFeedbackToUser());
+        assertEquals(DANIEL, selected.getPersonForDetails().orElseThrow());
+        assertEquals(0, contacts.saveCount);
+        assertEquals(1, prefs.saveCount);
+        assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
     }
 
     private static final class CountingPreferences extends JsonUserPrefsStorage {

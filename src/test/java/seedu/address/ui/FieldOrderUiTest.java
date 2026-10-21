@@ -183,6 +183,33 @@ class FieldOrderUiTest {
         });
     }
 
+    @Test
+    void window_namedView_refreshesDetailsWhenFieldOrderChanges() throws Exception {
+        ContactFile contacts = new ContactFile();
+        contacts.addPerson(WITH_ACTION);
+        ModelManager model = new ModelManager(contacts, new UserPrefs());
+        LogicManager logic = new LogicManager(model, new StorageManager(
+                new JsonContactFileStorage(testFolder.resolve("contacts.json")),
+                new JsonUserPrefsStorage(testFolder.resolve("preferences.json"))));
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, logic, testFolder.resolve("contacts.json"));
+            window.fillInnerParts("Loaded");
+            window.show();
+            TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+            TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
+            execute(input, "view Alice Pauline");
+            assertEquals(Messages.format(WITH_ACTION), output.getText());
+            ObservableList<Person> binding = model.getFilteredPersonList();
+            model.setFieldOrder(CUSTOM);
+            assertEquals(Messages.format(WITH_ACTION, CUSTOM), output.getText());
+            assertSame(binding, model.getFilteredPersonList());
+            assertEquals(List.of(WITH_ACTION), binding);
+        });
+        assertFalse(Files.exists(testFolder.resolve("contacts.json")));
+        assertFalse(Files.exists(testFolder.resolve("preferences.json")));
+    }
+
     private static List<String> rowIds(Node root) {
         VBox rows = (VBox) root.lookup("#fields");
         return rows.getChildren().stream().map(Node::getId).toList();
