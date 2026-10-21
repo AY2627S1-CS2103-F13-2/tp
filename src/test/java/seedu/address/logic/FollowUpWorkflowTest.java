@@ -14,6 +14,7 @@ import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +71,51 @@ class FollowUpWorkflowTest {
         assertEquals(model.getContactFile().getPersonList(), storage.readContactFile().orElseThrow().getPersonList());
         assertTrue(logic.execute("view 1").getFeedbackToUser().contains("#1 [PENDING] Send portfolio"));
         assertEquals(1, storage.saveCount);
+    }
+
+    @Test
+    void execute_datedAction_acceptsPastDateAndPersistsIt() throws Exception {
+        logic.execute("followup 1 a/Call d/29 Feb 2000");
+        FollowUp action = model.getFilteredPersonList().getFirst().getFollowUps().getFirst();
+        assertEquals(LocalDate.of(2000, 2, 29), action.getDueDate().orElseThrow());
+        assertTrue(action.isOverdue());
+        assertEquals(model.getContactFile().getPersonList(), storage.loadForStartup().contacts());
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
+    void execute_datedDuplicate_preservesRequestedDateAndExistingAction() throws Exception {
+        logic.execute("followup 1 a/Call d/2026-10-25");
+        assertTrue(logic.execute("followup 1 a/Call d/01/11/2026").getPendingRequest().isPresent());
+        assertEquals(1, storage.saveCount);
+        logic.execute("y");
+        assertEquals(List.of(new FollowUp(1, "Call", FollowUp.Status.PENDING, LocalDate.of(2026, 10, 25)),
+                new FollowUp(2, "Call", FollowUp.Status.PENDING, LocalDate.of(2026, 11, 1))),
+                model.getFilteredPersonList().getFirst().getFollowUps());
+        assertEquals(model.getContactFile().getPersonList(), storage.loadForStartup().contacts());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_invalidDatedAction_doesNotChangeOrSave() throws Exception {
+        ContactFile before = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        for (String suffix : List.of("d/", "d/2026-02-29", "d/25/10/2026 d/26/10/2026")) {
+            assertThrows(ParseException.class, () -> logic.execute("followup 1 a/Call " + suffix));
+        }
+        assertThrows(CommandException.class, () -> logic.execute("followup 99 a/Call d/25 Oct 2026"));
+        assertEquals(before, model.getContactFile());
+        assertEquals(0, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+    }
+
+    @Test
+    void command_dueDates_participateInValueSemantics() {
+        FollowUpCommand command = new FollowUpCommand(Index.fromOneBased(1), "Call", LocalDate.of(2026, 10, 25));
+        assertEquals(command, new FollowUpCommand(Index.fromOneBased(1), "Call", LocalDate.of(2026, 10, 25)));
+        assertNotEquals(command, new FollowUpCommand(Index.fromOneBased(1), "Call"));
+        assertNotEquals(command, new FollowUpCommand(Index.fromOneBased(1), "Call", LocalDate.of(2026, 11, 1)));
+        assertTrue(command.toString().contains("dueDate=2026-10-25"));
     }
 
     @Test
