@@ -20,7 +20,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 1. Copy the file to the folder you want to use as the _home folder_ for Astra.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar contactfile.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. On first launch, Astra shows sample contacts and a welcome message. Type `clear` to remove the sample contacts when you are ready to add your own.<br>
+   A GUI similar to the one below should appear in a few seconds. On first launch, Astra shows sample contacts and a welcome message. Type `clear` and then `y` to remove the sample contacts when you are ready to add your own.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -32,7 +32,9 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
+
+   * `clear`, then `y`: Deletes all contacts.
 
    * `exit` : Exits the app.
 
@@ -84,7 +86,7 @@ If Astra cannot safely prepare a reset, **Start anew** is unavailable and the co
 * Items followed by `…`​ can appear zero or more times.<br>
   For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
+* Prefixed contact fields for `add` and `edit` can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, and `exit`, are ignored.<br>
@@ -232,21 +234,66 @@ Examples:
 `delete` cannot be undone. A confirmation prompt is planned for a later version.
 </div>
 
+### Recording a follow-up: `followup`
+
+Adds a pending action to the contact at the currently displayed index.
+
+Format: `followup INDEX a/DESCRIPTION`
+
+* `INDEX` must be a positive number from the displayed list, including filtered
+  results. The contact stays in the current view after adding an action.
+* Provide one non-blank description after `a/`. Outer whitespace is removed;
+  letter case and internal spacing are kept. Additional command prefixes such
+  as `p/`, repeated `a/`, and `confirm/` are rejected. URLs such as
+  `https://example.com/portfolio` can be part of the description.
+* A new action is saved immediately with status `PENDING`. The response and
+  contact card show the ordered list with stable IDs, for example
+  `#1 [PENDING] Send portfolio`. `view INDEX` also shows the full history.
+* If an identical description already has a pending action, Astra shows it and
+  asks **Add another?** Enter `y` to add another, or `n`/`cancel` to stop.
+  Comparison is case-sensitive after trimming: `Call` and `call` are different.
+  Other replies repeat the prompt; cancel before entering another command.
+* A completed action with the same description does not require confirmation.
+  Completed history is retained, but marking actions complete and assigning due
+  dates are not available in this version.
+* Actions survive restart and ordinary contact edits. A failed save preserves
+  the file, previous action history, and current view. Earlier contact files
+  without actions load with an empty history.
+
+Example:
+
+```text
+followup 1 a/Send portfolio
+followup 1 a/Send portfolio
+```
+
+The first command adds `#1 [PENDING] Send portfolio`. The second asks whether
+another is wanted; enter `y` to add `#2`, or `n` to keep just `#1`. The original
+command does not need to be repeated while answering the prompt.
+
 ### Clearing all entries: `clear`
 
-Clears every contact from the contact file and reports how many were cleared.
+Previews the total number of stored contacts and asks for confirmation before
+clearing them. The count includes contacts hidden by a filter.
 
 Format: `clear`
 
-* `clear` takes no parameters. Extra parameters are rejected rather than ignored, so `clear 3` is reported as an invalid command instead of silently clearing everything.
-* If the contact file is already empty, Astra reports that there are no contacts to clear and changes nothing.
+* Enter `y` to clear every contact, or `n`/`cancel` to stop. Invalid replies
+  repeat the prompt. Cancel before running an unrelated command.
+* Nothing is cleared until you enter `y`. Success reports how many were cleared
+  and that 0 remain. A failed save preserves the file, contacts, and prior view.
+* `clear` takes no parameters. `clear 3` is rejected and changes nothing.
+* An already empty contact file reports that there is nothing to clear.
 
 Examples:
-* `clear`, with 12 contacts stored, reports `Cleared 12 contact(s). 0 contact(s) remaining.`
-* `clear 3` is rejected, and the accepted command format is shown.
+
+* `clear`, then `y`, with 12 stored contacts, reports
+  `Cleared 12 contact(s). 0 contact(s) remaining.`
+* `find Alice`, then `clear`, then `cancel` preserves every contact and restores
+  the results of `find Alice`.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-`clear` cannot be undone. A confirmation prompt is planned for a later version.
+Confirmed clearing cannot be undone. Check the count before entering `y`.
 </div>
 
 ### Exiting the program: `exit`
@@ -258,7 +305,7 @@ Format: `exit`
 ### Saving the data
 
 Astra automatically saves successful contact changes. You do not need to save
-manually. Viewing, searching, and commands that
+manually. Viewing, searching, pending prompts, cancellation, and commands that
 change nothing do not rewrite the contact file. If saving fails, Astra reports
 the error and keeps the previous file, contact data, and displayed view.
 
@@ -296,10 +343,11 @@ _Details coming soon ..._
 Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
-**Clear** | `clear`
+**Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
 **Delete** | `delete INDEX` or `delete NAME`<br> e.g., `delete 3`, `delete James Ho`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
+**Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`

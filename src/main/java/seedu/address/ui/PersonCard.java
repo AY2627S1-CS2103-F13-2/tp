@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import seedu.address.logic.Messages;
 import seedu.address.model.person.Person;
 
 /**
@@ -44,6 +45,8 @@ public class PersonCard extends UiPart<Region> {
     private Label linkedin;
     @FXML
     private FlowPane tags;
+    @FXML
+    private Label followUps;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -58,6 +61,8 @@ public class PersonCard extends UiPart<Region> {
         setOptionalLabel(phone, person.getPhone().map(value -> value.value).orElse(null));
         setOptionalLabel(email, person.getEmail().map(value -> value.value).orElse(null));
         setOptionalLabel(linkedin, person.getLinkedin().map(value -> value.value).orElse(null));
+        setOptionalLabel(followUps, person.getFollowUps().isEmpty() ? null
+                : "Follow-ups:\n" + Messages.formatFollowUps(person));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));

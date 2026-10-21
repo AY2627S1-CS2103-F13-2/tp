@@ -217,6 +217,18 @@ canonical value. Email matching uses `Email#matches` and ignores letter case.
 Find, duplicate checks, and startup recovery share these comparisons. Missing
 phone/email values are not shared keys. Existing contact identity is preserved.
 
+### Pending requests
+
+`CommandResult` can carry a `PendingRequest`. Logic retains it with the snapshot
+from before the initial command. `ConfirmationRequest` executes its retained
+command only for y. Logic handles n/cancel, restores the original view, and
+clears pending state on completion, cancellation, or failed confirmed saving.
+Invalid replies repeat the prompt; unrelated commands do not execute while a
+response is pending. Clear uses this mechanism now; delete will adopt it in the
+next package. `PersonSelectionRequest` supplies reusable numbered selection for
+that upcoming workflow. UC16 reuses confirmation with an "Add another?" question
+for duplicate pending actions; it does not introduce another response mechanism.
+
 ### Transactional contact saves
 
 `ModelSnapshot` copies contact contents and retains the original predicate.
@@ -229,6 +241,44 @@ compares the candidate, then uses atomic replacement. Failures before
 replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
+
+### Follow-up actions (UC16)
+
+`Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
+ID unique within that contact, a stripped non-blank description, and a
+`PENDING` or `COMPLETED` status. IDs are allocated as one greater than the
+maximum existing ID, including completed history, rather than the list size or
+last element. Existing IDs and order never change; ID exhaustion is rejected
+without mutation. This version does not remove actions or implement completion.
+
+`FollowUpCommandParser` requires a positive displayed index and exactly one
+`a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
+rejected instead of being silently stored as description text. Exact trimmed,
+case-sensitive description equality defines duplicates, and only pending
+actions trigger confirmation. The command retains the resolved contact and
+description in the shared request. A later displayed index cannot redirect a
+confirmed action; a changed or missing target invalidates the request.
+
+Strong `Person` equality/hash include ordered follow-ups so Logic detects and
+saves an action change. Contact identity and phone/email duplicate checks do
+not include actions. `EditCommand` carries existing history into the replacement
+contact, and `PersonBuilder` preserves history when copying a contact in tests.
+Model replacement updates bound cards immediately; cards and full details show
+each action's stable ID and status, with no blank action row for empty history.
+
+`JsonAdaptedPerson` defaults a missing/null `followUps` property to an empty
+list for old files. `JsonAdaptedFollowUp` validates raw JSON field types,
+positive integer IDs, non-blank descriptions, and supported status values;
+duplicate IDs and null actions invalidate the entire contact. Startup recovery
+uses the same conversion and reports/skips the affected record, preserving its
+original bytes in the existing recovery archive. Valid histories retain their
+order, status, and IDs through normal saves and recovery. Failed immediate or
+confirmed saves restore the original action history, model, and predicate.
+
+The following activity diagram shows the command and transaction boundaries.
+Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
+
+![Recording a follow-up](images/FollowUpActivityDiagram.svg)
 
 ### \[Proposed\] Undo/redo feature
 
@@ -484,7 +534,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Deferred to a later version**
 
 * Confirming before the contact is deleted. v1.3 deletes immediately; the prompt arrives with the
-  pending-command layer, which UC05 will share.
+  pending-command layer already used by UC05.
 * Deleting by email or contact number, and deleting several contacts in one command. These wait on the
   matching for those fields so that it is shared with `find` rather than written twice.
 
@@ -602,37 +652,24 @@ Command-save rollback is implemented through Logic and Storage and applies to ed
 
 **MSS**
 
-1. User requests to clear all contacts.
-2. Astra saves an empty contact list and shows how many contacts it cleared and that 0 remain.
+1. User enters clear with no arguments.
+2. Astra displays the total stored contact count and asks for y/n confirmation.
+3. User replies y.
+4. Astra saves the empty list once and reports how many contacts were cleared
+   and that 0 remain. The full empty list is displayed.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The contact list is empty.
-    * 1a1. Astra shows that there are no contacts to clear.
-
-      Use case ends.
-
-* 1b. The command has extra arguments.
-    * 1b1. Astra shows the command usage.
-
-      Use case ends.
-
-**Deferred to a later version**
-
-* Confirming before the list is cleared, together with UC02's prompt and sharing the same
-  pending-command layer.
-
-* 3b. User enters a response other than y or n.
-    * 3b1. Astra asks the user to enter y or n.
-
-      Use case resumes at step 3.
-
-* 4a. Saving fails.
-    * 4a1. Astra shows a save error. The contact list and file are unchanged.
-
-      Use case ends.
+* 1a. No contacts are stored: report that there is nothing to clear.
+* 1b. Extra arguments are supplied: show usage and change nothing.
+* 2a. A filter is active: the preview still counts every stored contact.
+* 3a. User replies n/cancel: leave data/file unchanged, restore the pre-request
+  view, and discard the request.
+* 3b. Any other reply: repeat the prompt without mutation or saving.
+* 4a. Saving fails: report the error, restore the original model/filter, retain
+  the old active file, and discard the pending request.
 
 **Use case: UC06 - Start Astra and restore saved contacts**
 
@@ -698,6 +735,40 @@ Command-save rollback is implemented through Logic and Storage and applies to ed
       Use case ends.
 
 *{More to be added}*
+
+**Use case: UC16 - Record a follow-up action**
+
+**MSS**
+
+1. User enters `followup INDEX a/DESCRIPTION` for a displayed contact.
+2. Astra validates and trims the description, resolves the displayed contact,
+   and checks its pending actions for the identical description.
+3. Astra appends a new action with the next stable ID and `PENDING` status.
+4. Astra saves once and displays the updated ordered action list in feedback
+   and the contact card, preserving the active contact filter.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The index or format is invalid, the description is blank, or an unsupported
+  prefix is supplied: report the error without modifying or saving contacts.
+* 2a. An identical pending action exists: show it and ask "Add another?".
+    * 2a1. User replies y: resume at step 3 with the retained contact/description.
+    * 2a2. User replies n/cancel: discard the request and preserve data/view.
+    * 2a3. Any other reply: repeat the prompt and perform no save or command.
+* 2b. Only a completed action has that description: proceed without a prompt.
+* 3a. No further positive integer IDs are available: report the error without
+  renumbering or changing the history.
+* 4a. Saving fails: restore previous file/model/history/view, clear any pending
+  request, and report the failure. A retry requires a new request.
+
+**Scope decisions**
+
+Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
+proposed confirmation suffix by user decision. IDs, completed status, and
+history storage support future UC17; completion commands, due dates, and
+links to events remain outside UC16.
 
 ### Non-Functional Requirements
 
@@ -826,18 +897,45 @@ testers are expected to do more *exploratory* testing.
 
 ### Clearing all entries
 
-1. Clearing a list that has contacts in it
+1. With several contacts stored, run `find Alice`, then `clear`: expect the
+   total stored count, not the filtered count, and no changes before `y`.
+2. Enter `n` or `cancel`: expect every contact intact and the original filtered
+   results restored. Invalid replies repeat the prompt.
+3. Repeat `clear`, then `y`: expect every contact removed, the cleared count and
+   0 remaining reported, and an empty full list. Restart and verify it stays empty.
+4. Run `clear` again: expect nothing to clear. Run `clear 3`: expect usage and no
+   mutation. Neither command should save.
+5. Simulate failed saving with the storage test doubles: confirmed clear must preserve the old file bytes, original contacts, original order,
+   and filter. A later y must not replay a failed request.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+### Recording follow-ups
 
-   1. Test case: `clear`<br>
-      Expected: Every contact is removed. The status message reports how many were cleared and that 0 remain.
+Use a fresh copy of sample data.
 
-   1. Test case: `clear` again, on the now empty list<br>
-      Expected: Nothing changes. The status message reports that there are no contacts to clear.
-
-   1. Test case: `clear 3`<br>
-      Expected: Nothing is cleared. The status message shows the command usage, since `clear` takes no parameters.
+1. Run `followup 1 a/  Send portfolio  `: expect `#1 [PENDING] Send portfolio`
+   in feedback and the card. Run `view 1`: expect the same ordered action list.
+2. Repeat `followup 1 a/Send portfolio`: expect the existing action and "Add
+   another?" without mutation. Try `maybe`, `list`, and `yes`: expect the same
+   prompt and unchanged data. Enter `n`: expect cancellation. Repeat and enter
+   `y`: expect a second action with ID 2 and one save.
+3. Run `find Benson`, then `followup 1 a/Call`: only Benson changes and the
+   filtered view remains. Repeat and enter `cancel`: the original view/history
+   remain. A later `y` must be unknown rather than replaying the request.
+4. Edit that contact's name, phone, tags, or remove an optional field. Expect
+   all actions retained. Restart: actions and IDs remain. Add a different action:
+   expect the next ID, without renumbering existing actions.
+5. Try index 0, an out-of-range index, a blank description, repeated `a/`, and
+   `followup 1 a/Call confirm/yes`: expect an error and no changes or save.
+6. Load an old contact file without `followUps`: expect an empty history.
+   Using a backed-up test file, include completed action #9 and pending action
+   #3, in that order; add the completed description again: expect pending #10
+   without a prompt. The stored action order remains 9, 3, 10.
+7. Load a test file containing one contact with duplicate/invalid action IDs
+   and another valid contact with actions: expect recovery to report the bad
+   record, preserve the original backup, and retain the valid history.
+8. Simulate failed saving using the storage test double for both a new action
+   and a confirmed duplicate: expect unchanged file bytes, actions, order,
+   filtered view, and observable-list binding. A later y must not replay it.
 
 ### Saving data
 

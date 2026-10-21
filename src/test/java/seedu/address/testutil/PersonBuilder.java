@@ -1,10 +1,12 @@
 package seedu.address.testutil;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -32,6 +34,7 @@ public class PersonBuilder {
     private Email email;
     private Linkedin linkedin;
     private Set<Tag> tags;
+    private List<FollowUp> followUps = List.of();
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -57,6 +60,7 @@ public class PersonBuilder {
         email = personToCopy.getEmail().orElse(null);
         linkedin = personToCopy.getLinkedin().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
+        followUps = personToCopy.getFollowUps();
     }
 
     /**
@@ -120,8 +124,19 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the ordered follow-up history of the contact being built.
+     */
+    public PersonBuilder withFollowUps(FollowUp... actions) {
+        followUps = List.of(actions);
+        return this;
+    }
+
+    /**
+     * Builds an immutable contact with the selected details and actions.
+     */
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, tags);
+        return new Person(name, company, role, phone, email, linkedin, tags, followUps);
     }
 
 }
