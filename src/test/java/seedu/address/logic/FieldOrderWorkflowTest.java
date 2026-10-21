@@ -186,6 +186,42 @@ class FieldOrderWorkflowTest {
         assertArrayEquals(prefsBytes, Files.readAllBytes(prefsFile));
     }
 
+    @Test
+    void execute_filteredDelete_usesSavedOrderForPreviewAndResult() throws Exception {
+        logic.execute("order " + CUSTOM);
+        logic.execute("filter t/friends");
+        String details = Messages.format(ALICE, CUSTOM);
+        assertTrue(logic.execute("delete 1").getFeedbackToUser().contains(details));
+        assertEquals(0, contacts.saveCount);
+        assertTrue(logic.execute("y").getFeedbackToUser().contains(details));
+        assertFalse(model.getContactFile().getPersonList().contains(ALICE));
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
+        assertEquals(CUSTOM, model.getFieldOrder());
+        assertEquals(1, contacts.saveCount);
+        assertEquals(1, prefs.saveCount);
+    }
+
+    @Test
+    void execute_filteredDeleteFailure_restoresTagFilterAndSavedOrder() throws Exception {
+        logic.execute("order " + CUSTOM);
+        logic.execute("filter t/friends");
+        List<Person> filtered = List.copyOf(model.getFilteredPersonList());
+        ObservableList<Person> binding = model.getFilteredPersonList();
+        byte[] savedPrefs = Files.readAllBytes(prefsFile);
+        logic.execute("delete 1");
+        contacts.shouldFail = true;
+        assertThrows(CommandException.class, () -> logic.execute("y"));
+        assertEquals(filtered, model.getFilteredPersonList());
+        assertSame(binding, model.getFilteredPersonList());
+        assertEquals(getTypicalContactFile(), model.getContactFile());
+        assertEquals(CUSTOM, model.getFieldOrder());
+        assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
+        assertArrayEquals(savedPrefs, Files.readAllBytes(prefsFile));
+        assertEquals(1, contacts.saveCount);
+        assertEquals(1, prefs.saveCount);
+        assertThrows(ParseException.class, () -> logic.execute("y"));
+    }
+
     private static final class CountingPreferences extends JsonUserPrefsStorage {
         private int saveCount;
         private IOException failure;
