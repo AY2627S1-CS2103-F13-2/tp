@@ -32,7 +32,8 @@ public class ViewCommandTest {
 
         ViewCommand command = new ViewCommand(firstIndex);
 
-        assertCommandSuccess(command, model, Messages.format(personToView), expectedModel);
+        assertCommandSuccess(command, model,
+                CommandResult.createPersonDetails(Messages.format(personToView), personToView), expectedModel);
     }
 
     @Test

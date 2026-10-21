@@ -128,7 +128,7 @@ The `Model` component,
 * a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
 * `Person#isSamePerson` retains the legacy identity rule: equal names and equal email presence (both present or both absent). Email values do not participate in that rule. Add/edit separately reject shared normalized phone numbers and case-insensitive email addresses. This differs from the intended phone/email key policy; changing identity requires a separate compatibility decision.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* stores a `UserPrefs` object that represents the user’s preferences (GUI settings and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
@@ -186,8 +186,9 @@ references rather than resolving a displayed index again later.
 Logic handles n/cancel centrally, restores the pre-request filter, and discards
 the request. Invalid replies repeat the current prompt; unrelated commands are
 not executed while a reply is pending. A completed or failed confirmed request
-clears pending state, so a stale y cannot replay the mutation. UC16 reuses the shared confirmation API with an "Add another?"
-question for duplicate pending actions.
+clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
+shared confirmation API with an "Add another?" question for duplicate pending
+actions.
 
 `ModelSnapshot` copies contact contents and retains the original predicate.
 Logic compares the completed model with the snapshot and saves only changed
@@ -269,6 +270,55 @@ The following activity diagram shows the command and transaction boundaries.
 Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 
 ![Recording a follow-up](images/FollowUpActivityDiagram.svg)
+
+### Display-field order (UC26)
+
+`FieldOrder` is an immutable permutation of all eight supported fields. Its
+constructor validates field count, case-insensitive names, and uniqueness;
+partial orders cannot hide fields. The default matches the original card order
+with follow-ups last. `UserPrefs` stores this global value and includes it in
+copy/equality/hash. JSON uses a canonical array of lower-case field names in
+`fieldOrder`; old preference files without that property retain the default.
+Malformed or null orders are rejected by preference loading, using the existing
+startup fallback to default preferences.
+
+`OrderCommandParser` accepts a no-argument query or one complete permutation.
+`OrderCommand` changes only preferences. A query or unchanged order makes no
+mutation and performs no save. `ModelSnapshot` now includes preferences as well
+as contact data and the active predicate. Logic detects preference changes
+separately from contact changes, saves the corresponding file, and restores the
+captured model/predicate on failure. The commands in this delivery change one
+persistence domain at a time; ordering never writes the contact file.
+
+`JsonUserPrefsStorage` copies the requested preferences, writes a sibling
+temporary file, reloads and compares it, then atomically replaces the active
+file. Failed writes, invalid/different/missing candidates, or replacement
+failures preserve the old file. Temporary cleanup failure after successful
+replacement is logged without reporting a false transaction failure. Startup
+and shutdown preference saves also use this path.
+
+The model exposes a read-only observable field order through Logic.
+`PersonListPanel` refreshes existing cells when it changes; `PersonCard` arranges
+its field nodes in that order. The displayed index stays with the name row.
+Absent optional values, empty tags, and empty follow-up lists are invisible and
+unmanaged, leaving no field rows behind. Contacts, selection indices, stored
+order, active predicates, and observable-list bindings are retained.
+
+`Messages#format(Person, FieldOrder)` formats full details in the same order.
+View/add/delete detail output passes the active preference. A view result also
+retains the contact as presentation metadata in `CommandResult`, so MainWindow
+can refresh the last viewed details immediately without parsing feedback or
+re-running view. An order change shows its confirmation and the refreshed
+details; an error retains details in the restored order alongside the error.
+Other successful commands replace the detail context normally. Preference
+rollback notifies observers, returning visible cards/details to the saved order.
+
+The PDF's UC26 summary mentions alphabetical sorting, whereas its detailed
+MSS specifies field ordering. This implementation follows the detailed MSS and
+the user's explicit saved choice. Contact sorting remains outside UC26.
+The editable diagram source is `docs/diagrams/FieldOrderActivityDiagram.dot`.
+
+![Changing the contact field order](images/FieldOrderActivityDiagram.svg)
 
 ### \[Proposed\] Undo/redo feature
 
@@ -777,6 +827,32 @@ The user requested OR as well as the PDF's AND matching. Tag names preserve
 existing case-sensitive equality; mode values ignore case. Mixed expressions,
 contact sorting, and changing tag validation are outside this use case.
 
+**Use case: UC26 - Reorder displayed contact information**
+
+**MSS**
+
+1. User enters `order` to inspect the current global field order.
+2. User supplies every supported field exactly once in the desired order.
+3. Astra validates the permutation and updates the global preference.
+4. Astra saves preferences atomically and immediately refreshes cards and any
+   viewed contact details, retaining the current contact list and filter.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. A field is unknown, repeated, or missing: show accepted fields and preserve
+  the existing preference, data, and view. Field names ignore letter case.
+* 3a. The order is unchanged: report that no changes are needed and do not save.
+* 4a. Saving fails: preserve the active preference file, restore the previous
+  preference and displayed field order, and show the error. Do not write contacts.
+* 4b. A contact lacks an optional value: omit that field's row without changing
+  the configured order or leaving a blank row.
+
+Old preference files without an order use the default card order, with
+follow-ups last. Successful orders persist across restart. UC26 changes field
+order, following its detailed PDF MSS; it does not sort contacts alphabetically.
+
 ### Non-Functional Requirements
 
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
@@ -919,6 +995,32 @@ Use a fresh copy of sample data.
 8. Simulate failed saving using the storage test double for both a new action
    and a confirmed duplicate: expect unchanged file bytes, actions, order,
    filtered view, and observable-list binding. A later y must not replay it.
+
+### Reordering displayed fields
+
+1. Run `order`: expect `name tags company role phone email linkedin followups`
+   on a default profile. Run the same complete order: expect "unchanged" and
+   no preference-file write.
+2. Run `view 1`, then `order followups phone email name tags company role linkedin`:
+   expect existing cards to reorder immediately and the viewed details to be
+   redisplayed in that order. The displayed index moves with the name; contact
+   order, active filter, and contact-file bytes remain unchanged.
+3. Test contacts with only a name and contacts with actions/tags/all optional
+   fields. Missing values must have no visible/managed blank row in any order.
+4. Try missing `followups`, repeated `name`, an unknown field, and an extra
+   token: expect the accepted fields with unchanged preferences and display.
+   A complete upper-case order must succeed.
+5. Restart Astra: expect the saved order in cards and `view`. Load an old
+   preference file containing only GUI settings: expect default field order
+   while preserving those GUI settings.
+6. Simulate a preference write, candidate-validation, or replacement failure:
+   expect the previous preference-file bytes, model preference, cards, viewed
+   details, filter, and contact data restored/preserved. The error should be
+   visible without reporting success. Automated tests exercise real file
+   boundaries and JavaFX updates/rollback.
+7. Verify a changed order saves preferences once and never writes contacts;
+   query/unchanged/invalid requests save neither file. Add an action afterward:
+   it must save contacts without changing or rewriting the field-order preference.
 
 ### Filtering by tags
 

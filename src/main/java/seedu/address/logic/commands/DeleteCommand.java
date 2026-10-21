@@ -91,7 +91,7 @@ public class DeleteCommand extends Command {
             if (targetIndex.getZeroBased() >= model.getFilteredPersonList().size()) {
                 throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
             }
-            request = createConfirmation(List.of(model.getFilteredPersonList().get(targetIndex.getZeroBased())));
+            request = createConfirmation(List.of(model.getFilteredPersonList().get(targetIndex.getZeroBased())), model);
         } else if (targetName != null) {
             List<Person> matches = PersonNameResolver.findMatches(model, targetName);
             if (matches.isEmpty()) {
@@ -99,19 +99,19 @@ public class DeleteCommand extends Command {
             }
             if (matches.size() > 1) {
                 model.updateFilteredPersonList(matches::contains);
-                request = new PersonSelectionRequest(matches, person -> createConfirmation(List.of(person)));
+                request = new PersonSelectionRequest(matches, person -> createConfirmation(List.of(person), model));
             } else {
-                request = createConfirmation(matches);
+                request = createConfirmation(matches, model);
             }
         } else if (targetPhone != null) {
             request = createConfirmation(List.of(resolveField(model, ContactFieldPredicate.Field.PHONE,
-                    targetPhone.value)));
+                    targetPhone.value)), model);
         } else {
             Set<Person> targets = new LinkedHashSet<>();
             for (Email email : targetEmails) {
                 targets.add(resolveField(model, ContactFieldPredicate.Field.EMAIL, email.value));
             }
-            request = createConfirmation(List.copyOf(targets));
+            request = createConfirmation(List.copyOf(targets), model);
         }
         return new CommandResult(request.getPrompt(), request);
     }
@@ -129,9 +129,10 @@ public class DeleteCommand extends Command {
         return matches.get(0);
     }
 
-    private static PendingRequest createConfirmation(List<Person> targets) {
+    private static PendingRequest createConfirmation(List<Person> targets, Model model) {
         String preview = "Delete " + targets.size() + " contact(s):\n"
-                + targets.stream().map(Messages::format).collect(Collectors.joining("\n"));
+                + targets.stream().map(person -> Messages.format(person, model.getFieldOrder()))
+                        .collect(Collectors.joining("\n"));
         return new ConfirmationRequest(preview, new ConfirmedDeleteCommand(targets));
     }
 
@@ -177,7 +178,8 @@ public class DeleteCommand extends Command {
             targets.forEach(model::deletePerson);
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
             String deleted = targets.stream()
-                    .map(person -> String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(person)))
+                    .map(person -> String.format(MESSAGE_DELETE_PERSON_SUCCESS,
+                            Messages.format(person, model.getFieldOrder())))
                     .collect(Collectors.joining("\n"));
             return new CommandResult(deleted + "\n" + model.getContactFile().getPersonList().size()
                     + " contact(s) remaining.");

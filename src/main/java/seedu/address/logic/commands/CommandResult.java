@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.model.person.Person;
 
 /**
  * Represents the result of a command execution.
@@ -25,25 +26,20 @@ public class CommandResult {
     private final boolean exit;
 
     private final PendingRequest pendingRequest;
+    private final Person personForDetails;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this.feedbackToUser = requireNonNull(feedbackToUser);
-        this.showHelp = showHelp;
-        this.exit = exit;
-        pendingRequest = null;
+        this(feedbackToUser, showHelp, exit, null, null);
     }
 
     /**
      * Constructs a result that asks Logic to retain a request without saving contact data.
      */
     public CommandResult(String feedbackToUser, PendingRequest pendingRequest) {
-        this.feedbackToUser = requireNonNull(feedbackToUser);
-        this.pendingRequest = requireNonNull(pendingRequest);
-        showHelp = false;
-        exit = false;
+        this(feedbackToUser, false, false, requireNonNull(pendingRequest), null);
     }
 
     /**
@@ -52,6 +48,26 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser) {
         this(feedbackToUser, false, false);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
+            Person personForDetails) {
+        this.feedbackToUser = requireNonNull(feedbackToUser);
+        this.showHelp = showHelp;
+        this.exit = exit;
+        this.pendingRequest = pendingRequest;
+        this.personForDetails = personForDetails;
+    }
+
+    /**
+     * Creates a detail result retaining the contact for presentation refresh without another view command.
+     */
+    public static CommandResult createPersonDetails(String feedbackToUser, Person person) {
+        return new CommandResult(feedbackToUser, false, false, null, requireNonNull(person));
+    }
+
+    public Optional<Person> getPersonForDetails() {
+        return Optional.ofNullable(personForDetails);
     }
 
     public String getFeedbackToUser() {
@@ -84,12 +100,13 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
-                && Objects.equals(pendingRequest, otherCommandResult.pendingRequest);
+                && Objects.equals(pendingRequest, otherCommandResult.pendingRequest)
+                && Objects.equals(personForDetails, otherCommandResult.personForDetails);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, pendingRequest);
+        return Objects.hash(feedbackToUser, showHelp, exit, pendingRequest, personForDetails);
     }
 
     @Override

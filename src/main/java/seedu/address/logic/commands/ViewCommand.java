@@ -47,7 +47,7 @@ public class ViewCommand extends Command {
         }
 
         Person personToView = lastShownList.get(targetIndex.getZeroBased());
-        return new CommandResult(Messages.format(personToView));
+        return CommandResult.createPersonDetails(Messages.format(personToView, model.getFieldOrder()), personToView);
     }
 
     @Override
