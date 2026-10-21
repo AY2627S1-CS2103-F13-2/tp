@@ -9,6 +9,7 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.PendingRequest;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.ContactFileParser;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -32,6 +33,9 @@ public class LogicManager implements Logic {
     private final Storage storage;
     private final ContactFileParser contactFileParser;
 
+    private PendingRequest pendingRequest;
+    private ModelSnapshot pendingSnapshot;
+
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
      */
@@ -44,24 +48,56 @@ public class LogicManager implements Logic {
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
-        ModelSnapshot snapshot = new ModelSnapshot(model);
+
+        ModelSnapshot snapshot = pendingRequest == null ? new ModelSnapshot(model) : pendingSnapshot;
         try {
-            Command command = contactFileParser.parseCommand(commandText);
-            CommandResult result = command.execute(model);
-            if (snapshot.hasDataChanged(model)) {
-                storage.saveContactFile(model.getContactFile());
+            CommandResult commandResult;
+            if (pendingRequest != null) {
+                String response = commandText.trim();
+                if (response.equalsIgnoreCase("n") || response.equalsIgnoreCase("cancel")) {
+                    snapshot.restore(model);
+                    clearPendingRequest();
+                    return new CommandResult("Request cancelled. No contacts changed.");
+                }
+                commandResult = pendingRequest.respond(response, model);
+            } else {
+                Command command = contactFileParser.parseCommand(commandText);
+                commandResult = command.execute(model);
             }
-            return result;
+
+            if (commandResult.getPendingRequest().isPresent()) {
+                pendingRequest = commandResult.getPendingRequest().orElseThrow();
+                pendingSnapshot = snapshot;
+            } else {
+                if (snapshot.hasDataChanged(model)) {
+                    storage.saveContactFile(model.getContactFile());
+                }
+                clearPendingRequest();
+            }
+            return commandResult;
         } catch (AccessDeniedException e) {
-            snapshot.restore(model);
+            restoreFailedRequest(snapshot);
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException e) {
-            snapshot.restore(model);
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, e.getMessage()), e);
-        } catch (CommandException | ParseException | RuntimeException e) {
-            snapshot.restore(model);
+        } catch (IOException ioe) {
+            restoreFailedRequest(snapshot);
+            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        } catch (CommandException | ParseException e) {
+            restoreFailedRequest(snapshot);
+            throw e;
+        } catch (RuntimeException e) {
+            restoreFailedRequest(snapshot);
             throw e;
         }
+    }
+
+    private void restoreFailedRequest(ModelSnapshot snapshot) {
+        snapshot.restore(model);
+        clearPendingRequest();
+    }
+
+    private void clearPendingRequest() {
+        pendingRequest = null;
+        pendingSnapshot = null;
     }
 
     @Override

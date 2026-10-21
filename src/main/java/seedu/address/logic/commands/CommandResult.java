@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import seedu.address.commons.util.ToStringBuilder;
 
@@ -13,11 +14,17 @@ public class CommandResult {
 
     private final String feedbackToUser;
 
-    /** Help information should be shown to the user. */
+    /**
+     * Indicates whether help information should be shown.
+     */
     private final boolean showHelp;
 
-    /** The application should exit. */
+    /**
+     * Indicates whether the application should exit.
+     */
     private final boolean exit;
+
+    private final PendingRequest pendingRequest;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
@@ -26,6 +33,17 @@ public class CommandResult {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        pendingRequest = null;
+    }
+
+    /**
+     * Constructs a result that asks Logic to retain a request without saving contact data.
+     */
+    public CommandResult(String feedbackToUser, PendingRequest pendingRequest) {
+        this.feedbackToUser = requireNonNull(feedbackToUser);
+        this.pendingRequest = requireNonNull(pendingRequest);
+        showHelp = false;
+        exit = false;
     }
 
     /**
@@ -48,6 +66,10 @@ public class CommandResult {
         return exit;
     }
 
+    public Optional<PendingRequest> getPendingRequest() {
+        return Optional.ofNullable(pendingRequest);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -61,12 +83,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && Objects.equals(pendingRequest, otherCommandResult.pendingRequest);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, showHelp, exit, pendingRequest);
     }
 
     @Override
