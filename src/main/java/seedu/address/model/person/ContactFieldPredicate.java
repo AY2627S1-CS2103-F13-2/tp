@@ -26,8 +26,8 @@ public class ContactFieldPredicate implements Predicate<Person> {
     /**
      * Creates a predicate for the specified contact field and query.
      *
-     * @param field field to search
-     * @param query normalized value to search for
+     * @param field Field to search.
+     * @param query Normalized value to search for.
      */
     public ContactFieldPredicate(Field field, String query) {
         this.field = requireNonNull(field);
@@ -38,12 +38,12 @@ public class ContactFieldPredicate implements Predicate<Person> {
     public boolean test(Person person) {
         if (field == Field.PHONE) {
             return person.getPhone()
-                    .map(phone -> phone.value.equals(query))
+                    .map(phone -> phone.matches(query))
                     .orElse(false);
         }
 
         return person.getEmail()
-                .map(email -> email.value.equalsIgnoreCase(query))
+                .map(email -> email.matches(query))
                 .orElse(false);
     }
 

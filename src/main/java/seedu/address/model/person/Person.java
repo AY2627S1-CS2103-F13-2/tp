@@ -94,15 +94,12 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same phone.
-     * Phone number is normalised before checking
+     * Returns true if both persons have a phone and their normalized numbers match.
      */
     public boolean hasSamePhone(Person otherPerson) {
-        if (otherPerson == this) {
-            return true;
-        }
-
         return otherPerson != null
+                && getPhone().isPresent()
+                && otherPerson.getPhone().isPresent()
                 && otherPerson.getPhone().equals(getPhone());
     }
 
@@ -110,14 +107,10 @@ public class Person {
      * Returns true if both persons have the same email.
      */
     public boolean hasSameEmail(Person otherPerson) {
-        if (otherPerson == this) {
-            return true;
-        }
-
         return otherPerson != null
                 && getEmail().isPresent()
                 && otherPerson.getEmail().isPresent()
-                && otherPerson.getEmail().orElseThrow().value.equalsIgnoreCase(getEmail().orElseThrow().value);
+                && getEmail().orElseThrow().matches(otherPerson.getEmail().orElseThrow().value);
     }
 
     /**

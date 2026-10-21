@@ -124,7 +124,7 @@ The `Model` component,
 
 * stores the contact file data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
-* two `Person` objects are currently treated as duplicates when they have the same `Name`. Keying on the contact number or email instead is planned for a later iteration.
+* `Person#isSamePerson` retains the legacy identity rule: equal names and equal email presence (both present or both absent). Email values do not participate in that rule. Add/edit separately reject shared normalized phone numbers and case-insensitive email addresses. This differs from the intended phone/email key policy; changing identity requires a separate compatibility decision.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
@@ -208,6 +208,14 @@ one command and as a name by another.
   a nullable index and a nullable name. This removes the remaining nullable-field pair from `EditCommand`
   and `DeleteCommand` and would let `view` gain name support for free. It is the natural next step once
   a third command needs it; it was not done here to keep the change to `edit` small.
+
+### Normalized contact keys
+
+Phone matching uses `Phone#matches`, which removes spaces, hyphens, and
+parentheses but preserves a leading plus. Equality and hashing use that same
+canonical value. Email matching uses `Email#matches` and ignores letter case.
+Find, duplicate checks, and startup recovery share these comparisons. Missing
+phone/email values are not shared keys. Existing contact identity is preserved.
 
 ### \[Proposed\] Undo/redo feature
 
