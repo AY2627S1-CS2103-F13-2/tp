@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -32,8 +33,9 @@ class FollowUpStorageTest {
     @Test
     void storage_actionHistory_preservesIdsStatusOrderAndOptionalFields() throws Exception {
         Person person = new PersonBuilder(ALICE).withCompany(null).withFollowUps(
-                new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING),
-                new FollowUp(2, "Call", FollowUp.Status.COMPLETED)).build();
+                new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING, LocalDate.of(2026, 10, 25)),
+                new FollowUp(2, "Call", FollowUp.Status.COMPLETED, LocalDate.of(2026, 10, 20)),
+                new FollowUp(9, "Check in", FollowUp.Status.PENDING)).build();
         ContactFile contacts = new ContactFile();
         contacts.addPerson(person);
         Path path = testFolder.resolve("contacts.json");
@@ -46,6 +48,55 @@ class FollowUpStorageTest {
         assertEquals(StartupLoadResult.Source.STORED, startup.source());
         assertArrayEquals(saved, Files.readAllBytes(path));
         assertTrue(Files.readString(path).contains("COMPLETED"));
+        assertTrue(Files.readString(path).contains("2026-10-25"));
+        assertTrue(Files.readString(path).contains("2026-10-20"));
+        assertFalse(Files.readString(path).contains("isOverdue"));
+    }
+
+    @Test
+    void toModelType_missingOrNullDueDate_loadsWithoutDueDate() throws Exception {
+        for (String action : List.of(VALID_ACTION, withDueDate("null"))) {
+            FollowUp loaded = JsonUtil.fromJsonString(action, JsonAdaptedFollowUp.class).toModelType();
+            assertEquals(new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING), loaded);
+            assertTrue(loaded.getDueDate().isEmpty());
+            assertFalse(loaded.isOverdue());
+        }
+    }
+
+    @Test
+    void toModelType_validDueDate_preservesDateAndRecomputesOverdue() throws Exception {
+        FollowUp pending = JsonUtil.fromJsonString(withDueDate("\"2000-02-29\""),
+                JsonAdaptedFollowUp.class).toModelType();
+        assertEquals(LocalDate.of(2000, 2, 29), pending.getDueDate().orElseThrow());
+        assertTrue(pending.isOverdue());
+        FollowUp completed = JsonUtil.fromJsonString(
+                withDueDate("\"2000-02-29\"").replace("PENDING", "COMPLETED"),
+                JsonAdaptedFollowUp.class).toModelType();
+        assertFalse(completed.isOverdue());
+    }
+
+    @Test
+    void toModelType_invalidDueDates_rejectsInsteadOfCoercing() throws Exception {
+        for (String date : List.of("123", "true", "[]", "{}", "\"\"", "\"2026-02-29\"",
+                "\"2026-04-31\"", "\"2026-13-01\"", "\"25/10/2026\"", "\"25 Oct 2026\"",
+                "\"2026-10-25T12:00:00\"")) {
+            JsonAdaptedFollowUp adapted = JsonUtil.fromJsonString(withDueDate(date), JsonAdaptedFollowUp.class);
+            assertThrows(IllegalValueException.class, adapted::toModelType, date);
+        }
+    }
+
+    @Test
+    void recovery_invalidDueDate_skipsContactAndPreservesValidDatedAction() throws Exception {
+        String json = "{\"persons\":[{\"name\":\"Broken\",\"followUps\":[" + withDueDate("\"2026-02-30\"")
+                + "]},{\"name\":\"Valid\",\"followUps\":[" + withDueDate("\"2026-10-25\"") + "]}]}";
+        ContactRecoveryResult result = new ContactRecoveryParser().parse(json.getBytes(StandardCharsets.UTF_8));
+        assertEquals(List.of(1), result.skippedContacts().stream().map(SkippedContact::recordNumber).toList());
+        assertEquals(List.of(new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING, LocalDate.of(2026, 10, 25))),
+                result.recoveredContacts().getFirst().getFollowUps());
+    }
+
+    private static String withDueDate(String jsonValue) {
+        return VALID_ACTION.substring(0, VALID_ACTION.length() - 1) + ",\"dueDate\":" + jsonValue + "}";
     }
 
     @Test
