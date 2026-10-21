@@ -32,6 +32,8 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
+   * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
+
    * `clear`, then `y`: Deletes all contacts.
 
    * `exit` : Exits the app.
@@ -84,7 +86,7 @@ If Astra cannot safely prepare a reset, **Start anew** is unavailable and the co
 * Items followed by `…`​ can appear zero or more times.<br>
   For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
+* Prefixed contact fields for `add` and `edit` can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, and `exit`, are ignored.<br>
@@ -246,6 +248,43 @@ Examples:
 Confirmed deletion cannot be undone. Check the preview before entering `y`.
 </div>
 
+### Recording a follow-up: `followup`
+
+Adds a pending action to the contact at the currently displayed index.
+
+Format: `followup INDEX a/DESCRIPTION`
+
+* `INDEX` must be a positive number from the displayed list, including filtered
+  results. The contact stays in the current view after adding an action.
+* Provide one non-blank description after `a/`. Outer whitespace is removed;
+  letter case and internal spacing are kept. Additional command prefixes such
+  as `p/`, repeated `a/`, and `confirm/` are rejected. URLs such as
+  `https://example.com/portfolio` can be part of the description.
+* A new action is saved immediately with status `PENDING`. The response and
+  contact card show the ordered list with stable IDs, for example
+  `#1 [PENDING] Send portfolio`. `view INDEX` also shows the full history.
+* If an identical description already has a pending action, Astra shows it and
+  asks **Add another?** Enter `y` to add another, or `n`/`cancel` to stop.
+  Comparison is case-sensitive after trimming: `Call` and `call` are different.
+  Other replies repeat the prompt; cancel before entering another command.
+* A completed action with the same description does not require confirmation.
+  Completed history is retained, but marking actions complete and assigning due
+  dates are not available in this version.
+* Actions survive restart and ordinary contact edits. A failed save preserves
+  the file, previous action history, and current view. Earlier contact files
+  without actions load with an empty history.
+
+Example:
+
+```text
+followup 1 a/Send portfolio
+followup 1 a/Send portfolio
+```
+
+The first command adds `#1 [PENDING] Send portfolio`. The second asks whether
+another is wanted; enter `y` to add `#2`, or `n` to keep just `#1`. The original
+command does not need to be repeated while answering the prompt.
+
 ### Clearing all entries: `clear`
 
 Previews the total number of stored contacts and asks for confirmation before
@@ -322,6 +361,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
+**Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 2`
 **Help** | `help`

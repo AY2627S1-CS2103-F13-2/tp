@@ -17,7 +17,14 @@ public final class ConfirmationRequest implements PendingRequest {
      * Creates a confirmation for an already resolved operation.
      */
     public ConfirmationRequest(String preview, Command confirmedCommand) {
-        prompt = requireNonNull(preview) + "\nConfirm? (y/n; cancel to stop)";
+        this(preview, "Confirm?", confirmedCommand);
+    }
+
+    /**
+     * Creates a confirmation with a question specific to the resolved operation.
+     */
+    public ConfirmationRequest(String preview, String question, Command confirmedCommand) {
+        prompt = requireNonNull(preview) + "\n" + requireNonNull(question) + " (y/n; cancel to stop)";
         this.confirmedCommand = requireNonNull(confirmedCommand);
     }
 
