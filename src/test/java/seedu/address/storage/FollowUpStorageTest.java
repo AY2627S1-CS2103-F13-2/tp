@@ -16,6 +16,10 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+
+import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ContactFile;
@@ -64,6 +68,57 @@ class FollowUpStorageTest {
     }
 
     @Test
+    void toModelType_nullConstructorFields_validatesRequiredFieldsAndAllowsAbsentDate() throws Exception {
+        IntNode id = IntNode.valueOf(7);
+        TextNode description = TextNode.valueOf("Send portfolio");
+        TextNode status = TextNode.valueOf("PENDING");
+        assertThrows(IllegalValueException.class, () ->
+                new JsonAdaptedFollowUp(null, description, status, null).toModelType());
+        assertThrows(IllegalValueException.class, () ->
+                new JsonAdaptedFollowUp(id, null, status, null).toModelType());
+        assertThrows(IllegalValueException.class, () ->
+                new JsonAdaptedFollowUp(id, description, null, null).toModelType());
+        assertTrue(new JsonAdaptedFollowUp(id, description, status, null).toModelType().getDueDate().isEmpty());
+    }
+
+    @Test
+    void storage_replacedDueDate_preservesNewDateAcrossRestart() throws Exception {
+        Path path = testFolder.resolve("replaced-date.json");
+        ContactFile contacts = new ContactFile();
+        contacts.addPerson(new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING, LocalDate.of(2026, 10, 25))).build());
+        JsonContactFileStorage storage = new JsonContactFileStorage(path);
+        storage.saveContactFile(contacts);
+        contacts.setPerson(contacts.getPersonList().getFirst(), new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING, LocalDate.of(2026, 11, 1))).build());
+        storage.saveContactFile(contacts);
+        assertEquals(List.copyOf(contacts.getPersonList()),
+                new JsonContactFileStorage(path).loadForStartup().contacts());
+        assertFalse(Files.readString(path).contains("2026-10-25"));
+    }
+
+    @Test
+    void storage_legacyActionWithoutDueDate_loadsAndSavesSuccessfully() throws Exception {
+        Path path = testFolder.resolve("legacy.json");
+        Files.writeString(path, "{\"persons\":[{\"name\":\"Alice\",\"followUps\":[" + VALID_ACTION + "]}]}");
+        JsonContactFileStorage storage = new JsonContactFileStorage(path);
+        ContactFile contacts = new ContactFile(storage.readContactFile().orElseThrow());
+        assertTrue(contacts.getPersonList().getFirst().getFollowUps().getFirst().getDueDate().isEmpty());
+        storage.saveContactFile(contacts);
+        assertEquals(contacts, new JsonContactFileStorage(path).readContactFile().orElseThrow());
+    }
+
+    @Test
+    void storage_invalidDueDate_strictReadFailsWithoutChangingFile() throws Exception {
+        Path path = testFolder.resolve("invalid-date.json");
+        String json = "{\"persons\":[{\"name\":\"Alice\",\"followUps\":["
+                + withDueDate("\"2026-02-30\"") + "]}]}";
+        Files.writeString(path, json);
+        assertThrows(DataLoadingException.class, () -> new JsonContactFileStorage(path).readContactFile());
+        assertEquals(json, Files.readString(path));
+    }
+
+    @Test
     void toModelType_validDueDate_preservesDateAndRecomputesOverdue() throws Exception {
         FollowUp pending = JsonUtil.fromJsonString(withDueDate("\"2000-02-29\""),
                 JsonAdaptedFollowUp.class).toModelType();
@@ -79,7 +134,8 @@ class FollowUpStorageTest {
     void toModelType_invalidDueDates_rejectsInsteadOfCoercing() throws Exception {
         for (String date : List.of("123", "true", "[]", "{}", "\"\"", "\"2026-02-29\"",
                 "\"2026-04-31\"", "\"2026-13-01\"", "\"25/10/2026\"", "\"25 Oct 2026\"",
-                "\"2026-10-25T12:00:00\"")) {
+                "\"2026-10-25T12:00:00\"", "\" 2026-10-25\"", "\"2026-10-25 \"",
+                "\"2026-00-01\"", "\"2026-01-00\"", "\"2026-1-1\"")) {
             JsonAdaptedFollowUp adapted = JsonUtil.fromJsonString(withDueDate(date), JsonAdaptedFollowUp.class);
             assertThrows(IllegalValueException.class, adapted::toModelType, date);
         }
@@ -154,14 +210,17 @@ class FollowUpStorageTest {
 
     @Test
     void startup_recovery_archivesOriginalAndRetainsValidActions() throws Exception {
-        String json = "{\"persons\":[{\"name\":\"Broken\",\"followUps\":[{}]},"
-                + "{\"name\":\"Valid\",\"followUps\":[" + VALID_ACTION + "]}]}";
+        String json = "{\"persons\":[{\"name\":\"Broken\",\"followUps\":["
+                + withDueDate("\"2026-02-30\"") + "]},"
+                + "{\"name\":\"Valid\",\"followUps\":[" + withDueDate("\"2026-10-25\"") + "]}]}";
         Path file = testFolder.resolve("contacts.json");
         Files.writeString(file, json);
         StartupLoadResult result = new JsonContactFileStorage(file).loadForStartup();
         assertEquals(StartupLoadResult.Source.RECOVERED, result.source());
         assertEquals(json, Files.readString(result.recoveryArchive().orElseThrow().backupFile()));
         assertEquals(7, result.contacts().getFirst().getFollowUps().getFirst().getId());
+        assertEquals(LocalDate.of(2026, 10, 25),
+                result.contacts().getFirst().getFollowUps().getFirst().getDueDate().orElseThrow());
         assertEquals(result.contacts(),
                 new JsonContactFileStorage(file).readContactFile().orElseThrow().getPersonList());
     }

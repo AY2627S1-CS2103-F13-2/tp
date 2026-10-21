@@ -58,6 +58,25 @@ class FollowUpTest {
         assertTrue(action.isOverdue());
         assertEquals(same, action);
         assertEquals(originalHashCode, action.hashCode());
+        clock.instant = CLOCK.instant();
+        assertFalse(action.isOverdue());
+    }
+
+    @Test
+    void isOverdue_midnightBoundary_usesClockTimeZone() {
+        Instant instant = Instant.parse("2026-10-21T16:00:00Z");
+        FollowUp utc = new FollowUp(1, "Call", FollowUp.Status.PENDING, TODAY,
+                Clock.fixed(instant, ZoneOffset.UTC));
+        FollowUp singapore = new FollowUp(1, "Call", FollowUp.Status.PENDING, TODAY,
+                Clock.fixed(instant, ZoneId.of("Asia/Singapore")));
+        assertFalse(utc.isOverdue());
+        assertTrue(singapore.isOverdue());
+    }
+
+    @Test
+    void constructor_nullClock_rejectsAction() {
+        assertThrows(NullPointerException.class, () ->
+                new FollowUp(1, "Call", FollowUp.Status.PENDING, TODAY, null));
     }
 
     @Test
