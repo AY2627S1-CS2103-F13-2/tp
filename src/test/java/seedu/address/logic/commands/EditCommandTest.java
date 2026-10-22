@@ -36,6 +36,32 @@ public class EditCommandTest {
     private Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     @Test
+    public void execute_starredPerson_preservesStarredStatus() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person starredPerson = new PersonBuilder(original).withStarred(true).build();
+        model.setPerson(original, starredPerson);
+        Person editedPerson = new PersonBuilder(starredPerson).withName(VALID_NAME_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+        Model expectedModel = new ModelManager(model.getContactFile(), new UserPrefs());
+        expectedModel.setPerson(starredPerson, editedPerson);
+
+        assertCommandSuccess(editCommand, model,
+                EditCommand.formatUpdatedFields(starredPerson, editedPerson), expectedModel);
+    }
+
+    @Test
+    public void execute_starredPersonSameValues_failureWithoutChanges() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person starredPerson = new PersonBuilder(original).withStarred(true).build();
+        model.setPerson(original, starredPerson);
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder(starredPerson).build());
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGES);
+    }
+
+    @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedPerson = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();

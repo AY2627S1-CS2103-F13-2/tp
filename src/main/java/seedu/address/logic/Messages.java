@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import seedu.address.logic.parser.Prefix;
+import seedu.address.model.FieldOrder;
 import seedu.address.model.person.Person;
 
 /**
@@ -35,19 +36,40 @@ public class Messages {
      * Formats the {@code person} for display to the user. Fields the person does not have are omitted.
      */
     public static String format(Person person) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(person.getName());
-        person.getCompany().ifPresent(company -> builder.append("; Company: ").append(company));
-        person.getRole().ifPresent(role -> builder.append("; Role: ").append(role));
-        person.getPhone().ifPresent(phone -> builder.append("; Phone: ").append(phone));
-        person.getEmail().ifPresent(email -> builder.append("; Email: ").append(email));
-        person.getLinkedin().ifPresent(linkedin -> builder.append("; LinkedIn: ").append(linkedin));
-        person.getIntroducer().ifPresent(introducer -> builder.append("; Introduced by: ").append(introducer));
-        if (!person.getTags().isEmpty()) {
-            builder.append("; Tags: ");
-            person.getTags().forEach(builder::append);
-        }
-        return builder.toString();
+        return format(person, FieldOrder.DEFAULT);
     }
 
+    /**
+     * Formats full details in the requested order, omitting absent fields.
+     */
+    public static String format(Person person, FieldOrder order) {
+        String details = order.getFields().stream().map(field -> formatField(person, field))
+                .filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
+        if (person.getIntroducer().isPresent()) {
+            String introducer = "Introduced by: " + person.getIntroducer().orElseThrow();
+            details = details.isEmpty() ? introducer : details + "; " + introducer;
+        }
+        return details;
+    }
+
+    private static String formatField(Person person, FieldOrder.Field field) {
+        return switch (field) {
+            case NAME -> person.getName().toString();
+            case TAGS -> person.getTags().isEmpty() ? "" : "Tags: " + person.getTags().stream()
+                    .map(Object::toString).sorted().collect(Collectors.joining());
+            case COMPANY -> person.getCompany().map(value -> "Company: " + value).orElse("");
+            case ROLE -> person.getRole().map(value -> "Role: " + value).orElse("");
+            case PHONE -> person.getPhone().map(value -> "Phone: " + value).orElse("");
+            case EMAIL -> person.getEmail().map(value -> "Email: " + value).orElse("");
+            case LINKEDIN -> person.getLinkedin().map(value -> "LinkedIn: " + value).orElse("");
+            case FOLLOWUPS -> person.getFollowUps().isEmpty() ? "" : "Follow-ups:\n" + formatFollowUps(person);
+        };
+    }
+
+    /**
+     * Formats actions in stored order with their stable IDs and statuses.
+     */
+    public static String formatFollowUps(Person person) {
+        return person.getFollowUps().stream().map(Object::toString).collect(Collectors.joining("\n"));
+    }
 }

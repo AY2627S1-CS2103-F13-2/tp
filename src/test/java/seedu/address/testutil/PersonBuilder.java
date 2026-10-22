@@ -1,10 +1,12 @@
 package seedu.address.testutil;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -33,6 +35,8 @@ public class PersonBuilder {
     private Linkedin linkedin;
     private Name introducer;
     private Set<Tag> tags;
+    private List<FollowUp> followUps = List.of();
+    private boolean starred;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -59,6 +63,8 @@ public class PersonBuilder {
         linkedin = personToCopy.getLinkedin().orElse(null);
         introducer = personToCopy.getIntroducer().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
+        followUps = personToCopy.getFollowUps();
+        starred = personToCopy.isStarred();
     }
 
     /**
@@ -130,8 +136,27 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the ordered follow-up history of the contact being built.
+     */
+    public PersonBuilder withFollowUps(FollowUp... actions) {
+        followUps = List.of(actions);
+        return this;
+    }
+
+    /**
+     * Sets the starred status of the contact being built.
+     */
+    public PersonBuilder withStarred(boolean starred) {
+        this.starred = starred;
+        return this;
+    }
+
+    /**
+     * Builds an immutable contact with the selected details and actions.
+     */
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, introducer, tags);
+        return new Person(name, company, role, phone, email, linkedin, introducer, tags, followUps, starred);
     }
 
 }
