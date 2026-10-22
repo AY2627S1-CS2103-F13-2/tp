@@ -765,6 +765,11 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 
           Use case ends.
 
+    The following sequence diagram illustrates storage recovery in extension 2b,
+    including the case where no valid contacts can be recovered.
+
+    ![UC06 extension 2b: recovery of invalid or conflicting contact records](images/UC06Extension2bSequenceDiagram.png)
+
 * 2c. The contact file cannot be read or reliably parsed, or recovery cannot
   create its backup/report or safely replace the active file.
     * 2c1. If Astra can read the failed contact file, it preserves its exact bytes
