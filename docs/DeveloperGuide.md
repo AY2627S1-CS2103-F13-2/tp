@@ -858,6 +858,32 @@ today. Duplicate confirmation retains the requested date and creates a separate
 action. Completion commands, editing or deleting individual follow-ups, and
 links to events remain outside UC16.
 
+**Use case: UC12 - Review pending follow-ups (listing)**
+
+**MSS**
+
+1. User enters `followups`.
+2. Astra retrieves pending actions across all stored contacts, including contacts
+   hidden by a contact filter.
+3. Astra displays numbered entries with the contact name, stable action ID,
+   description, status and due date. Dates sort ascending; equal dates retain
+   contact order and stored action order. Pending actions due before today are
+   marked `[OVERDUE]`.
+
+**Extensions**
+
+* 2a. No pending actions remain: show `No pending follow-ups remain.`
+* 3a. Undated actions: list them after dated actions with `No due date`.
+* 1a. Extra arguments: reject the command and display usage instructions.
+
+**Implementation and scope**
+
+`ModelManager.getPendingFollowUps()` returns an unmodifiable snapshot of
+`FollowUpEntry` records, pairing each action with its contact. The command uses
+the shared follow-up formatter, preserves the current contact filter and does
+not save data. Running it again retrieves current results. Selecting an entry
+and opening its contact remain for the next issue.
+
 **Use case: UC20 - Filter contacts by tags**
 
 **Precondition:** Tags can be assigned using add/edit.

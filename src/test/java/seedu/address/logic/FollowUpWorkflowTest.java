@@ -173,6 +173,30 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_followups_includesHiddenContactsWithoutSavingAndRefreshesAfterCreation() throws Exception {
+        assertEquals("No pending follow-ups remain.", logic.execute("followups").getFeedbackToUser());
+        assertEquals(0, storage.saveCount);
+        logic.execute("followup 1 a/Call d/29 Feb 2000");
+        logic.execute("find Benson");
+        ContactFile before = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        storage.shouldFail = true;
+        CommandResult result = logic.execute("followups");
+        assertTrue(result.getFeedbackToUser().contains(ALICE.getName() + " | #1 [PENDING] Call"));
+        assertTrue(result.getFeedbackToUser().contains("Due: 2000-02-29 [OVERDUE]"));
+        assertEquals(before, model.getContactFile());
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        storage.shouldFail = false;
+        logic.execute("followup 1 a/Send portfolio");
+        String refreshed = logic.execute("followups").getFeedbackToUser();
+        assertTrue(refreshed.startsWith("Pending follow-ups (2):"));
+        assertTrue(refreshed.contains(BENSON.getName() + " | #1 [PENDING] Send portfolio | No due date"));
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
     void execute_datedDuplicate_preservesRequestedDateAndExistingAction() throws Exception {
         logic.execute("followup 1 a/Call d/2026-10-25");
         CommandResult prompt = logic.execute("followup 1 a/Call d/01/11/2026");

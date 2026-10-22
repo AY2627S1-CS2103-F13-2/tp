@@ -35,6 +35,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
+   * `followups`: Reviews pending actions across all contacts in due-date order.
 
    * `order name phone email company role tags linkedin followups`: Changes the field order for every contact.
 
@@ -386,6 +387,34 @@ The second asks whether another is wanted; enter `y` to add `#2` due on
 `2026-11-01`, or `n` to keep just `#1`. The original
 command does not need to be repeated while answering the prompt.
 
+### Reviewing pending follow-ups: `followups`
+
+Lists incomplete follow-ups across all contacts, including contacts hidden by
+the current `find` or `filter` results. Your contact filter stays unchanged.
+
+Format: `followups`
+
+* Takes no arguments. Extra arguments are rejected with usage instructions.
+* Dated actions appear in ascending due-date order, followed by undated actions.
+* Equal dates retain contact order, then each contact's stored action order.
+  Undated actions retain that same order.
+* Each numbered entry shows the contact name, stable action ID, status,
+  description, and due date in `yyyy-MM-dd` format or `No due date`.
+* Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
+* Completed actions are excluded. If none remain, Astra displays
+  `No pending follow-ups remain.`
+* Running this command does not change or save contact data. Run it again to
+  refresh the results after adding an action or when the day changes.
+
+Example output (when today is 2026-10-21):
+
+```text
+Pending follow-ups (3):
+1. Alice | #2 [PENDING] Call | Due: 2026-10-19 [OVERDUE]
+2. Benson | #1 [PENDING] Send portfolio | Due: 2026-10-25
+3. Alice | #3 [PENDING] Check in | No due date
+```
+
 ### Clearing all entries: `clear`
 
 Previews the total number of stored contacts and asks for confirmation before
@@ -505,6 +534,7 @@ Action | Format, Examples
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Pending follow-ups** | `followups` lists incomplete actions across all contacts in due-date order
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
