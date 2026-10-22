@@ -851,7 +851,11 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 
 Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
 proposed confirmation suffix by user decision. IDs, completed status, and
-history storage support future UC17; completion commands, due dates, and
+history storage support future UC17. Creation accepts an optional
+`d/DATE` before or after `a/DESCRIPTION`, in ISO, day/month/year, or English abbreviated-month format. Dates
+display in ISO format with an overdue indicator for pending actions due before
+today. Duplicate confirmation retains the requested date and creates a separate
+action. Completion commands, editing or deleting individual follow-ups, and
 links to events remain outside UC16.
 
 **Use case: UC20 - Filter contacts by tags**

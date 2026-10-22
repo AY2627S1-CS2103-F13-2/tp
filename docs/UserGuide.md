@@ -338,7 +338,7 @@ Confirmed deletion cannot be undone. Check the preview before entering `y`.
 
 Adds a pending action to the contact at the currently displayed index.
 
-Format: `followup INDEX a/DESCRIPTION`
+Format: `followup INDEX a/DESCRIPTION [d/DATE]`
 
 * `INDEX` must be a positive number from the displayed list, including filtered
   results. The contact stays in the current view after adding an action.
@@ -346,29 +346,44 @@ Format: `followup INDEX a/DESCRIPTION`
   letter case and internal spacing are kept. Additional command prefixes such
   as `p/`, repeated `a/`, and `confirm/` are rejected. URLs such as
   `https://example.com/portfolio` can be part of the description.
+* Optionally add one `d/DATE` before or after `a/DESCRIPTION`. For example,
+  `followup 1 d/2026-10-30 a/Call back` is also accepted. Accepted formats are
+  `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
+  `d MMM yyyy` (`25 Oct 2026`). Month names use English three-letter abbreviations
+  and are case-insensitive. Slash-separated dates use day/month/year.
+  Omitting `d/` creates an action with no due date. Empty or repeated `d/`
+  parameters and impossible dates are rejected without saving an action;
+  date errors show the supported formats.
 * A new action is saved immediately with status `PENDING`. The response and
   contact card show the ordered list with stable IDs, for example
-  `#1 [PENDING] Send portfolio`. `view INDEX` also shows the full history.
+  `#1 [PENDING] Send portfolio | Due: 2026-10-25`. `view INDEX` also shows the full history.
+  All dates display as `yyyy-MM-dd`, regardless of the input format. Undated
+  actions display `No due date`. Past dates are accepted: pending actions due
+  before today show `[OVERDUE]`. Actions due today or later and completed
+  actions are not overdue. Today follows the computer's local date.
 * If an identical description already has a pending action, Astra shows it and
   asks **Add another?** Enter `y` to add another, or `n`/`cancel` to stop.
   Comparison is case-sensitive after trimming: `Call` and `call` are different.
+  A different due date still triggers confirmation for the same pending description.
+  The prompt shows the existing action and the requested date. Confirming creates
+  another action with the requested date and leaves the existing action unchanged.
   Other replies repeat the prompt; cancel before entering another command.
 * A completed action with the same description does not require confirmation.
-  Completed history is retained, but marking actions complete and assigning due
-  dates are not available in this version.
+  Completed history is retained. Marking actions complete and editing or deleting
+  individual follow-ups are not available in this version.
 * Actions survive restart and ordinary contact edits. A failed save preserves
-  the file, previous action history, and current view. Earlier contact files
-  without actions load with an empty history.
+  the file, previous action history, and current view.
 
 Example:
 
 ```text
-followup 1 a/Send portfolio
-followup 1 a/Send portfolio
+followup 1 a/Send portfolio d/25 Oct 2026
+followup 1 a/Send portfolio d/01/11/2026
 ```
 
-The first command adds `#1 [PENDING] Send portfolio`. The second asks whether
-another is wanted; enter `y` to add `#2`, or `n` to keep just `#1`. The original
+The first command adds `#1 [PENDING] Send portfolio | Due: 2026-10-25`.
+The second asks whether another is wanted; enter `y` to add `#2` due on
+`2026-11-01`, or `n` to keep just `#1`. The original
 command does not need to be repeated while answering the prompt.
 
 ### Clearing all entries: `clear`
@@ -489,7 +504,7 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
-**Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
+**Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
