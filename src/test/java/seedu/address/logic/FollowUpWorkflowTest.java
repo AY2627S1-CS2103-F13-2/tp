@@ -189,6 +189,7 @@ class FollowUpWorkflowTest {
         assertEquals(1, storage.saveCount);
         assertArrayEquals(bytes, Files.readAllBytes(file));
         storage.shouldFail = false;
+        logic.execute("cancel");
         logic.execute("followup 1 a/Send portfolio");
         String refreshed = logic.execute("followups").getFeedbackToUser();
         assertTrue(refreshed.startsWith("Pending follow-ups (2):"));
@@ -210,6 +211,172 @@ class FollowUpWorkflowTest {
                 model.getFilteredPersonList().getFirst().getFollowUps());
         assertEquals(model.getContactFile().getPersonList(), storage.loadForStartup().contacts());
         assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_createReviewSelect_preservesFilterAndFileAcrossInvalidReplies() throws Exception {
+        logic.execute("followup 1 a/Portfolio d/31 Dec 9999");
+        logic.execute("followup 2 a/Call d/29 Feb 2000");
+        logic.execute("find Alice");
+        ContactFile before = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        String prompt = logic.execute("followups").getFeedbackToUser();
+        assertTrue(prompt.indexOf("Call") < prompt.indexOf("Portfolio"));
+        storage.shouldFail = true;
+        for (String reply : List.of("0", "-1", "3", "2147483648", "1.5")) {
+            assertTrue(logic.execute(reply).getPendingRequest().isPresent());
+            assertEquals(before, model.getContactFile());
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+        CommandResult selected = logic.execute(" 1 ");
+        assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
+        assertTrue(selected.getFeedbackToUser().startsWith(
+                "Selected follow-up:\n#1 [PENDING] Call | Due: 2000-02-29 [OVERDUE]"));
+        assertTrue(selected.getPendingRequest().isEmpty());
+        assertEquals(List.of(before.getPersonList().getFirst()), model.getFilteredPersonList());
+        assertEquals(before, model.getContactFile());
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        assertEquals(2, storage.saveCount);
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+    }
+
+    @Test
+    void execute_selectionCancellation_clearsRequestAndAllowsNewCommands() throws Exception {
+        logic.execute("followup 1 a/Call");
+        byte[] bytes = Files.readAllBytes(file);
+        for (String reply : List.of("n", "N", "cancel", " CANCEL ")) {
+            logic.execute("followups");
+            assertTrue(logic.execute(reply).getPendingRequest().isEmpty());
+            assertThrows(ParseException.class, () -> logic.execute("1"));
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+        logic.execute("followup 2 a/Portfolio d/01 Jan 1900");
+        logic.execute("followups");
+        CommandResult selected = logic.execute("1");
+        assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_nonNumberDuringSelection_runsNormalCommandsAndClearsSelection() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("find Benson");
+        logic.execute("followups");
+        assertTrue(logic.execute(" list ").getPendingRequest().isEmpty());
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+        logic.execute("followups");
+        assertEquals(ALICE.getName(), logic.execute("view 1").getPersonForDetails().orElseThrow().getName());
+        logic.execute("followups");
+        logic.execute("followup 2 a/Portfolio");
+        assertEquals(1, model.getContactFile().getPersonList().get(1).getFollowUps().size());
+        assertEquals(2, storage.saveCount);
+        logic.execute("followups");
+        assertTrue(logic.execute("followups").getPendingRequest().isPresent());
+        assertTrue(logic.execute("help").isShowHelp());
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+        logic.execute("followups");
+        assertTrue(logic.execute("exit").isExit());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_invalidCommandDuringSelection_reportsNormalErrorAndEndsSelection() throws Exception {
+        logic.execute("followup 1 a/Call");
+        byte[] bytes = Files.readAllBytes(file);
+        for (String input : List.of("unknown", "y", "", "1 extra", "followup 1 a/Call d/bad")) {
+            logic.execute("followups");
+            assertThrows(ParseException.class, () -> logic.execute(input));
+            assertThrows(ParseException.class, () -> logic.execute("1"));
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
+    void execute_commandDuringSelection_canStartConfirmationAndRollBackFailedSave() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("followups");
+        assertTrue(logic.execute("followup 1 a/Call").getPendingRequest().isPresent());
+        assertTrue(logic.execute("list").getPendingRequest().isPresent());
+        assertEquals(1, storage.saveCount);
+        logic.execute("y");
+        assertEquals(2, model.getContactFile().getPersonList().getFirst().getFollowUps().size());
+        logic.execute("followups");
+        ContactFile before = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        storage.shouldFail = true;
+        assertThrows(CommandException.class, () -> logic.execute("followup 2 a/Fail save"));
+        assertEquals(before, model.getContactFile());
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+    }
+
+    @Test
+    void execute_restart_requiresNewListThenSelectsPersistedAction() throws Exception {
+        logic.execute("followup 1 a/Call d/29/02/2000");
+        logic.execute("followups");
+        ModelManager reloaded = new ModelManager(storage.readContactFile().orElseThrow(), new UserPrefs());
+        LogicManager restarted = new LogicManager(reloaded, new StorageManager(storage,
+                new JsonUserPrefsStorage(testFolder.resolve("prefs.json"))));
+        assertThrows(ParseException.class, () -> restarted.execute("1"));
+        restarted.execute("followups");
+        CommandResult selected = restarted.execute("1");
+        assertEquals(reloaded.getContactFile().getPersonList().getFirst(),
+                selected.getPersonForDetails().orElseThrow());
+        assertTrue(selected.getFeedbackToUser().contains("Due: 2000-02-29 [OVERDUE]"));
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
+    void execute_staleSelection_doesNotResurrectDeletedContactOrSave() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("followups");
+        model.deletePerson(model.getContactFile().getPersonList().getFirst());
+        ContactFile changed = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        assertThrows(CommandException.class, () -> logic.execute("1"));
+        assertEquals(changed, model.getContactFile());
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+    }
+
+    @Test
+    void execute_readOnlyCancellation_preservesChangesMadeAfterPrompt() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("followups");
+        model.setPerson(BENSON, new PersonBuilder(BENSON).withName("Benson changed").build());
+        model.updateFilteredPersonList(person -> person.getName().fullName.equals("Benson changed"));
+        ContactFile changed = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        logic.execute("cancel");
+        assertEquals(changed, model.getContactFile());
+        assertEquals(1, model.getFilteredPersonList().size());
+        assertEquals("Benson changed", model.getFilteredPersonList().getFirst().getName().fullName);
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+    }
+
+    @Test
+    void execute_readOnlySelection_doesNotSaveUnrelatedChangesAndRetainsDisplayedOrder() throws Exception {
+        logic.execute("followup 1 a/Call d/01 Jan 2000");
+        logic.execute("followups");
+        Person updated = BENSON.appendFollowUp(
+                new FollowUp(1, "Earlier", FollowUp.Status.PENDING, LocalDate.of(1900, 1, 1)));
+        model.setPerson(BENSON, updated);
+        ContactFile changed = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        assertTrue(logic.execute("99999999999999999999").getPendingRequest().isPresent());
+        CommandResult selected = logic.execute("1");
+        assertEquals(ALICE.getName(), selected.getPersonForDetails().orElseThrow().getName());
+        assertEquals("Call", selected.getFollowUpForDetails().orElseThrow().getDescription());
+        assertEquals(changed, model.getContactFile());
+        assertEquals(1, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        logic.execute("followups");
+        assertEquals(updated, logic.execute("1").getPersonForDetails().orElseThrow());
+        assertEquals(1, storage.saveCount);
     }
 
     @Test

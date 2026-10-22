@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
@@ -47,12 +48,13 @@ class PendingFollowUpsCommandTest {
         assertEquals("Pending follow-ups (3):\n"
                 + "1. " + benson.getName() + " | #1 [PENDING] Call | Due: 2000-01-01 [OVERDUE]\n"
                 + "2. " + alice.getName() + " | #1 [PENDING] Send portfolio | Due: 9999-12-31\n"
-                + "3. " + alice.getName() + " | #2 [PENDING] Check in | No due date", result.getFeedbackToUser());
+                + "3. " + alice.getName() + " | #2 [PENDING] Check in | No due date\n"
+                + FollowUpSelectionRequest.MESSAGE_SELECTION, result.getFeedbackToUser());
         assertEquals(before, model.getContactFile());
         assertEquals(List.of(alice), model.getFilteredPersonList());
         assertFalse(result.isExit());
         assertFalse(result.isShowHelp());
-        assertEquals(new CommandResult(result.getFeedbackToUser()), result);
+        assertTrue(result.getPendingRequest().isPresent());
     }
 
     @Test

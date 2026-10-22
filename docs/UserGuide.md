@@ -403,8 +403,21 @@ Format: `followups`
 * Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
 * Completed actions are excluded. If none remain, Astra displays
   `No pending follow-ups remain.`
+* When entries are shown, enter a displayed number to open that follow-up's
+  details and its associated contact. Use the numbered row, not the action's
+  `#ID` or a contact index. The contact filter stays unchanged, even if the
+  selected contact is hidden by it.
+* Invalid numeric replies repeat the list and instructions. Non-number input
+  leaves selection and runs as a normal command: for example, `list`, `view 1`,
+  `help`, or `followup 1 a/Call`. Unknown or malformed commands show their usual
+  error and still end selection. Enter `n` or `cancel` to leave without running
+  another command. An empty result requires no reply.
+* Selection uses the exact order shown in the prompt. If the selected contact
+  or its follow-ups have changed or the contact was deleted, Astra asks you to
+  run `followups` again rather than opening stale details.
 * Running this command does not change or save contact data. Run it again to
-  refresh the results after adding an action or when the day changes.
+  refresh the results after selecting or cancelling, adding an action, or when
+  the day changes. Pending selections are not retained across restart.
 
 Example output (when today is 2026-10-21):
 
@@ -413,7 +426,11 @@ Pending follow-ups (3):
 1. Alice | #2 [PENDING] Call | Due: 2026-10-19 [OVERDUE]
 2. Benson | #1 [PENDING] Send portfolio | Due: 2026-10-25
 3. Alice | #3 [PENDING] Check in | No due date
+Enter a follow-up number, another command, or n/cancel to stop.
 ```
+
+Enter `2` to display Benson's `Send portfolio` action and full contact details.
+Enter `cancel` instead to leave the list without selecting an action.
 
 ### Clearing all entries: `clear`
 
@@ -534,7 +551,7 @@ Action | Format, Examples
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
-**Pending follow-ups** | `followups` lists incomplete actions across all contacts in due-date order
+**Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
