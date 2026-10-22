@@ -66,9 +66,24 @@ public class LogCommandTest {
 
         Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
         expectedModel.setPerson(ALICE, ALICE.withInteraction(OCT_15));
+        expectedModel.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("alice pauline")));
 
         assertCommandSuccess(logCommand, model, String.format(LogCommand.MESSAGE_SUCCESS, "Alice Pauline",
                 "2026-10-15", "1. 2026-10-15: Coffee chat"), expectedModel);
+    }
+
+    @Test
+    public void execute_afterFind_keepsFilterSoIndexStillPointsToSamePerson() throws Exception {
+        model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Benson")));
+        Person benson = model.getFilteredPersonList().get(0);
+
+        new LogCommand(INDEX_FIRST_PERSON, OCT_1).execute(model);
+        new LogCommand(INDEX_FIRST_PERSON, OCT_15).execute(model);
+
+        assertEquals(1, model.getFilteredPersonList().size());
+        Person updated = model.getFilteredPersonList().get(0);
+        assertEquals(benson.getName(), updated.getName());
+        assertEquals(List.of(OCT_1, OCT_15), updated.getInteractions());
     }
 
     @Test
@@ -92,7 +107,7 @@ public class LogCommandTest {
     public void execute_sameInteractionTwice_failure() throws Exception {
         new LogCommand(INDEX_FIRST_PERSON, OCT_15).execute(model);
 
-        Interaction sameInDifferentCase = new Interaction(OCT_15.date, "coffee CHAT");
+        Interaction sameInDifferentCase = new Interaction(OCT_15.getDate(), "coffee CHAT");
         assertCommandFailure(new LogCommand(INDEX_FIRST_PERSON, sameInDifferentCase), model,
                 String.format(LogCommand.MESSAGE_DUPLICATE_INTERACTION, "Alice Pauline"));
     }

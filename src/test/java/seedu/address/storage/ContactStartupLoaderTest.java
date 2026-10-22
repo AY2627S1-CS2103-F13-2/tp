@@ -208,6 +208,9 @@ class ContactStartupLoaderTest {
         LogicManager logic = new LogicManager(model, storage);
 
         logic.execute(ClearCommand.COMMAND_WORD);
+        assertFalse(model.getContactFile().getPersonList().isEmpty());
+        assertFalse(Files.exists(source));
+        logic.execute("y");
 
         assertTrue(model.getContactFile().getPersonList().isEmpty());
         assertTrue(Files.exists(source));

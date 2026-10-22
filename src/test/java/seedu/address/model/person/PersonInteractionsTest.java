@@ -18,6 +18,7 @@ public class PersonInteractionsTest {
 
     private static final Interaction OCT_1 = new Interaction(LocalDate.of(2026, 10, 1), "Career fair chat");
     private static final Interaction OCT_15 = new Interaction(LocalDate.of(2026, 10, 15), "Coffee chat");
+    private static final FollowUp FOLLOW_UP = new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING);
     private static final Interaction OCT_15_LATER = new Interaction(LocalDate.of(2026, 10, 15), "Follow-up call");
 
     @Test
@@ -50,6 +51,24 @@ public class PersonInteractionsTest {
     }
 
     @Test
+    public void withInteraction_personWithFollowUpsAndStar_keepsThem() {
+        Person starred = ALICE.appendFollowUp(FOLLOW_UP).withStarred(true);
+        Person person = starred.withInteraction(OCT_1);
+
+        assertEquals(starred.getFollowUps(), person.getFollowUps());
+        assertTrue(person.isStarred());
+        assertEquals(List.of(OCT_1), person.getInteractions());
+    }
+
+    @Test
+    public void appendFollowUpAndWithStarred_personWithInteractions_keepInteractions() {
+        Person person = ALICE.withInteraction(OCT_1).appendFollowUp(FOLLOW_UP).withStarred(true);
+
+        assertEquals(List.of(OCT_1), person.getInteractions());
+        assertEquals(1, person.getFollowUps().size());
+    }
+
+    @Test
     public void getInteractions_modifyList_throwsUnsupportedOperationException() {
         Person person = ALICE.withInteraction(OCT_1);
         assertThrows(UnsupportedOperationException.class, () -> person.getInteractions().clear());
@@ -59,7 +78,7 @@ public class PersonInteractionsTest {
     public void hasInteraction() {
         Person person = ALICE.withInteraction(OCT_15);
 
-        assertTrue(person.hasInteraction(new Interaction(OCT_15.date, "coffee chat")));
+        assertTrue(person.hasInteraction(new Interaction(OCT_15.getDate(), "coffee chat")));
         assertFalse(person.hasInteraction(OCT_1));
     }
 

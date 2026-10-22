@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
-import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
+import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
+import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -42,24 +43,56 @@ public class UnlogCommandTest {
         return expectedModel;
     }
 
+    /**
+     * Runs {@code command} and answers y to its confirmation prompt.
+     */
+    private CommandResult executeAndConfirm(UnlogCommand command) throws Exception {
+        PendingRequest request = command.execute(model).getPendingRequest().orElseThrow();
+        return request.respond("y", model);
+    }
+
     @Test
-    public void execute_byIndex_removesInteractionAndShowsRemainingHistory() {
+    public void execute_valid_asksForConfirmationWithoutChanges() throws Exception {
+        Model expectedModel = modelWithAliceHistory();
+        model.setPerson(ALICE, ALICE_WITH_HISTORY);
+
+        CommandResult result = new UnlogCommand(INDEX_FIRST_PERSON, Index.fromOneBased(2)).execute(model);
+
+        assertTrue(result.getPendingRequest().isPresent());
+        assertEquals("Interaction 2 of Alice Pauline: 2026-10-15: Coffee chat\n"
+                + "Remove this interaction? (y/n; cancel to stop)", result.getFeedbackToUser());
+        assertEquals(expectedModel, model);
+    }
+
+    @Test
+    public void execute_byIndexConfirmed_removesInteractionAndShowsRemainingHistory() throws Exception {
         Model expectedModel = modelWithAliceHistory();
         expectedModel.setPerson(ALICE_WITH_HISTORY, ALICE.withInteractions(List.of(OCT_15)));
         model.setPerson(ALICE, ALICE_WITH_HISTORY);
 
-        String expectedMessage = "Removed interaction 2026-10-01: Career fair chat from Alice Pauline.\n"
+        CommandResult result = executeAndConfirm(new UnlogCommand(INDEX_FIRST_PERSON, Index.fromOneBased(1)));
+
+        assertEquals("Removed interaction 2026-10-01: Career fair chat from Alice Pauline.\n"
                 + "Interaction history:\n"
-                + "1. 2026-10-15: Coffee chat";
-        assertCommandSuccess(new UnlogCommand(INDEX_FIRST_PERSON, Index.fromOneBased(1)), model, expectedMessage,
-                expectedModel);
+                + "1. 2026-10-15: Coffee chat", result.getFeedbackToUser());
+        assertEquals(expectedModel, model);
+    }
+
+    @Test
+    public void execute_contactChangedBeforeConfirmation_failure() throws Exception {
+        model.setPerson(ALICE, ALICE_WITH_HISTORY);
+        PendingRequest request = new UnlogCommand(INDEX_FIRST_PERSON, Index.fromOneBased(1)).execute(model)
+                .getPendingRequest().orElseThrow();
+        model.setPerson(ALICE_WITH_HISTORY, ALICE);
+
+        assertThrows(CommandException.class, UnlogCommand.MESSAGE_CONTACT_CHANGED, () -> request.respond("y", model));
     }
 
     @Test
     public void execute_lastInteractionByName_saysNoneLeft() throws Exception {
         model.setPerson(ALICE, ALICE.withInteraction(OCT_15));
 
-        CommandResult result = new UnlogCommand("alice", Index.fromOneBased(1)).execute(model);
+        CommandResult result = executeAndConfirm(new UnlogCommand("alice", Index.fromOneBased(1)));
 
         assertEquals("Removed interaction 2026-10-15: Coffee chat from Alice Pauline.\n"
                 + "Alice Pauline has no logged interactions left.", result.getFeedbackToUser());

@@ -3,9 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_DATE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NOTE;
-import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -71,18 +69,10 @@ public class LogCommand extends Command {
         requireNonNull(model);
 
         Person person;
-        if (targetName == null) {
-            List<Person> lastShownList = model.getFilteredPersonList();
-            if (index.getZeroBased() >= lastShownList.size()) {
-                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-            }
-            person = lastShownList.get(index.getZeroBased());
-        } else {
-            switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
-                case PersonNameResolver.Outcome.Unique unique -> person = unique.person();
-                case PersonNameResolver.Outcome.Several several -> {
-                    return new CommandResult(several.message());
-                }
+        switch (PersonNameResolver.resolveTarget(model, index, targetName, COMMAND_WORD)) {
+            case PersonNameResolver.Outcome.Unique unique -> person = unique.person();
+            case PersonNameResolver.Outcome.Several several -> {
+                return new CommandResult(several.message());
             }
         }
 
@@ -93,25 +83,12 @@ public class LogCommand extends Command {
         Person updatedPerson = person.withInteraction(interaction);
         assert updatedPerson.getInteractions().size() == person.getInteractions().size() + 1;
         model.setPerson(person, updatedPerson);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        // Logging does not change who matches the current filter, so the displayed list and its
+        // indexes are left as they are.
         logger.fine("Logged interaction for " + person.getName() + ": " + interaction);
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS, person.getName(), interaction.date,
-                formatHistory(updatedPerson.getInteractions())));
-    }
-
-    /**
-     * Returns the interactions as numbered lines in the given order, e.g. "1. 2026-10-15: Discussed internships".
-     */
-    static String formatHistory(List<Interaction> interactions) {
-        StringBuilder history = new StringBuilder();
-        for (int i = 0; i < interactions.size(); i++) {
-            if (i > 0) {
-                history.append("\n");
-            }
-            history.append(i + 1).append(". ").append(interactions.get(i));
-        }
-        return history.toString();
+        return new CommandResult(String.format(MESSAGE_SUCCESS, person.getName(), interaction.getDate(),
+                Messages.formatInteractions(updatedPerson.getInteractions())));
     }
 
     @Override
