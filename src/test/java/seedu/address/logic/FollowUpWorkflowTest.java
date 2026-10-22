@@ -117,6 +117,33 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_starredFilter_followUpEditUnstarAndRollbackRetainMetadata() throws Exception {
+        logic.execute("star 1");
+        logic.execute("find Benson");
+        logic.execute("starred");
+        assertEquals(List.of(ALICE.withStarred(true)), model.getFilteredPersonList());
+        logic.execute("followup 1 a/Call Alice");
+        Person withAction = ALICE.withStarred(true).appendFollowUp(
+                new FollowUp(1, "Call Alice", FollowUp.Status.PENDING));
+        assertEquals(List.of(withAction), model.getFilteredPersonList());
+        logic.execute("edit 1 p/76543210");
+        Person edited = new PersonBuilder(withAction).withPhone("76543210").build();
+        logic.execute("starred");
+        byte[] saved = Files.readAllBytes(file);
+        assertEquals(3, storage.saveCount);
+        storage.shouldFail = true;
+        assertThrows(CommandException.class, () -> logic.execute("unstar 1"));
+        assertEquals(List.of(edited), model.getFilteredPersonList());
+        assertArrayEquals(saved, Files.readAllBytes(file));
+        storage.shouldFail = false;
+        logic.execute("unstar 1");
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals(edited.withStarred(false), storage.readContactFile().orElseThrow().getPersonList().getFirst());
+        logic.execute("list");
+        assertEquals(edited.withStarred(false), model.getFilteredPersonList().getFirst());
+    }
+
+    @Test
     void execute_newAction_savesOnceAndDisplaysUpdatedOrderedList() throws Exception {
         List<Person> original = List.copyOf(model.getContactFile().getPersonList());
         CommandResult result = logic.execute("followup 1 a/  Send portfolio  ");

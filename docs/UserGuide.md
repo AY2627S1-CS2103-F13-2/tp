@@ -93,7 +93,7 @@ If Astra cannot safely prepare a reset, **Start anew** is unavailable and the co
 * Prefixed contact fields for `add` and `edit` can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, and `exit`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `starred`, and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`. `clear` is the exception: it rejects extra parameters instead of ignoring them.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -130,6 +130,39 @@ Examples:
 Shows a list of all persons in the contact file.
 
 Format: `list`
+
+### Starring an important contact: `star`
+
+Marks a contact as important so you can retrieve it later with `starred`.
+
+Format: `star INDEX`
+
+* `INDEX` must be a positive integer from the currently displayed list.
+* If the contact is already starred, Astra reports that status without changing contact data.
+* Starred status is saved automatically and preserved across restarts and edits.
+
+Example: `find Betsy` followed by `star 1` stars the 1st search result.
+
+### Removing a contact's star: `unstar`
+
+Removes a contact's starred status.
+
+Format: `unstar INDEX`
+
+* `INDEX` must be a positive integer from the currently displayed list.
+* If the contact is not starred, Astra reports that status without changing contact data.
+* The change is saved automatically. In the starred list, the contact disappears and the remaining contacts are renumbered.
+
+Example: `starred` followed by `unstar 1` unstars the 1st starred contact.
+
+### Retrieving starred contacts: `starred`
+
+Shows all starred contacts in their existing order, replacing any previous search filter.
+
+Format: `starred`
+
+* If none are starred, the list is empty and Astra reports `There are no starred contacts.`
+* Use `list` to return to all contacts.
 
 ### Editing a person: `edit`
 
@@ -460,4 +493,7 @@ Action | Format, Examples
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
+**Star** | `star INDEX`<br> e.g., `star 2`
+**Unstar** | `unstar INDEX`<br> e.g., `unstar 1`
+**Starred** | `starred`
 **Help** | `help`
