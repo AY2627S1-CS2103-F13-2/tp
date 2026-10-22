@@ -1,6 +1,8 @@
 package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
@@ -8,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -45,6 +49,35 @@ public class JsonAdaptedPersonTest {
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_legacyConstructor_defaultsMetadata() throws Exception {
+        Person person = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE, VALID_EMAIL,
+                VALID_LINKEDIN, VALID_TAGS).toModelType();
+
+        assertEquals(new Name(VALID_NAME), person.getName());
+        assertEquals(Optional.empty(), person.getIntroducer());
+        assertEquals(List.of(), person.getFollowUps());
+        assertFalse(person.isStarred());
+    }
+
+    @Test
+    public void toModelType_constructorWithFollowUps_preservesFollowUps() throws Exception {
+        FollowUp followUp = new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING);
+        JsonAdaptedPerson adaptedPerson = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
+                VALID_EMAIL, VALID_LINKEDIN, VALID_TAGS, List.of(new JsonAdaptedFollowUp(followUp)));
+
+        assertEquals(List.of(followUp), adaptedPerson.toModelType().getFollowUps());
+    }
+
+    @Test
+    public void toModelType_constructorWithStarredStatus_preservesStarredStatus() throws Exception {
+        JsonAdaptedPerson adaptedPerson = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
+                VALID_EMAIL, VALID_LINKEDIN, VALID_TAGS, true);
+
+        assertTrue(adaptedPerson.toModelType().isStarred());
+        assertEquals(List.of(), adaptedPerson.toModelType().getFollowUps());
     }
 
     @Test

@@ -16,6 +16,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,26 @@ public class PersonTest {
         Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags());
         assertFalse(person.isStarred());
         assertEquals(NAME_ONLY, person);
+    }
+
+    @Test
+    public void constructor_withStarredStatus_defaultsToNoFollowUps() {
+        Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags(), true);
+
+        assertTrue(person.isStarred());
+        assertTrue(person.getFollowUps().isEmpty());
+        assertEquals(Optional.empty(), person.getIntroducer());
+    }
+
+    @Test
+    public void constructor_withFollowUpsAndStarredStatus_preservesBoth() {
+        FollowUp followUp = new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING);
+        Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags(),
+                List.of(followUp), true);
+
+        assertTrue(person.isStarred());
+        assertEquals(List.of(followUp), person.getFollowUps());
+        assertEquals(Optional.empty(), person.getIntroducer());
     }
 
     @Test

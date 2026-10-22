@@ -13,6 +13,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import seedu.address.logic.Messages;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
@@ -47,6 +48,21 @@ class PersonCardFollowUpTest {
             Label label = (Label) new PersonCard(ALICE, 1).getRoot().lookup("#followUps");
             assertFalse(label.isVisible());
             assertFalse(label.isManaged());
+        });
+    }
+
+    @Test
+    void card_withIntroducer_placesIntroducerAfterLinkedin() throws Exception {
+        FxTestUtil.runOnFxThread(() -> {
+            Person person = new PersonBuilder(ALICE).withIntroducer("Jane Doe").build();
+            PersonCard card = new PersonCard(person, 1);
+            VBox fields = (VBox) card.getRoot().lookup("#fields");
+            Label linkedin = (Label) card.getRoot().lookup("#linkedin");
+            Label introducer = (Label) card.getRoot().lookup("#introducer");
+
+            assertEquals("Introduced by: Jane Doe", introducer.getText());
+            assertTrue(introducer.isVisible());
+            assertEquals(fields.getChildren().indexOf(linkedin) + 1, fields.getChildren().indexOf(introducer));
         });
     }
 
