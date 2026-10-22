@@ -63,6 +63,11 @@ class FollowUpSelectionUiTest {
                 TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
                 execute(input, "followups");
                 assertTrue(output.getText().contains("Enter a follow-up number"));
+                execute(input, "list");
+                assertEquals("Listed all persons.", output.getText());
+                assertEquals(2, model.getFilteredPersonList().size());
+                execute(input, "find Benson");
+                execute(input, "followups");
                 execute(input, "99");
                 assertTrue(output.getText().contains("Enter a number from the displayed follow-ups."));
                 execute(input, "1");

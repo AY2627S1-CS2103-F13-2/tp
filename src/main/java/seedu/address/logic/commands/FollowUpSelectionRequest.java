@@ -17,7 +17,7 @@ import seedu.address.model.Model;
  * Retains the displayed follow-up order until the user selects an entry or cancels.
  */
 final class FollowUpSelectionRequest implements PendingRequest {
-    static final String MESSAGE_SELECTION = "Enter a follow-up number, or n/cancel to stop.";
+    static final String MESSAGE_SELECTION = "Enter a follow-up number, another command, or n/cancel to stop.";
     static final String MESSAGE_INVALID = "Enter a number from the displayed follow-ups.";
     static final String MESSAGE_CHANGED = "The selected contact or follow-up changed. Run followups again.";
 
@@ -34,6 +34,11 @@ final class FollowUpSelectionRequest implements PendingRequest {
     @Override
     public boolean isReadOnly() {
         return true;
+    }
+
+    @Override
+    public boolean shouldRunAsCommand(String response) {
+        return !response.matches("[+-]?[0-9]+(?:\\.[0-9]+)?");
     }
 
     @Override

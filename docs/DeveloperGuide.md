@@ -842,7 +842,9 @@ links to events remain outside UC16.
 * 2a. No pending actions remain: show `No pending follow-ups remain.`
 * 3a. Undated actions: list them after dated actions with `No due date`.
 * 1a. Extra arguments: reject the command and display usage instructions.
-* 4a. Invalid reply: repeat the retained list and selection instructions.
+* 4a. Invalid numeric reply: repeat the retained list and selection instructions.
+* 4d. Non-number input: clear selection and parse/execute the input as a normal
+  command. Invalid commands show their normal errors and leave selection closed.
 * 4b. User enters `n` or `cancel`: clear the request without changing data.
 * 4c. Selected contact or action history changed or the contact was deleted:
   clear the request and ask the user to run `followups` again.
@@ -855,7 +857,10 @@ the shared follow-up formatter, preserves the current contact filter and does
 not save data. A nonempty list returns a `FollowUpSelectionRequest`, which
 copies entries in displayed order. Logic retains it through the existing
 pending-request flow. Valid replies return `CommandResult.createPersonDetails`
-with the selected action and contact; invalid replies keep the same request.
+with the selected action and contact; invalid numeric replies keep the same request.
+Non-number replies are dispatched through the normal command parser by Logic,
+after clearing the selection request. Other pending requests retain their existing
+reply handling, including confirmation prompts.
 Selection verifies that the captured contact still exists with the same data.
 The UI displays the details in the result panel while retaining the contact
 filter. Running the list again retrieves current results. Requests are held

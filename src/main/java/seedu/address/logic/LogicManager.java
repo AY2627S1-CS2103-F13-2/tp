@@ -62,7 +62,12 @@ public class LogicManager implements Logic {
                     clearPendingRequest();
                     return new CommandResult("Request cancelled. No contacts changed.");
                 }
-                commandResult = pendingRequest.respond(response, model);
+                if (pendingRequest.shouldRunAsCommand(response)) {
+                    clearPendingRequest();
+                    commandResult = contactFileParser.parseCommand(commandText).execute(model);
+                } else {
+                    commandResult = pendingRequest.respond(response, model);
+                }
             } else {
                 Command command = contactFileParser.parseCommand(commandText);
                 commandResult = command.execute(model);

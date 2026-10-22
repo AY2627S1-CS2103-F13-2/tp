@@ -28,6 +28,16 @@ class FollowUpSelectionRequestTest {
     private Person benson;
     private FollowUpSelectionRequest request;
 
+    @Test
+    void shouldRunAsCommand_nonNumbersLeaveSelection_numericInputStays() {
+        for (String input : List.of("list", "view 1", "followups", "help", "", "y", "1 extra")) {
+            assertTrue(request.shouldRunAsCommand(input));
+        }
+        for (String input : List.of("1", "0", "-1", "+1", "1.5", "2147483648")) {
+            assertFalse(request.shouldRunAsCommand(input));
+        }
+    }
+
     @BeforeEach
     void setUp() {
         alice = new PersonBuilder(ALICE).withFollowUps(
@@ -59,9 +69,8 @@ class FollowUpSelectionRequestTest {
     }
 
     @Test
-    void respond_invalidNumbersAndOtherInput_repeatsSameRequest() throws Exception {
-        for (String response : List.of("", "0", "-1", "+1", "1.5", "4", "2147483648", "9999999999999999999",
-                "Call", "followups", "1 extra", "y")) {
+    void respond_invalidNumbers_repeatsSameRequest() throws Exception {
+        for (String response : List.of("0", "-1", "+1", "1.5", "4", "2147483648", "9999999999999999999")) {
             CommandResult result = request.respond(response, model);
             assertSame(request, result.getPendingRequest().orElseThrow());
             assertEquals(FollowUpSelectionRequest.MESSAGE_INVALID + "\n" + request.getPrompt(),

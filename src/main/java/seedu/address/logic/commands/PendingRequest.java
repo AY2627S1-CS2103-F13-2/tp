@@ -16,6 +16,14 @@ public interface PendingRequest {
     }
 
     /**
+     * Returns whether this reply should leave the request and be parsed as a normal command.
+     * Cancellation words are handled by Logic before this method is called.
+     */
+    default boolean shouldRunAsCommand(String response) {
+        return false;
+    }
+
+    /**
      * Returns the instructions to display while this request is pending.
      */
     String getPrompt();

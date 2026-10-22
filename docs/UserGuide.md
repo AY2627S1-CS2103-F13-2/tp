@@ -373,8 +373,11 @@ Format: `followups`
   details and its associated contact. Use the numbered row, not the action's
   `#ID` or a contact index. The contact filter stays unchanged, even if the
   selected contact is hidden by it.
-* Invalid replies repeat the list and instructions. Enter `n` or `cancel` to
-  leave the list before running another command. An empty result requires no reply.
+* Invalid numeric replies repeat the list and instructions. Non-number input
+  leaves selection and runs as a normal command: for example, `list`, `view 1`,
+  `help`, or `followup 1 a/Call`. Unknown or malformed commands show their usual
+  error and still end selection. Enter `n` or `cancel` to leave without running
+  another command. An empty result requires no reply.
 * Selection uses the exact order shown in the prompt. If the selected contact
   or its follow-ups have changed or the contact was deleted, Astra asks you to
   run `followups` again rather than opening stale details.
@@ -389,7 +392,7 @@ Pending follow-ups (3):
 1. Alice | #2 [PENDING] Call | Due: 2026-10-19 [OVERDUE]
 2. Benson | #1 [PENDING] Send portfolio | Due: 2026-10-25
 3. Alice | #3 [PENDING] Check in | No due date
-Enter a follow-up number, or n/cancel to stop.
+Enter a follow-up number, another command, or n/cancel to stop.
 ```
 
 Enter `2` to display Benson's `Send portfolio` action and full contact details.

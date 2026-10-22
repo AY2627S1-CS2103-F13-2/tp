@@ -136,7 +136,7 @@ class FollowUpWorkflowTest {
         String prompt = logic.execute("followups").getFeedbackToUser();
         assertTrue(prompt.indexOf("Call") < prompt.indexOf("Portfolio"));
         storage.shouldFail = true;
-        for (String reply : List.of("0", "-1", "3", "2147483648", "y", "view 1", "")) {
+        for (String reply : List.of("0", "-1", "3", "2147483648", "1.5")) {
             assertTrue(logic.execute(reply).getPendingRequest().isPresent());
             assertEquals(before, model.getContactFile());
             assertArrayEquals(bytes, Files.readAllBytes(file));
@@ -168,6 +168,61 @@ class FollowUpWorkflowTest {
         CommandResult selected = logic.execute("1");
         assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
         assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_nonNumberDuringSelection_runsNormalCommandsAndClearsSelection() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("find Benson");
+        logic.execute("followups");
+        assertTrue(logic.execute(" list ").getPendingRequest().isEmpty());
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+        logic.execute("followups");
+        assertEquals(ALICE.getName(), logic.execute("view 1").getPersonForDetails().orElseThrow().getName());
+        logic.execute("followups");
+        logic.execute("followup 2 a/Portfolio");
+        assertEquals(1, model.getContactFile().getPersonList().get(1).getFollowUps().size());
+        assertEquals(2, storage.saveCount);
+        logic.execute("followups");
+        assertTrue(logic.execute("followups").getPendingRequest().isPresent());
+        assertTrue(logic.execute("help").isShowHelp());
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+        logic.execute("followups");
+        assertTrue(logic.execute("exit").isExit());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_invalidCommandDuringSelection_reportsNormalErrorAndEndsSelection() throws Exception {
+        logic.execute("followup 1 a/Call");
+        byte[] bytes = Files.readAllBytes(file);
+        for (String input : List.of("unknown", "y", "", "1 extra", "followup 1 a/Call d/bad")) {
+            logic.execute("followups");
+            assertThrows(ParseException.class, () -> logic.execute(input));
+            assertThrows(ParseException.class, () -> logic.execute("1"));
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
+    void execute_commandDuringSelection_canStartConfirmationAndRollBackFailedSave() throws Exception {
+        logic.execute("followup 1 a/Call");
+        logic.execute("followups");
+        assertTrue(logic.execute("followup 1 a/Call").getPendingRequest().isPresent());
+        assertTrue(logic.execute("list").getPendingRequest().isPresent());
+        assertEquals(1, storage.saveCount);
+        logic.execute("y");
+        assertEquals(2, model.getContactFile().getPersonList().getFirst().getFollowUps().size());
+        logic.execute("followups");
+        ContactFile before = new ContactFile(model.getContactFile());
+        byte[] bytes = Files.readAllBytes(file);
+        storage.shouldFail = true;
+        assertThrows(CommandException.class, () -> logic.execute("followup 2 a/Fail save"));
+        assertEquals(before, model.getContactFile());
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+        assertThrows(ParseException.class, () -> logic.execute("1"));
     }
 
     @Test

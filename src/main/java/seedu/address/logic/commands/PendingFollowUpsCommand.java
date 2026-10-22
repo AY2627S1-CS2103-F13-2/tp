@@ -14,7 +14,7 @@ public class PendingFollowUpsCommand extends Command {
     public static final String COMMAND_WORD = "followups";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Lists pending follow-ups across all contacts, earliest due dates first and undated actions last.\n"
-            + "This command takes no arguments. Then enter a displayed number, or n/cancel to stop.\n"
+            + "This command takes no arguments. Then enter a displayed number, another command, or n/cancel to stop.\n"
             + "Example: " + COMMAND_WORD;
     public static final String MESSAGE_EMPTY = "No pending follow-ups remain.";
 
