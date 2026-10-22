@@ -314,7 +314,8 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   letter case and internal spacing are kept. Additional command prefixes such
   as `p/`, repeated `a/`, and `confirm/` are rejected. URLs such as
   `https://example.com/portfolio` can be part of the description.
-* Optionally add one `d/DATE` after the description. Accepted formats are
+* Optionally add one `d/DATE` before or after `a/DESCRIPTION`. For example,
+  `followup 1 d/2026-10-30 a/Call back` is also accepted. Accepted formats are
   `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
   `d MMM yyyy` (`25 Oct 2026`). Month names use English three-letter abbreviations
   and are case-insensitive. Slash-separated dates use day/month/year.
