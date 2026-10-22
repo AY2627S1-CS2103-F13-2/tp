@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -33,23 +34,55 @@ class JsonAdaptedPerson {
     private final String email;
     private final String linkedin;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    private final boolean starred;
+    private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            List<JsonAdaptedTag> tags) {
+        this(name, company, role, phone, email, linkedin, tags, null);
+    }
+
+    /**
+     * Creates an adapted contact, defaulting absent action history to an empty list for older files.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            List<JsonAdaptedTag> tags, List<JsonAdaptedFollowUp> followUps) {
+        this(name, company, role, phone, email, linkedin, tags, followUps, false);
+    }
+
+    /**
+     * Creates an adapted contact with starred status and no action history.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            List<JsonAdaptedTag> tags, boolean starred) {
+        this(name, company, role, phone, email, linkedin, tags, null, starred);
+    }
+
+    /**
+     * Reads both metadata fields; absent fields retain legacy defaults.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("company") String company,
             @JsonProperty("role") String role, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("linkedin") String linkedin,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("tags") List<JsonAdaptedTag> tags,
+            @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
+            @JsonProperty("starred") boolean starred) {
         this.name = name;
         this.company = company;
         this.role = role;
         this.phone = phone;
         this.email = email;
         this.linkedin = linkedin;
+        this.starred = starred;
         if (tags != null) {
             this.tags.addAll(tags);
+        }
+        if (followUps != null) {
+            this.followUps.addAll(followUps);
         }
     }
 
@@ -63,9 +96,11 @@ class JsonAdaptedPerson {
         phone = source.getPhone().map(value -> value.value).orElse(null);
         email = source.getEmail().map(value -> value.value).orElse(null);
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
+        starred = source.isStarred();
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+        source.getFollowUps().stream().map(JsonAdaptedFollowUp::new).forEach(followUps::add);
     }
 
     /**
@@ -135,7 +170,20 @@ class JsonAdaptedPerson {
         }
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin, modelTags);
+        List<FollowUp> modelFollowUps = new ArrayList<>();
+        Set<Integer> actionIds = new HashSet<>();
+        for (JsonAdaptedFollowUp action : followUps) {
+            if (action == null) {
+                throw new IllegalValueException("Follow-up entries must not be null.");
+            }
+            FollowUp modelAction = action.toModelType();
+            if (!actionIds.add(modelAction.getId())) {
+                throw new IllegalValueException("Follow-up IDs must be unique within a contact.");
+            }
+            modelFollowUps.add(modelAction);
+        }
+        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin,
+                modelTags, modelFollowUps, starred);
     }
 
 }

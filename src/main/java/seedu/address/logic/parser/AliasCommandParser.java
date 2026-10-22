@@ -1,9 +1,14 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AliasCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
@@ -23,6 +28,8 @@ public class AliasCommandParser implements Parser<AliasCommand> {
             + "but %2$s is not one of them.";
 
     private static final String SHORTCUT_REGEX = "[A-Za-z][A-Za-z0-9]*";
+
+    private static final Logger logger = LogsCenter.getLogger(AliasCommandParser.class);
 
     /**
      * Parses the given {@code String} of arguments in the context of the AliasCommand
@@ -53,6 +60,33 @@ public class AliasCommandParser implements Parser<AliasCommand> {
         String shortcut = parseShortcut(shortcutAndExpansion[0]);
         String expansion = parseExpansion(shortcutAndExpansion[1]);
         return isReplace ? AliasCommand.replace(shortcut, expansion) : AliasCommand.add(shortcut, expansion);
+    }
+
+    /**
+     * Returns the shortcuts in {@code aliases} that follow the same rules as {@code alias}, with each name
+     * in lower case. Shortcuts read from a hand-edited preferences file skip the checks this parser applies,
+     * so this drops any entry that is null, blank, uses a built-in command word as its name, or does not
+     * stand for a built-in command, and logs each one it drops.
+     */
+    public static Map<String, String> validAliases(Map<String, String> aliases) {
+        requireNonNull(aliases);
+        Map<String, String> valid = new TreeMap<>();
+        aliases.forEach((shortcut, expansion) -> {
+            if (shortcut == null || expansion == null || expansion.isBlank()) {
+                logger.warning("Dropped shortcut " + shortcut + " from preferences: it has no command.");
+                return;
+            }
+            try {
+                String validShortcut = parseShortcut(shortcut.trim());
+                if (valid.containsKey(validShortcut)) {
+                    throw new ParseException("Shortcut " + validShortcut + " is defined twice.");
+                }
+                valid.put(validShortcut, parseExpansion(expansion.trim()));
+            } catch (ParseException e) {
+                logger.warning("Dropped shortcut " + shortcut + " from preferences: " + e.getMessage());
+            }
+        });
+        return valid;
     }
 
     /**
