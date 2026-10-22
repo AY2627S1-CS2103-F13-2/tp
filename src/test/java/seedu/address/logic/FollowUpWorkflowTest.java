@@ -370,6 +370,20 @@ class FollowUpWorkflowTest {
         assertThrows(IllegalArgumentException.class, () -> new FollowUpCommand(Index.fromOneBased(1), " "));
     }
 
+    @Test
+    void execute_dateBeforeDescription_createsAndConfirmsDuplicateWithRequestedDate() throws Exception {
+        logic.execute("followup 1 d/2026-10-30 a/Call back");
+        assertEquals(LocalDate.of(2026, 10, 30),
+                model.getFilteredPersonList().getFirst().getFollowUps().getFirst().getDueDate().orElseThrow());
+        assertTrue(logic.execute("followup 1 d/1 Nov 2026 a/Call back").getPendingRequest().isPresent());
+        logic.execute("y");
+        assertEquals(List.of(new FollowUp(1, "Call back", FollowUp.Status.PENDING, LocalDate.of(2026, 10, 30)),
+                new FollowUp(2, "Call back", FollowUp.Status.PENDING, LocalDate.of(2026, 11, 1))),
+                model.getFilteredPersonList().getFirst().getFollowUps());
+        assertEquals(model.getContactFile().getPersonList(), storage.loadForStartup().contacts());
+        assertEquals(2, storage.saveCount);
+    }
+
     private static final class CountingStorage extends JsonContactFileStorage {
         private int saveCount;
         private boolean shouldFail;

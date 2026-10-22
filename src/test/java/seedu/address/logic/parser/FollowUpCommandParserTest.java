@@ -20,8 +20,11 @@ class FollowUpCommandParserTest {
         FollowUpCommand expected = new FollowUpCommand(Index.fromOneBased(1), "Call", LocalDate.of(2026, 10, 25));
         for (String date : List.of("2026-10-25", "25/10/2026", "25 Oct 2026", "25 oCT 2026")) {
             assertEquals(expected, parser.parse("1 a/Call d/" + date));
+            assertEquals(expected, parser.parse("1 d/" + date + " a/Call"));
         }
         assertEquals(expected, parser.parse("\t1\ta/ Call \td/ 25 Oct 2026  "));
+        assertEquals(expected, parser.parse("\t1\td/ 25 Oct 2026 \ta/ Call  "));
+        assertEquals(expected, new ContactFileParser().parseCommand("followup 1 d/25/10/2026 a/Call"));
         assertEquals(expected, new ContactFileParser().parseCommand("followup 1 a/Call d/25/10/2026"));
         assertEquals(new FollowUpCommand(Index.fromOneBased(1), "Call", LocalDate.of(2028, 2, 29)),
                 parser.parse("1 a/Call d/29/02/2028"));
@@ -36,12 +39,17 @@ class FollowUpCommandParserTest {
                 "10/25/2026", "2026-1-5", "5/1/2026", "2026-10-25T12:00:00", "tomorrow", "25 Oct 26")) {
             ParseException error = assertThrows(ParseException.class, () -> parser.parse("1 a/Call d/" + date), date);
             assertEquals(FollowUpCommandParser.MESSAGE_DATE_FORMAT, error.getMessage());
+            ParseException dateFirst = assertThrows(ParseException.class, () ->
+                    parser.parse("1 d/" + date + " a/Call"), date);
+            assertEquals(FollowUpCommandParser.MESSAGE_DATE_FORMAT, dateFirst.getMessage());
         }
     }
 
     @Test
     void parse_malformedDatedArguments_rejectsRequest() {
-        for (String input : List.of("1 a/Call d/2026-10-25 d/2026-11-01", "1 d/2026-10-25 a/Call",
+        for (String input : List.of("1 a/Call d/2026-10-25 d/2026-11-01", "1 d/2026-10-25 a/Call d/2026-11-01",
+                "1 d/2026-10-25 d/2026-11-01 a/Call", "1 d/2026-10-25 a/Call a/Other",
+                "1 d/2026-10-25 a/", "1 d/2026-10-25 x/value a/Call",
                 "1 a/ d/2026-10-25", "1 a/Call D/2026-10-25", "1 a/Call d/2026-10-25 x/value",
                 "1 d/2026-10-25", "1 a/Call a/Other d/2026-10-25", "0 a/Call d/2026-10-25")) {
             assertThrows(ParseException.class, () -> parser.parse(input), input);
@@ -55,6 +63,9 @@ class FollowUpCommandParserTest {
         assertEquals(new FollowUpCommand(Index.fromOneBased(1), "Call"), parser.parse("\t1\ta/Call"));
         assertEquals(new FollowUpCommand(Index.fromOneBased(1), "Send portfolio"),
                 new ContactFileParser().parseCommand("followup 1 a/Send portfolio"));
+        assertEquals(new FollowUpCommand(Index.fromOneBased(1), "Call  back: https://example.com/a/b",
+                LocalDate.of(2026, 10, 30)),
+                parser.parse("1 d/2026-10-30 a/Call  back: https://example.com/a/b"));
     }
 
     @Test
