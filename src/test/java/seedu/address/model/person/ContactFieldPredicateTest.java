@@ -11,6 +11,14 @@ import seedu.address.testutil.PersonBuilder;
 public class ContactFieldPredicateTest {
 
     @Test
+    public void test_groupedPhone_usesNormalizedWholeNumber() {
+        Person person = new PersonBuilder().withPhone("+65 (9123)-4567").build();
+        assertTrue(new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "+6591234567").test(person));
+        assertFalse(new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "6591234567").test(person));
+        assertFalse(new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567").test(person));
+    }
+
+    @Test
     public void test_phoneMatches_returnsTrue() {
         ContactFieldPredicate predicate =
                 new ContactFieldPredicate(
@@ -45,7 +53,7 @@ public class ContactFieldPredicateTest {
                         ContactFieldPredicate.Field.PHONE,
                         "91234567");
 
-        Person person = new PersonBuilder().build();
+        Person person = new PersonBuilder().withPhone(null).build();
 
         assertFalse(predicate.test(person));
     }

@@ -99,10 +99,29 @@ public class PersonTest {
         Person personWithoutEmail = new PersonBuilder().withName(VALID_NAME_BOB).withEmail(null).build();
         Person anotherPersonWithoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
         assertFalse(personWithoutEmail.hasSameEmail(anotherPersonWithoutEmail));
+        assertFalse(personWithoutEmail.hasSameEmail(personWithoutEmail));
 
         // one email absent -> returns false
         assertFalse(personWithoutEmail.hasSameEmail(ALICE));
         assertFalse(ALICE.hasSameEmail(personWithoutEmail));
+    }
+
+    @Test
+    public void hasSamePhone_missingValues_returnsFalse() {
+        Person first = new PersonBuilder(ALICE).withPhone(null).build();
+        Person second = new PersonBuilder(BOB).withPhone(null).build();
+        assertFalse(first.hasSamePhone(second));
+        assertFalse(first.hasSamePhone(first));
+        assertFalse(first.hasSamePhone(ALICE));
+        assertFalse(ALICE.hasSamePhone(first));
+    }
+
+    @Test
+    public void equals_groupedPhone_hashCodesMatch() {
+        Person grouped = new PersonBuilder(ALICE).withPhone("+65 (9312)-1534").build();
+        Person compact = new PersonBuilder(ALICE).withPhone("+6593121534").build();
+        assertEquals(grouped, compact);
+        assertEquals(grouped.hashCode(), compact.hashCode());
     }
 
     @Test
@@ -188,7 +207,7 @@ public class PersonTest {
                 + ", phone=" + ALICE.getPhone().orElse(null)
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
-                + ", tags=" + ALICE.getTags() + "}";
+                + ", tags=" + ALICE.getTags() + ", followUps=" + ALICE.getFollowUps() + "}";
         assertEquals(expected, ALICE.toString());
     }
 
