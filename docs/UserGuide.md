@@ -533,7 +533,7 @@ Action | Format, Examples
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
-**Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
+**Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change
 **Star** | `star INDEX`<br> e.g., `star 2`
 **Unstar** | `unstar INDEX`<br> e.g., `unstar 1`
 **Starred** | `starred`
