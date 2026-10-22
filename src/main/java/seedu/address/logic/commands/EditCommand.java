@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.CollectionUtil;
 import seedu.address.commons.util.ToStringBuilder;
-import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Company;
@@ -103,18 +102,10 @@ public class EditCommand extends Command {
         requireNonNull(model);
 
         Person personToEdit;
-        if (targetName == null) {
-            List<Person> lastShownList = model.getFilteredPersonList();
-            if (index.getZeroBased() >= lastShownList.size()) {
-                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-            }
-            personToEdit = lastShownList.get(index.getZeroBased());
-        } else {
-            switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
-                case PersonNameResolver.Outcome.Unique unique -> personToEdit = unique.person();
-                case PersonNameResolver.Outcome.Several several -> {
-                    return new CommandResult(several.message());
-                }
+        switch (PersonNameResolver.resolveTarget(model, index, targetName, COMMAND_WORD)) {
+            case PersonNameResolver.Outcome.Unique unique -> personToEdit = unique.person();
+            case PersonNameResolver.Outcome.Several several -> {
+                return new CommandResult(several.message());
             }
         }
 
@@ -253,9 +244,9 @@ public class EditCommand extends Command {
                 editPersonDescriptor.getLinkedin(), personToEdit.getLinkedin());
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        // Edits never change the interaction history, so carry it over unchanged.
+        // Edits never change follow-ups, starring or the interaction history, so carry them over unchanged.
         return new Person(updatedName, updatedCompany, updatedRole, updatedPhone, updatedEmail, updatedLinkedin,
-                updatedTags).withInteractions(personToEdit.getInteractions());
+                updatedTags, personToEdit.getFollowUps(), personToEdit.isStarred(), personToEdit.getInteractions());
     }
 
     /**

@@ -20,8 +20,8 @@ public class Interaction {
             "Interaction dates should be real dates in the format " + DATE_FORMAT + ", e.g. 2026-10-15.";
     public static final String MESSAGE_NOTE_CONSTRAINTS = "Interaction notes should not be blank.";
 
-    public final LocalDate date;
-    public final String note;
+    private final LocalDate date;
+    private final String note;
 
     /**
      * Constructs an {@code Interaction} on {@code date} with the given {@code note}.
@@ -33,6 +33,14 @@ public class Interaction {
         checkArgument(isValidNote(note), MESSAGE_NOTE_CONSTRAINTS);
         this.date = date;
         this.note = StringUtil.normalise(note);
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public String getNote() {
+        return note;
     }
 
     /**

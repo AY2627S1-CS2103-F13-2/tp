@@ -52,7 +52,8 @@ public class FindNotesCommand extends FindCommand {
             }
             groups.append(i + 1).append(". ").append(person.getName());
             for (Interaction interaction : predicate.matchingInteractions(person)) {
-                groups.append("\n   ").append(interaction.date).append(": ").append(excerpt(interaction.note));
+                groups.append("\n   ").append(interaction.getDate()).append(": ")
+                        .append(excerpt(interaction.getNote()));
             }
         }
         return new CommandResult(String.format(MESSAGE_MATCHES, matches.size(), groups));

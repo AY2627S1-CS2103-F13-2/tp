@@ -48,7 +48,7 @@ public class InteractionHistoryKeptTest {
         String feedback = new ViewCommand(INDEX_FIRST_PERSON).execute(model).getFeedbackToUser();
 
         assertTrue(feedback.startsWith(ALICE.getName().toString()));
-        assertTrue(feedback.endsWith("\nInteraction history:\n1. 2026-10-01: Career fair chat"));
+        assertTrue(feedback.endsWith("; Interaction history:\n1. 2026-10-01: Career fair chat"));
     }
 
     @Test

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
-import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
@@ -16,7 +15,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
@@ -26,114 +24,90 @@ import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 
 /**
- * Contains integration tests (interaction with the Model) for deleting a person by name with
- * {@code DeleteCommand}.
+ * Tests name resolution, candidate selection, and confirmation before deletion.
  */
 public class DeleteCommandByNameTest {
 
     private final Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
 
     @Test
-    public void execute_fullName_success() {
-        assertDeletes(new DeleteCommand("Alice Pauline"), ALICE);
+    public void execute_fullName_confirmsCorrectPerson() throws Exception {
+        assertConfirmedDeletion("Alice Pauline", ALICE);
     }
 
     @Test
-    public void execute_partialNameMatchingOnePerson_success() {
-        assertDeletes(new DeleteCommand("Pauline"), ALICE);
+    public void execute_partialName_confirmsCorrectPerson() throws Exception {
+        assertConfirmedDeletion("Pauline", ALICE);
     }
 
     @Test
-    public void execute_nameInDifferentCase_success() {
-        assertDeletes(new DeleteCommand("alice pauline"), ALICE);
+    public void execute_differentCase_confirmsCorrectPerson() throws Exception {
+        assertConfirmedDeletion("alice pauline", ALICE);
     }
 
     @Test
-    public void execute_nameHiddenByFilter_success() {
-        // Carl is not on display, but naming him in full still deletes him.
+    public void execute_nameHiddenByFilter_searchesAllContacts() throws Exception {
         model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alice")));
-
-        assertDeletes(new DeleteCommand("Carl Kurz"), CARL);
+        assertConfirmedDeletion("Carl Kurz", CARL);
     }
 
     @Test
-    public void execute_severalMatches_showsNumberedListWithoutDeleting() {
-        DeleteCommand deleteCommand = new DeleteCommand("Meier");
-
-        String expectedMessage = "2 contacts found:\n"
-                + "1. Benson Meier \u2014 GovTech \u2014 johnd@example.com\n"
-                + "2. Daniel Meier \u2014 DBS \u2014 cornelia@example.com\n"
-                + "To delete one of them, enter the command again with its index in place of the name.";
-        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
-        expectedModel.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Meier")));
-
-        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
-    }
-
-    @Test
-    public void execute_severalMatchesThenIndex_deletesChosenPerson() throws Exception {
-        new DeleteCommand("Meier").execute(model);
+    public void execute_severalMatches_requiresSelectionThenConfirmation() throws Exception {
+        ContactFile original = new ContactFile(model.getContactFile());
+        CommandResult selection = new DeleteCommand("Meier").execute(model);
         assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        assertEquals(original, model.getContactFile());
+        assertTrue(selection.getFeedbackToUser().contains("2. Daniel Meier"));
 
-        new DeleteCommand(Index.fromOneBased(2)).execute(model);
+        PendingRequest request = selection.getPendingRequest().orElseThrow();
+        CommandResult invalid = request.respond("99", model);
+        assertEquals(original, model.getContactFile());
+        assertTrue(invalid.getPendingRequest().isPresent());
 
+        CommandResult confirmation = request.respond("2", model);
+        assertEquals(original, model.getContactFile());
+        assertTrue(confirmation.getFeedbackToUser().contains(Messages.format(DANIEL)));
+        confirmation.getPendingRequest().orElseThrow().respond("y", model);
         assertFalse(model.getContactFile().getPersonList().contains(DANIEL));
         assertTrue(model.getContactFile().getPersonList().contains(BENSON));
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_noMatch_failure() {
-        DeleteCommand deleteCommand = new DeleteCommand("Zed");
-
-        assertCommandFailure(deleteCommand, model,
+        assertCommandFailure(new DeleteCommand("Zed"), model,
                 String.format(PersonNameResolver.MESSAGE_NAME_NOT_FOUND, "Zed"));
     }
 
     @Test
     public void execute_emptyContactFile_failure() {
         Model emptyModel = new ModelManager(new ContactFile(), new UserPrefs());
-
         assertCommandFailure(new DeleteCommand("Alice Pauline"), emptyModel,
                 DeleteCommand.MESSAGE_EMPTY_CONTACT_FILE);
     }
 
     @Test
-    public void execute_byName_showsEveryRemainingContactAfterwards() throws Exception {
-        new DeleteCommand("Alice Pauline").execute(model);
-
-        // Resolving the name narrowed the list to Alice alone; once she is gone the full list is back.
-        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
-    }
-
-    @Test
     public void equals() {
-        DeleteCommand deleteAlice = new DeleteCommand("Alice");
-
-        assertTrue(deleteAlice.equals(new DeleteCommand("Alice")));
-        assertFalse(deleteAlice.equals(new DeleteCommand("Benson")));
-        assertFalse(deleteAlice.equals(new DeleteCommand(INDEX_FIRST_PERSON)));
-        assertFalse(deleteAlice.equals(null));
-        assertFalse(deleteAlice.equals(1));
+        DeleteCommand command = new DeleteCommand("Alice");
+        assertEquals(command, new DeleteCommand("Alice"));
+        assertFalse(command.equals(new DeleteCommand("Benson")));
+        assertFalse(command.equals(new DeleteCommand(INDEX_FIRST_PERSON)));
+        assertFalse(command.equals(null));
     }
 
     @Test
     public void toStringMethod() {
-        DeleteCommand deleteCommand = new DeleteCommand("Alice");
-        String expected = DeleteCommand.class.getCanonicalName() + "{targetIndex=null, targetName=Alice}";
-
-        assertEquals(expected, deleteCommand.toString());
+        assertEquals(DeleteCommand.class.getCanonicalName()
+                + "{targetIndex=null, targetName=Alice, targetPhone=null, targetEmails=[]}",
+                new DeleteCommand("Alice").toString());
     }
 
-    /**
-     * Asserts that {@code deleteCommand} removes {@code personToDelete} and reports it, leaving every
-     * remaining contact on display.
-     */
-    private void assertDeletes(DeleteCommand deleteCommand, Person personToDelete) {
-        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS,
-                Messages.format(personToDelete));
-        Model expectedModel = new ModelManager(new ContactFile(model.getContactFile()), new UserPrefs());
-        expectedModel.deletePerson(personToDelete);
-
-        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    private void assertConfirmedDeletion(String name, Person target) throws Exception {
+        ContactFile original = new ContactFile(model.getContactFile());
+        CommandResult preview = new DeleteCommand(name).execute(model);
+        assertEquals(original, model.getContactFile());
+        preview.getPendingRequest().orElseThrow().respond("y", model);
+        assertFalse(model.getContactFile().getPersonList().contains(target));
+        assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
     }
 }

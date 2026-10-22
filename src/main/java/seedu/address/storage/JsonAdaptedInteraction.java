@@ -14,6 +14,7 @@ import seedu.address.model.person.Interaction;
 class JsonAdaptedInteraction {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Interaction's %s field is missing!";
+    public static final String MESSAGE_FUTURE_DATE = "Interaction's date %1$s is in the future.";
 
     private final String date;
     private final String note;
@@ -31,14 +32,17 @@ class JsonAdaptedInteraction {
      * Converts a given {@code Interaction} into this class for Jackson use.
      */
     public JsonAdaptedInteraction(Interaction source) {
-        date = source.date.toString();
-        note = source.note;
+        date = source.getDate().toString();
+        note = source.getNote();
     }
 
     /**
      * Converts this Jackson-friendly adapted interaction into the model's {@code Interaction} object.
      *
-     * @throws IllegalValueException if the date or note is missing or invalid.
+     * Applies the same rules as {@code log}, so a hand-edited file cannot hold an interaction
+     * that could not have been logged.
+     *
+     * @throws IllegalValueException if the date or note is missing or invalid, or the date is in the future.
      */
     public Interaction toModelType() throws IllegalValueException {
         if (date == null) {
@@ -53,6 +57,10 @@ class JsonAdaptedInteraction {
         if (!Interaction.isValidNote(note)) {
             throw new IllegalValueException(Interaction.MESSAGE_NOTE_CONSTRAINTS);
         }
-        return new Interaction(LocalDate.parse(date.trim()), note);
+        LocalDate modelDate = LocalDate.parse(date.trim());
+        if (modelDate.isAfter(LocalDate.now())) {
+            throw new IllegalValueException(String.format(MESSAGE_FUTURE_DATE, modelDate));
+        }
+        return new Interaction(modelDate, note);
     }
 }

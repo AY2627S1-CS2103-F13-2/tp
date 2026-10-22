@@ -34,7 +34,7 @@ public class NoteContainsKeywordsPredicate implements Predicate<Person> {
      */
     public List<Interaction> matchingInteractions(Person person) {
         return person.getInteractions().stream()
-                .filter(interaction -> firstMatchIndex(interaction.note) >= 0)
+                .filter(interaction -> firstMatchIndex(interaction.getNote()) >= 0)
                 .toList();
     }
 
