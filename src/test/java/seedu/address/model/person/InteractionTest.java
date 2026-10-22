@@ -27,7 +27,7 @@ public class InteractionTest {
     @Test
     public void constructor_noteWithExtraSpaces_normalised() {
         assertEquals("Discussed backend internships",
-                new Interaction(DATE, "  Discussed   backend internships ").note);
+                new Interaction(DATE, "  Discussed   backend internships ").getNote());
     }
 
     @Test

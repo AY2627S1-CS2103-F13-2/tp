@@ -1,0 +1,26 @@
+digraph FieldOrder {
+  graph [rankdir=TB, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.4];
+  node [shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#5271a3", fontname="Arial", fontsize=12];
+  edge [fontname="Arial", fontsize=11, color="#43536b"];
+  input [label="order [complete field permutation]"];
+  query [shape=diamond, label="No arguments?"];
+  current [label="Display current order\nNo mutation or save", fillcolor="#e6f4ea"];
+  validate [shape=diamond, label="Every field exactly once?\nAll names recognized?"];
+  error [label="Show accepted fields\nPreserve preference and view", fillcolor="#fff4d9"];
+  same [shape=diamond, label="Same order?"];
+  unchanged [label="Report no changes needed\nNo save or refresh", fillcolor="#e6f4ea"];
+  apply [label="Snapshot preferences; apply observable order\nRefresh existing cards and viewed details"];
+  save [label="Write sibling temp; reload/compare\nAtomically replace preferences.json"];
+  success [label="Confirm order and display refreshed details\nNo contact-data mutation or save", fillcolor="#e6f4ea"];
+  rollback [label="On failure: retain old preference file\nRestore preference, cards, details, and filter", fillcolor="#fdecec"];
+  input -> query;
+  query -> current [label="yes"];
+  query -> validate [label="no"];
+  validate -> error [label="invalid"];
+  validate -> same [label="valid"];
+  same -> unchanged [label="yes"];
+  same -> apply [label="no"];
+  apply -> save;
+  save -> success [label="saved"];
+  save -> rollback [label="failed"];
+}
