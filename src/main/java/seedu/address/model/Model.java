@@ -3,6 +3,7 @@ package seedu.address.model;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.Person;
@@ -11,7 +12,9 @@ import seedu.address.model.person.Person;
  * The API of the Model component.
  */
 public interface Model {
-    /** {@code Predicate} that always evaluates to true */
+    /**
+     * Matches every contact.
+     */
     Predicate<Person> PREDICATE_SHOW_ALL_PERSONS = unused -> true;
 
     /**
@@ -45,11 +48,33 @@ public interface Model {
     void removeCommandAlias(String shortcut);
 
     /**
+     * Replaces all command shortcuts with {@code commandAliases}.
+     */
+    void setCommandAliases(Map<String, String> commandAliases);
+
+    /**
+     * Returns the global contact display order.
+     */
+    FieldOrder getFieldOrder();
+
+    /**
+     * Sets the global display order and notifies bound views.
+     */
+    void setFieldOrder(FieldOrder fieldOrder);
+
+    /**
+     * Returns the observable display order without exposing a writable property.
+     */
+    ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty();
+
+    /**
      * Replaces contact file data with the data in {@code contactFile}.
      */
     void setContactFile(ReadOnlyContactFile contactFile);
 
-    /** Returns the ContactFile */
+    /**
+     * Returns the contact file.
+     */
     ReadOnlyContactFile getContactFile();
 
     /**
@@ -58,7 +83,7 @@ public interface Model {
     boolean hasPerson(Person person);
 
     /**
-     * Return true if a person with the same phone as {@code person} exists in the address book.
+     * Returns true if a person with the same phone as {@code person} exists in the contact file.
      */
     boolean hasPhone(Person person);
 
@@ -86,11 +111,19 @@ public interface Model {
      */
     void setPerson(Person target, Person editedPerson);
 
-    /** Returns an unmodifiable view of the filtered person list */
+    /**
+     * Returns an unmodifiable view of the filtered person list.
+     */
     ObservableList<Person> getFilteredPersonList();
 
     /**
+     * Returns the active display predicate, or null when the list has no filter.
+     */
+    Predicate<Person> getPersonFilter();
+
+    /**
      * Updates the filter of the filtered person list to filter by the given {@code predicate}.
+     *
      * @throws NullPointerException if {@code predicate} is null.
      */
     void updateFilteredPersonList(Predicate<Person> predicate);

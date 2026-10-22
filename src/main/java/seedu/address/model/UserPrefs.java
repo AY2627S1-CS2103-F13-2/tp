@@ -15,6 +15,7 @@ import seedu.address.commons.core.GuiSettings;
 public class UserPrefs implements ReadOnlyUserPrefs {
 
     private GuiSettings guiSettings = new GuiSettings();
+    private FieldOrder fieldOrder = FieldOrder.DEFAULT;
     private Map<String, String> commandAliases = new TreeMap<>();
 
     /**
@@ -28,6 +29,7 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     public UserPrefs(ReadOnlyUserPrefs userPrefs) {
         requireNonNull(userPrefs);
         setGuiSettings(userPrefs.getGuiSettings());
+        setFieldOrder(userPrefs.getFieldOrder());
         setCommandAliases(userPrefs.getCommandAliases());
     }
 
@@ -40,9 +42,18 @@ public class UserPrefs implements ReadOnlyUserPrefs {
         this.guiSettings = guiSettings;
     }
 
+    public FieldOrder getFieldOrder() {
+        return fieldOrder;
+    }
+
+    public void setFieldOrder(FieldOrder fieldOrder) {
+        this.fieldOrder = requireNonNull(fieldOrder);
+    }
+
     @Override
     public Map<String, String> getCommandAliases() {
-        // A preferences file with "commandAliases": null is treated as having no shortcuts.
+        // A preferences file with "commandAliases": null is treated as having no shortcuts. Entries are
+        // checked against the alias rules when Logic starts (see AliasCommandParser#validAliases).
         return commandAliases == null ? Map.of() : Collections.unmodifiableMap(commandAliases);
     }
 
@@ -86,18 +97,19 @@ public class UserPrefs implements ReadOnlyUserPrefs {
             return false;
         }
 
-        return guiSettings.equals(otherUserPrefs.guiSettings)
+        return guiSettings.equals(otherUserPrefs.guiSettings) && fieldOrder.equals(otherUserPrefs.fieldOrder)
                 && getCommandAliases().equals(otherUserPrefs.getCommandAliases());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(guiSettings, getCommandAliases());
+        return Objects.hash(guiSettings, fieldOrder, getCommandAliases());
     }
 
     @Override
     public String toString() {
-        return "Gui Settings : " + guiSettings + "\nCommand Aliases : " + getCommandAliases();
+        return "Gui Settings : " + guiSettings + "; Field Order : " + fieldOrder
+                + "; Command Aliases : " + getCommandAliases();
     }
 
 }

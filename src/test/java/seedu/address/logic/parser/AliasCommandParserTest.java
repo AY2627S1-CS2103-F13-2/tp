@@ -12,7 +12,7 @@ public class AliasCommandParserTest {
 
     private static final String INVALID_FORMAT =
             String.format(MESSAGE_INVALID_COMMAND_FORMAT, AliasCommand.MESSAGE_USAGE);
-    private static final String TARGETS = "add, edit, delete, view, clear, find, list, exit, help";
+    private static final String TARGETS = String.join(", ", ContactFileParser.targetCommandWords());
 
     private final AliasCommandParser parser = new AliasCommandParser();
 

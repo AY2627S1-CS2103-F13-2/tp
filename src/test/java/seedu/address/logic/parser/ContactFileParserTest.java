@@ -24,6 +24,9 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.StarredCommand;
+import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -35,6 +38,47 @@ import seedu.address.testutil.PersonUtil;
 public class ContactFileParserTest {
 
     private final ContactFileParser parser = new ContactFileParser();
+
+    @Test
+    public void parseCommand_starred() throws Exception {
+        assertTrue(parser.parseCommand(StarredCommand.COMMAND_WORD) instanceof StarredCommand);
+    }
+
+    @Test
+    public void parseCommand_starredWithWhitespace_returnsStarredCommand() throws Exception {
+        assertTrue(parser.parseCommand("  starred  ") instanceof StarredCommand);
+    }
+
+    @Test
+    public void parseCommand_starredWithArguments_ignoresArgumentsLikeList() throws Exception {
+        assertTrue(parser.parseCommand(StarredCommand.COMMAND_WORD + " 3") instanceof StarredCommand);
+    }
+
+    @Test
+    public void parseCommand_star() throws Exception {
+        assertEquals(new StarCommand(INDEX_FIRST_PERSON), parser.parseCommand("star 1"));
+    }
+
+    @Test
+    public void parseCommand_unstar() throws Exception {
+        assertEquals(new UnstarCommand(INDEX_FIRST_PERSON), parser.parseCommand("unstar 1"));
+    }
+
+    @Test
+    public void parseCommand_starInvalidArguments_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, StarCommand.MESSAGE_USAGE);
+        for (String input : List.of("star", "star 0", "star 1 2")) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
+    public void parseCommand_unstarInvalidArguments_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, UnstarCommand.MESSAGE_USAGE);
+        for (String input : List.of("unstar", "unstar 0", "unstar 1 2")) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+        }
+    }
 
     @Test
     public void parseCommand_add() throws Exception {
@@ -136,6 +180,7 @@ public class ContactFileParserTest {
         assertEquals(
                 new ViewCommand(Index.fromOneBased(1)),
                 parser.parseCommand(ViewCommand.COMMAND_WORD + " 1"));
+        assertEquals(new ViewCommand("Alice Pauline"), parser.parseCommand("view Alice Pauline"));
     }
 
     @Test
@@ -149,5 +194,15 @@ public class ContactFileParserTest {
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+    }
+
+    @Test
+    public void isBuiltInCommandWord_everyParsedCommand_true() {
+        // Every command the parser runs is a built-in word, so a shortcut can never hide it.
+        for (String word : List.of("add", "edit", "delete", "view", "star", "unstar", "starred", "clear", "filter",
+                "find", "followup", "order", "list", "exit", "help", "alias")) {
+            assertTrue(ContactFileParser.isBuiltInCommandWord(word), word);
+        }
+        assertEquals("filter t/work", ContactFileParser.expandShortcut("filter t/work", Map.of("filter", "list")));
     }
 }

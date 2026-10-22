@@ -14,11 +14,14 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
+import seedu.address.model.FieldOrder;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
@@ -191,6 +194,21 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public FieldOrder getFieldOrder() {
+            return FieldOrder.DEFAULT;
+        }
+
+        @Override
+        public void setFieldOrder(FieldOrder fieldOrder) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty() {
+            return new ReadOnlyObjectWrapper<>(FieldOrder.DEFAULT).getReadOnlyProperty();
+        }
+
+        @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");
         }
@@ -221,6 +239,11 @@ public class AddCommandTest {
         }
 
         @Override
+        public void setCommandAliases(Map<String, String> commandAliases) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public void addPerson(Person person) {
             throw new AssertionError("This method should not be called.");
         }
@@ -247,7 +270,8 @@ public class AddCommandTest {
 
         @Override
         public boolean hasPhone(Person person) {
-            throw new AssertionError("This method should not be called"); }
+            throw new AssertionError("This method should not be called.");
+        }
 
         @Override
         public void deletePerson(Person target) {
@@ -261,6 +285,11 @@ public class AddCommandTest {
 
         @Override
         public ObservableList<Person> getFilteredPersonList() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Predicate<Person> getPersonFilter() {
             throw new AssertionError("This method should not be called.");
         }
 

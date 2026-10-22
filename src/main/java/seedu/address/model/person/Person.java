@@ -2,8 +2,10 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -13,8 +15,8 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the contact file.
- * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
- * Every other field is optional and may be absent.
+ * Guarantees: the name, tag set, and ordered action list are present and immutable.
+ * Contact details other than the name are optional; all field values are validated.
  */
 public class Person {
 
@@ -28,6 +30,8 @@ public class Person {
     private final Email email;
     private final Linkedin linkedin;
     private final Set<Tag> tags = new HashSet<>();
+    private final List<FollowUp> followUps;
+    private final boolean starred;
 
     /**
      * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
@@ -36,6 +40,37 @@ public class Person {
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
             Set<Tag> tags) {
+        this(name, company, role, phone, email, linkedin, tags, List.of());
+    }
+
+    /**
+     * Creates a contact with an ordered immutable action list whose IDs are unique.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, List<FollowUp> followUps) {
+        this(name, company, role, phone, email, linkedin, tags, followUps, false);
+    }
+
+    /**
+     * Creates a contact with the given starred status and no action history.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, boolean starred) {
+        this(name, company, role, phone, email, linkedin, tags, List.of(), starred);
+    }
+
+    /**
+     * Creates a contact retaining both starred status and ordered action history.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, List<FollowUp> followUps, boolean starred) {
+        this.followUps = List.copyOf(followUps);
+        Set<Integer> actionIds = new HashSet<>();
+        for (FollowUp action : this.followUps) {
+            if (!actionIds.add(action.getId())) {
+                throw new IllegalArgumentException("Follow-up IDs must be unique within a contact.");
+            }
+        }
         requireNonNull(name);
         requireNonNull(tags);
         this.name = name;
@@ -45,6 +80,7 @@ public class Person {
         this.email = email;
         this.linkedin = linkedin;
         this.tags.addAll(tags);
+        this.starred = starred;
     }
 
     public Name getName() {
@@ -79,6 +115,30 @@ public class Person {
         return Collections.unmodifiableSet(tags);
     }
 
+    public boolean isStarred() {
+        return starred;
+    }
+
+    /**
+     * Returns a copy with the requested starred status, retaining all contact data and actions.
+     */
+    public Person withStarred(boolean starred) {
+        return new Person(name, company, role, phone, email, linkedin, tags, followUps, starred);
+    }
+
+    public List<FollowUp> getFollowUps() {
+        return followUps;
+    }
+
+    /**
+     * Returns a copy with the action appended, retaining all existing fields and action order.
+     */
+    public Person appendFollowUp(FollowUp action) {
+        List<FollowUp> updatedActions = new ArrayList<>(followUps);
+        updatedActions.add(requireNonNull(action));
+        return new Person(name, company, role, phone, email, linkedin, tags, updatedActions, starred);
+    }
+
     /**
      * Returns true if both persons have the same name and both have an email or both do not.
      * This defines a weaker notion of equality between two persons.
@@ -94,15 +154,12 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same phone.
-     * Phone number is normalised before checking
+     * Returns true if both persons have a phone and their normalized numbers match.
      */
     public boolean hasSamePhone(Person otherPerson) {
-        if (otherPerson == this) {
-            return true;
-        }
-
         return otherPerson != null
+                && getPhone().isPresent()
+                && otherPerson.getPhone().isPresent()
                 && otherPerson.getPhone().equals(getPhone());
     }
 
@@ -110,14 +167,10 @@ public class Person {
      * Returns true if both persons have the same email.
      */
     public boolean hasSameEmail(Person otherPerson) {
-        if (otherPerson == this) {
-            return true;
-        }
-
         return otherPerson != null
                 && getEmail().isPresent()
                 && otherPerson.getEmail().isPresent()
-                && otherPerson.getEmail().orElseThrow().value.equalsIgnoreCase(getEmail().orElseThrow().value);
+                && getEmail().orElseThrow().matches(otherPerson.getEmail().orElseThrow().value);
     }
 
     /**
@@ -141,13 +194,15 @@ public class Person {
                 && Objects.equals(phone, otherPerson.phone)
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && followUps.equals(otherPerson.followUps)
+                && starred == otherPerson.starred;
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags);
+        return Objects.hash(name, company, role, phone, email, linkedin, tags, followUps, starred);
     }
 
     @Override
@@ -160,6 +215,8 @@ public class Person {
                 .add("email", email)
                 .add("linkedin", linkedin)
                 .add("tags", tags)
+                .add("followUps", followUps)
+                .add("starred", starred)
                 .toString();
     }
 

@@ -17,6 +17,7 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +30,14 @@ import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
+import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
@@ -107,6 +111,19 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_shortcutNeedingConfirmation_keepsPendingRequest() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("alias dl delete");
+
+        CommandResult result = logic.execute("dl 1");
+
+        assertTrue(result.getPendingRequest().isPresent());
+        assertTrue(result.getFeedbackToUser().startsWith("Ran: delete 1\n"));
+        logic.execute("y");
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
+    }
+
+    @Test
     public void execute_shortcutThatFails_errorShowsExpandedCommand() throws Exception {
         logic.execute("alias dl delete");
         assertThrows(CommandException.class, "Ran: delete 9\n" + DeleteCommand.MESSAGE_EMPTY_CONTACT_FILE, () ->
@@ -117,9 +134,66 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_shortcut_contactFileNotWritten() throws Exception {
+        logic.execute("alias ls list");
+        assertFalse(temporaryFolder.resolve("contactFile.json").toFile().exists());
+    }
+
+    @Test
+    public void execute_shortcutPrefsSaveFails_shortcutNotKept() {
+        JsonUserPrefsStorage failingPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json")) {
+                    @Override
+                    public void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException {
+                        throw DUMMY_IO_EXCEPTION;
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(
+                new JsonContactFileStorage(temporaryFolder.resolve("contactFile.json")), failingPrefsStorage));
+
+        assertThrows(CommandException.class, () -> logic.execute("alias ls list"));
+        assertEquals(Map.of(), model.getCommandAliases());
+    }
+
+    @Test
+    public void constructor_invalidShortcutsInPrefs_droppedAndNormalised() throws Exception {
+        Map<String, String> loaded = new HashMap<>();
+        loaded.put("FN", "find /notes");
+        loaded.put("list", "clear");
+        loaded.put("bad", "search x");
+        loaded.put("empty", null);
+        model.setCommandAliases(loaded);
+
+        logic = new LogicManager(model, new StorageManager(
+                new JsonContactFileStorage(temporaryFolder.resolve("contactFile.json")),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        assertEquals(Map.of("fn", "find /notes"), model.getCommandAliases());
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("list").getFeedbackToUser());
+    }
+
+    @Test
     public void execute_commandWithoutShortcutChange_prefsFileNotWritten() throws Exception {
         logic.execute(ListCommand.COMMAND_WORD);
         assertFalse(temporaryFolder.resolve("userPrefs.json").toFile().exists());
+    }
+
+    @Test
+    public void execute_starAndUnstar_persistsStatusThroughSaveFlow() throws Exception {
+        model.addPerson(AMY);
+        JsonContactFileStorage savedContacts =
+                new JsonContactFileStorage(temporaryFolder.resolve("contactFile.json"));
+        Person starredAmy = new PersonBuilder(AMY).withStarred(true).build();
+
+        assertEquals(String.format(StarCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("star 1").getFeedbackToUser());
+        assertEquals(starredAmy, model.getFilteredPersonList().getFirst());
+        assertEquals(starredAmy, savedContacts.readContactFile().orElseThrow().getPersonList().getFirst());
+
+        assertEquals(String.format(UnstarCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("unstar 1").getFeedbackToUser());
+        assertEquals(AMY, model.getFilteredPersonList().getFirst());
+        assertEquals(AMY, savedContacts.readContactFile().orElseThrow().getPersonList().getFirst());
     }
 
     @Test
@@ -218,9 +292,7 @@ public class LogicManagerTest {
         // Triggers the saveContactFile method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY
                 + PHONE_DESC_AMY + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
         ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
     }
 }

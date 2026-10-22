@@ -11,6 +11,8 @@ public interface ReadOnlyUserPrefs {
 
     GuiSettings getGuiSettings();
 
+    FieldOrder getFieldOrder();
+
     /**
      * Returns the command shortcuts, mapping each shortcut name to the command it stands for.
      */

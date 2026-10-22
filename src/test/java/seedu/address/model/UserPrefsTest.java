@@ -43,8 +43,8 @@ public class UserPrefsTest {
     public void toStringMethod() {
         UserPrefs userPrefs = new UserPrefs();
         userPrefs.setCommandAliases(Map.of("fn", "find /notes"));
-        assertEquals("Gui Settings : " + userPrefs.getGuiSettings() + "\nCommand Aliases : {fn=find /notes}",
-                userPrefs.toString());
+        assertEquals("Gui Settings : " + userPrefs.getGuiSettings() + "; Field Order : " + userPrefs.getFieldOrder()
+                + "; Command Aliases : {fn=find /notes}", userPrefs.toString());
     }
 
 }

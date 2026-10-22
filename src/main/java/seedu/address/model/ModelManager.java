@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import seedu.address.commons.core.GuiSettings;
@@ -22,6 +24,7 @@ public class ModelManager implements Model {
     private final ContactFile contactFile;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final ReadOnlyObjectWrapper<FieldOrder> fieldOrder;
 
     /**
      * Initializes a ModelManager with the given contactFile and userPrefs.
@@ -33,9 +36,13 @@ public class ModelManager implements Model {
 
         this.contactFile = new ContactFile(contactFile);
         this.userPrefs = new UserPrefs(userPrefs);
+        fieldOrder = new ReadOnlyObjectWrapper<>(this.userPrefs.getFieldOrder());
         filteredPersons = new FilteredList<>(this.contactFile.getPersonList());
     }
 
+    /**
+     * Creates an empty model with default preferences.
+     */
     public ModelManager() {
         this(new ContactFile(), new UserPrefs());
     }
@@ -73,6 +80,28 @@ public class ModelManager implements Model {
     public void removeCommandAlias(String shortcut) {
         requireNonNull(shortcut);
         userPrefs.removeCommandAlias(shortcut);
+    }
+
+    @Override
+    public void setCommandAliases(Map<String, String> commandAliases) {
+        requireNonNull(commandAliases);
+        userPrefs.setCommandAliases(commandAliases);
+    }
+
+    @Override
+    public FieldOrder getFieldOrder() {
+        return fieldOrder.get();
+    }
+
+    @Override
+    public void setFieldOrder(FieldOrder order) {
+        userPrefs.setFieldOrder(requireNonNull(order));
+        fieldOrder.set(order);
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty() {
+        return fieldOrder.getReadOnlyProperty();
     }
 
     //=========== ContactFile ================================================================================
@@ -130,6 +159,12 @@ public class ModelManager implements Model {
     @Override
     public ObservableList<Person> getFilteredPersonList() {
         return filteredPersons;
+    }
+
+    @Override
+    public Predicate<Person> getPersonFilter() {
+        Predicate<? super Person> predicate = filteredPersons.getPredicate();
+        return predicate == null ? null : predicate::test;
     }
 
     @Override
