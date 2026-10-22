@@ -57,6 +57,66 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_starEditAndUnstar_preservesHistoryAcrossReloadAndStartup() throws Exception {
+        Person original = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING),
+                new FollowUp(2, "Call", FollowUp.Status.COMPLETED)).build();
+        model.setPerson(ALICE, original);
+        logic.execute("find Alice");
+        logic.execute("star 1");
+        assertEquals(original.withStarred(true), model.getFilteredPersonList().getFirst());
+        assertEquals(original.withStarred(true), storage.readContactFile().orElseThrow().getPersonList().getFirst());
+        logic.execute("edit 1 p/76543210");
+        Person edited = new PersonBuilder(original).withStarred(true).withPhone("76543210").build();
+        assertEquals(edited, model.getFilteredPersonList().getFirst());
+        assertEquals(edited, storage.loadForStartup().contacts().getFirst());
+        logic.execute("unstar 1");
+        assertEquals(edited.withStarred(false), storage.readContactFile().orElseThrow().getPersonList().getFirst());
+        assertEquals(original.getFollowUps(), model.getFilteredPersonList().getFirst().getFollowUps());
+        assertEquals(3, storage.saveCount);
+    }
+
+    @Test
+    void execute_followUpOnStarredContact_retainsStarAndSkipsNoOpSaves() throws Exception {
+        logic.execute("star 1");
+        logic.execute("followup 1 a/Send portfolio");
+        Person updated = model.getFilteredPersonList().getFirst();
+        assertTrue(updated.isStarred());
+        assertEquals(List.of(new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING)), updated.getFollowUps());
+        assertEquals(updated, storage.loadForStartup().contacts().getFirst());
+        byte[] saved = Files.readAllBytes(file);
+        logic.execute("star 1");
+        logic.execute("view 1");
+        assertEquals(2, storage.saveCount);
+        assertArrayEquals(saved, Files.readAllBytes(file));
+        logic.execute("unstar 1");
+        logic.execute("unstar 1");
+        assertEquals(3, storage.saveCount);
+    }
+
+    @Test
+    void execute_failedStarAndUnstar_restoresHistoryFilterAndFile() throws Exception {
+        Person original = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(7, "Send portfolio", FollowUp.Status.PENDING)).build();
+        model.setPerson(ALICE, original);
+        logic.execute("find Alice");
+        storage.saveContactFile(model.getContactFile());
+        for (boolean starred : List.of(false, true)) {
+            storage.shouldFail = false;
+            if (starred) {
+                logic.execute("star 1");
+            }
+            byte[] saved = Files.readAllBytes(file);
+            ContactFile before = new ContactFile(model.getContactFile());
+            storage.shouldFail = true;
+            assertThrows(CommandException.class, () -> logic.execute(starred ? "unstar 1" : "star 1"));
+            assertEquals(before, model.getContactFile());
+            assertEquals(List.of(original.withStarred(starred)), model.getFilteredPersonList());
+            assertArrayEquals(saved, Files.readAllBytes(file));
+        }
+    }
+
+    @Test
     void execute_newAction_savesOnceAndDisplaysUpdatedOrderedList() throws Exception {
         List<Person> original = List.copyOf(model.getContactFile().getPersonList());
         CommandResult result = logic.execute("followup 1 a/  Send portfolio  ");

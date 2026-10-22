@@ -29,8 +29,6 @@ public class ContactFieldPredicate implements Predicate<Person> {
     /**
      * Creates a predicate for the specified contact field and query.
      *
-     * @param field field to search
-     * @param query value to search for
      * @param field Field to search.
      * @param query Normalized value to search for.
      */
@@ -51,7 +49,7 @@ public class ContactFieldPredicate implements Predicate<Person> {
 
         if (field == Field.EMAIL) {
             return person.getEmail()
-                    .map(email -> email.value.equalsIgnoreCase(query))
+                    .map(email -> email.matches(query))
                     .orElse(false);
         }
 
@@ -63,8 +61,6 @@ public class ContactFieldPredicate implements Predicate<Person> {
 
         return person.getRole()
                 .map(role -> containsIgnoreCase(role.value))
-        return person.getEmail()
-                .map(email -> email.matches(query))
                 .orElse(false);
     }
 

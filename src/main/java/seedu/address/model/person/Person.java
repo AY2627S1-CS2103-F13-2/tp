@@ -31,6 +31,7 @@ public class Person {
     private final Linkedin linkedin;
     private final Set<Tag> tags = new HashSet<>();
     private final List<FollowUp> followUps;
+    private final boolean starred;
 
     /**
      * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
@@ -47,6 +48,22 @@ public class Person {
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
             Set<Tag> tags, List<FollowUp> followUps) {
+        this(name, company, role, phone, email, linkedin, tags, followUps, false);
+    }
+
+    /**
+     * Creates a contact with the given starred status and no action history.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, boolean starred) {
+        this(name, company, role, phone, email, linkedin, tags, List.of(), starred);
+    }
+
+    /**
+     * Creates a contact retaining both starred status and ordered action history.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, List<FollowUp> followUps, boolean starred) {
         this.followUps = List.copyOf(followUps);
         Set<Integer> actionIds = new HashSet<>();
         for (FollowUp action : this.followUps) {
@@ -63,6 +80,7 @@ public class Person {
         this.email = email;
         this.linkedin = linkedin;
         this.tags.addAll(tags);
+        this.starred = starred;
     }
 
     public Name getName() {
@@ -97,6 +115,17 @@ public class Person {
         return Collections.unmodifiableSet(tags);
     }
 
+    public boolean isStarred() {
+        return starred;
+    }
+
+    /**
+     * Returns a copy with the requested starred status, retaining all contact data and actions.
+     */
+    public Person withStarred(boolean starred) {
+        return new Person(name, company, role, phone, email, linkedin, tags, followUps, starred);
+    }
+
     public List<FollowUp> getFollowUps() {
         return followUps;
     }
@@ -107,7 +136,7 @@ public class Person {
     public Person appendFollowUp(FollowUp action) {
         List<FollowUp> updatedActions = new ArrayList<>(followUps);
         updatedActions.add(requireNonNull(action));
-        return new Person(name, company, role, phone, email, linkedin, tags, updatedActions);
+        return new Person(name, company, role, phone, email, linkedin, tags, updatedActions, starred);
     }
 
     /**
@@ -166,13 +195,14 @@ public class Person {
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
                 && tags.equals(otherPerson.tags)
-                && followUps.equals(otherPerson.followUps);
+                && followUps.equals(otherPerson.followUps)
+                && starred == otherPerson.starred;
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, tags, followUps);
+        return Objects.hash(name, company, role, phone, email, linkedin, tags, followUps, starred);
     }
 
     @Override
@@ -186,6 +216,7 @@ public class Person {
                 .add("linkedin", linkedin)
                 .add("tags", tags)
                 .add("followUps", followUps)
+                .add("starred", starred)
                 .toString();
     }
 

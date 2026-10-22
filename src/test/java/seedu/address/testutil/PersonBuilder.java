@@ -35,6 +35,7 @@ public class PersonBuilder {
     private Linkedin linkedin;
     private Set<Tag> tags;
     private List<FollowUp> followUps = List.of();
+    private boolean starred;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -61,6 +62,7 @@ public class PersonBuilder {
         linkedin = personToCopy.getLinkedin().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
         followUps = personToCopy.getFollowUps();
+        starred = personToCopy.isStarred();
     }
 
     /**
@@ -133,10 +135,18 @@ public class PersonBuilder {
     }
 
     /**
+     * Sets the starred status of the contact being built.
+     */
+    public PersonBuilder withStarred(boolean starred) {
+        this.starred = starred;
+        return this;
+    }
+
+    /**
      * Builds an immutable contact with the selected details and actions.
      */
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, tags, followUps);
+        return new Person(name, company, role, phone, email, linkedin, tags, followUps, starred);
     }
 
 }

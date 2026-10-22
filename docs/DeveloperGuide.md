@@ -254,6 +254,14 @@ is `docs/diagrams/TagFilterActivityDiagram.dot`.
 
 ![Filtering contacts by tags](images/TagFilterActivityDiagram.svg)
 
+### Starred status and follow-up integration (UC21)
+
+`Person.withStarred(boolean)` copies every contact field and the complete ordered
+follow-up history. Appending a follow-up and editing contact details retain the
+starred flag. Strong equality and hashing include both metadata fields, so Logic
+saves actual changes and rolls both back together on storage failure. JSON stores
+both fields; older files default to unstarred contacts with empty action history.
+
 ### Follow-up actions (UC16)
 
 `Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
