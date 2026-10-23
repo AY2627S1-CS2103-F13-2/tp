@@ -90,7 +90,7 @@ public class StarCommandTest {
 
     @Test
     public void constructor_nullIndex_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new StarCommand(null));
+        assertThrows(NullPointerException.class, () -> new StarCommand((Index) null));
     }
 
     @Test

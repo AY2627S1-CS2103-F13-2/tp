@@ -138,7 +138,7 @@ Format: `list`
 
 Marks a contact as important so you can retrieve it later with `starred`.
 
-Format: `star INDEX`
+Format: `star INDEX` or `star QUERY`
 
 * `INDEX` must be a positive integer from the currently displayed list.
 * If the contact is already starred, Astra reports that status without changing contact data.
@@ -146,11 +146,22 @@ Format: `star INDEX`
 
 Example: `find Betsy` followed by `star 1` stars the 1st search result.
 
+Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`](#locating-persons-find): a name, `/contact PHONE_NUMBER`, or `/email EMAIL`.
+
+* Queries search all contacts and replace the current displayed filter with the search results.
+* One match: the contact's starred status is updated. If it already has the requested status, Astra reports this without changing contact data.
+* Multiple matches: Astra displays the results without changing any contacts and asks you to retry with `star INDEX` or `unstar INDEX`.
+* No matches: Astra displays an empty list and reports `Contact not found.`
+* Numeric input is treated as an index. As with other index commands, input beginning with an integer must be a single positive index.
+
+Examples: `star Alex`, `star /contact 87438807`, and `unstar /email alex@example.com`.
+
+
 ### Removing a contact's star: `unstar`
 
 Removes a contact's starred status.
 
-Format: `unstar INDEX`
+Format: `unstar INDEX` or `unstar QUERY`
 
 * `INDEX` must be a positive integer from the currently displayed list.
 * If the contact is not starred, Astra reports that status without changing contact data.
@@ -591,7 +602,7 @@ Action | Format, Examples
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
-**Star** | `star INDEX`<br> e.g., `star 2`
-**Unstar** | `unstar INDEX`<br> e.g., `unstar 1`
+**Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
+**Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`
 **Help** | `help`
