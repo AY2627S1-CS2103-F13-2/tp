@@ -86,6 +86,9 @@ public class Person {
                 null, tags, Set.of(), List.of(), starred);
     }
 
+    /**
+     * Constructs a person with introducer and follow-ups but without events.
+     */
     public Person(Name name, Company company, Role role, Phone phone, Email email,
             Linkedin linkedin, Name introducer, Set<Tag> tags, List<FollowUp> followUps,
             boolean starred) {
