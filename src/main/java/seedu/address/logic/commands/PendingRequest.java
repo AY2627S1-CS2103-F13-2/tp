@@ -9,6 +9,21 @@ import seedu.address.model.Model;
 public interface PendingRequest {
 
     /**
+     * Returns whether replies only inspect data, so rollback must not undo changes made since the prompt was shown.
+     */
+    default boolean isReadOnly() {
+        return false;
+    }
+
+    /**
+     * Returns whether this reply should leave the request and be parsed as a normal command.
+     * Cancellation words are handled by Logic before this method is called.
+     */
+    default boolean shouldRunAsCommand(String response) {
+        return false;
+    }
+
+    /**
      * Returns the instructions to display while this request is pending.
      */
     String getPrompt();

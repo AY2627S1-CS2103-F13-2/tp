@@ -1,5 +1,8 @@
 package seedu.address.storage;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,16 +19,19 @@ class JsonAdaptedFollowUp {
     private final JsonNode id;
     private final JsonNode description;
     private final JsonNode status;
+    private final JsonNode dueDate;
 
     /**
      * Creates an adapted action from raw JSON fields for validation.
      */
     @JsonCreator
     public JsonAdaptedFollowUp(@JsonProperty("id") JsonNode id,
-            @JsonProperty("description") JsonNode description, @JsonProperty("status") JsonNode status) {
+            @JsonProperty("description") JsonNode description, @JsonProperty("status") JsonNode status,
+            @JsonProperty("dueDate") JsonNode dueDate) {
         this.id = id;
         this.description = description;
         this.status = status;
+        this.dueDate = dueDate;
     }
 
     /**
@@ -35,6 +41,7 @@ class JsonAdaptedFollowUp {
         id = IntNode.valueOf(source.getId());
         description = TextNode.valueOf(source.getDescription());
         status = TextNode.valueOf(source.getStatus().name());
+        dueDate = source.getDueDate().map(date -> TextNode.valueOf(date.toString())).orElse(null);
     }
 
     /**
@@ -59,6 +66,17 @@ class JsonAdaptedFollowUp {
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException("Follow-up status must be PENDING or COMPLETED.");
         }
-        return new FollowUp(id.intValue(), description.textValue(), modelStatus);
+        LocalDate modelDueDate = null;
+        if (dueDate != null && !dueDate.isNull()) {
+            if (!dueDate.isTextual()) {
+                throw new IllegalValueException("Follow-up due date must be a valid ISO date (yyyy-MM-dd).");
+            }
+            try {
+                modelDueDate = LocalDate.parse(dueDate.textValue());
+            } catch (DateTimeParseException e) {
+                throw new IllegalValueException("Follow-up due date must be a valid ISO date (yyyy-MM-dd).");
+            }
+        }
+        return new FollowUp(id.intValue(), description.textValue(), modelStatus, modelDueDate);
     }
 }
