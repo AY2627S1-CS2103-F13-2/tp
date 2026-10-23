@@ -14,11 +14,13 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
@@ -35,6 +37,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.ContactFileBuilder;
 import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
@@ -107,8 +110,94 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_storageThrowsRuntimeException_restoresModel() {
+        JsonContactFileStorage contactFileStorage =
+                new JsonContactFileStorage(temporaryFolder.resolve("RuntimeExceptionContactFile.json")) {
+                    @Override
+                    public void saveContactFile(ReadOnlyContactFile contactFile) {
+                        throw new IllegalStateException("dummy runtime exception");
+                    }
+                };
+        StorageManager storage = new StorageManager(contactFileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("RuntimeExceptionUserPrefs.json")));
+        logic = new LogicManager(model, storage);
+
+        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY
+                + PHONE_DESC_AMY + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY;
+
+        assertThrows(IllegalStateException.class, () -> logic.execute(addCommand));
+        assertEquals(new ModelManager(), model);
+    }
+
+    @Test
+    public void execute_dropConfirmationAcceptsYesAndNo() throws Exception {
+        Person person = new PersonBuilder().withTags("outdated", "keep").build();
+        model = new ModelManager(new ContactFileBuilder().withPerson(person).build(), new UserPrefs());
+        AtomicInteger saveCount = new AtomicInteger();
+        JsonContactFileStorage countingStorage = new JsonContactFileStorage(temporaryFolder.resolve("contacts.json")) {
+            @Override
+            public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+                saveCount.incrementAndGet();
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(countingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        String preview = "Remove the following detail(s) from " + person.getName() + "?\n"
+                + "- tag: outdated\nConfirm? (y/n; cancel to stop)";
+        assertEquals(preview, logic.execute("drop 1 t/outdated").getFeedbackToUser());
+        assertEquals("Request cancelled. No contacts changed.", logic.execute("n").getFeedbackToUser());
+
+        assertEquals(0, saveCount.get());
+        assertEquals(person, model.getContactFile().getPersonList().getFirst());
+
+        assertEquals(preview, logic.execute("drop 1 t/outdated").getFeedbackToUser());
+        logic.execute("y");
+        assertEquals(1, saveCount.get());
+        assertEquals(new PersonBuilder(person).withTags("keep").build(),
+                model.getContactFile().getPersonList().getFirst());
+    }
+
+    @Test
+    public void execute_introduceReplacementConfirmationAcceptsYesAndNo() throws Exception {
+        Person person = new PersonBuilder().withName("Jane Doe").withIntroducer("Old Introducer").build();
+        model = new ModelManager(new ContactFileBuilder().withPerson(person).build(), new UserPrefs());
+        AtomicInteger saveCount = new AtomicInteger();
+        JsonContactFileStorage countingStorage = new JsonContactFileStorage(temporaryFolder.resolve("contacts.json")) {
+            @Override
+            public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+                saveCount.incrementAndGet();
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(countingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        String preview = "The existing introducer for Jane Doe is Old Introducer. Replace it with New Introducer?"
+                + "\nConfirm? (y/n; cancel to stop)";
+        assertEquals(preview, logic.execute("introduce 1 i/New Introducer").getFeedbackToUser());
+        assertEquals("Request cancelled. No contacts changed.", logic.execute("n").getFeedbackToUser());
+        assertEquals(person, model.getContactFile().getPersonList().getFirst());
+        assertEquals(0, saveCount.get());
+
+        assertEquals(preview, logic.execute("introduce 1 i/New Introducer").getFeedbackToUser());
+        logic.execute("y");
+        assertEquals(1, saveCount.get());
+        assertEquals(new PersonBuilder(person).withIntroducer("New Introducer").build(),
+                model.getContactFile().getPersonList().getFirst());
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void setGuiSettings_updatesModel() {
+        GuiSettings guiSettings = new GuiSettings(900, 700, 30, 40);
+
+        logic.setGuiSettings(guiSettings);
+
+        assertEquals(guiSettings, model.getGuiSettings());
     }
 
     /**

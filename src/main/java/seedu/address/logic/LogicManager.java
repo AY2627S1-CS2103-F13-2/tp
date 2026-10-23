@@ -77,7 +77,7 @@ public class LogicManager implements Logic {
                 pendingRequest = commandResult.getPendingRequest().orElseThrow();
                 pendingSnapshot = snapshot;
             } else {
-                if (snapshot.hasDataChanged(model)) {
+                if (commandResult.shouldSaveContactFile() && snapshot.hasDataChanged(model)) {
                     storage.saveContactFile(model.getContactFile());
                 }
                 if (snapshot.hasPreferencesChanged(model)) {

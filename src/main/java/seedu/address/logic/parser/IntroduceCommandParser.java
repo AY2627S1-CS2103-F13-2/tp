@@ -23,14 +23,6 @@ public class IntroduceCommandParser implements Parser<IntroduceCommand> {
             throw new ParseException(IntroduceCommand.MESSAGE_NAME_REQUIRED);
         }
 
-        boolean confirmed = false;
-        String confirmationSuffix = " " + IntroduceCommand.CONFIRM_OPTION;
-        if (trimmedArgs.endsWith(confirmationSuffix)) {
-            confirmed = true;
-            trimmedArgs = trimmedArgs.substring(0,
-                    trimmedArgs.length() - confirmationSuffix.length()).trim();
-        }
-
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_INTRODUCER);
         if (argMultimap.getValue(PREFIX_INTRODUCER).isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
@@ -43,15 +35,12 @@ public class IntroduceCommandParser implements Parser<IntroduceCommand> {
         }
 
         String targetInput = argMultimap.getPreamble();
-        if (targetInput.isEmpty()) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
-        }
-
         Name parsedIntroducer = ParserUtil.parseName(introducerInput);
+
         if (ParserUtil.isIndexInput(targetInput)) {
             try {
                 Index targetIndex = ParserUtil.parseIndex(targetInput);
-                return new IntroduceCommand(targetIndex, parsedIntroducer, confirmed);
+                return new IntroduceCommand(targetIndex, parsedIntroducer, false);
             } catch (ParseException pe) {
                 throw new ParseException(
                         String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE), pe);
@@ -61,6 +50,6 @@ public class IntroduceCommandParser implements Parser<IntroduceCommand> {
         if (!Name.isValidName(targetInput)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
         }
-        return new IntroduceCommand(StringUtil.normalise(targetInput), parsedIntroducer, confirmed);
+        return new IntroduceCommand(StringUtil.normalise(targetInput), parsedIntroducer, false);
     }
 }

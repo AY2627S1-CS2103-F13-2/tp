@@ -32,12 +32,6 @@ public class IntroduceCommandParserTest {
     }
 
     @Test
-    public void parse_confirmedReplacement_returnsConfirmedCommand() {
-        assertParseSuccess(parser, "Jane Smith i/Jane Doe --confirm",
-                new IntroduceCommand("Jane Smith", new Name("Jane Doe"), true));
-    }
-
-    @Test
     public void parse_indexTarget_returnsCommand() {
         assertParseSuccess(parser, "2 i/Jane Doe",
                 new IntroduceCommand(Index.fromOneBased(2), new Name("Jane Doe"), false));
@@ -50,11 +44,25 @@ public class IntroduceCommandParserTest {
     }
 
     @Test
+    public void parse_whitespaceAndPartialTarget_normalisesTargetAndIntroducer() {
+        assertParseSuccess(parser, "  Jane   Smith   i/  Jane   Doe   ",
+                new IntroduceCommand("Jane Smith", new Name("Jane Doe"), false));
+    }
+
+    @Test
     public void parse_missingOrInvalidName_fails() {
+        assertParseFailure(parser, "   ", IntroduceCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "Jane Smith", String.format(
                 MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
-        assertParseFailure(parser, "Jane Smith i/ --confirm", IntroduceCommand.MESSAGE_NAME_REQUIRED);
+        assertParseFailure(parser, "Jane Smith i/", IntroduceCommand.MESSAGE_NAME_REQUIRED);
+        assertParseFailure(parser, "Jane Smith i/   ", IntroduceCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "Jane Smith i/Jane& Doe", Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_emptyTargetInput_fails() {
+        assertParseFailure(parser, "i/Jane Doe",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
     }
 
     @Test
@@ -62,6 +70,8 @@ public class IntroduceCommandParserTest {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE);
         assertParseFailure(parser, "0 i/Jane Doe", expectedMessage);
         assertParseFailure(parser, "-2 i/Jane Doe", expectedMessage);
+        assertParseFailure(parser, "+2 i/Jane Doe", expectedMessage);
+        assertParseFailure(parser, "2 Jane i/Jane Doe", expectedMessage);
     }
 
     @Test
@@ -70,6 +80,7 @@ public class IntroduceCommandParserTest {
         assertParseFailure(parser, "1 Jane Doe", expectedMessage);
         assertParseFailure(parser, "Jane n/Jane Doe", expectedMessage);
         assertParseFailure(parser, "Jane& i/Jane Doe", expectedMessage);
+        assertParseFailure(parser, "Jane Smith n/Jane Doe i/Jane Doe", expectedMessage);
     }
 
     @Test
