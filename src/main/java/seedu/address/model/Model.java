@@ -1,5 +1,6 @@
 package seedu.address.model;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -76,6 +77,12 @@ public interface Model {
      * Returns the contact file.
      */
     ReadOnlyContactFile getContactFile();
+
+    /**
+     * Returns an unmodifiable snapshot of pending follow-ups across all contacts, regardless of the contact filter.
+     * Dates sort ascending, with undated actions last. Ties retain contact order, then stored action order.
+     */
+    List<FollowUpEntry> getPendingFollowUps();
 
     /**
      * Returns true if a person with the same identity as {@code person} exists in the contact file.

@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -27,6 +28,7 @@ public class CommandResult {
 
     private final PendingRequest pendingRequest;
     private final Person personForDetails;
+    private final FollowUp followUpForDetails;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
@@ -52,11 +54,17 @@ public class CommandResult {
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
             Person personForDetails) {
+        this(feedbackToUser, showHelp, exit, pendingRequest, personForDetails, null);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
+            Person personForDetails, FollowUp followUpForDetails) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.pendingRequest = pendingRequest;
         this.personForDetails = personForDetails;
+        this.followUpForDetails = followUpForDetails;
     }
 
     /**
@@ -71,7 +79,19 @@ public class CommandResult {
      */
     public CommandResult withFeedbackPrefix(String prefix) {
         requireNonNull(prefix);
-        return new CommandResult(prefix + feedbackToUser, showHelp, exit, pendingRequest, personForDetails);
+        return new CommandResult(prefix + feedbackToUser, showHelp, exit, pendingRequest, personForDetails,
+                followUpForDetails);
+    }
+
+    /**
+     * Retains a selected action and contact so display-order changes preserve both sets of details.
+     */
+    public static CommandResult createFollowUpDetails(String feedbackToUser, Person person, FollowUp action) {
+        return new CommandResult(feedbackToUser, false, false, null, requireNonNull(person), requireNonNull(action));
+    }
+
+    public Optional<FollowUp> getFollowUpForDetails() {
+        return Optional.ofNullable(followUpForDetails);
     }
 
     public Optional<Person> getPersonForDetails() {
@@ -109,12 +129,13 @@ public class CommandResult {
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
                 && Objects.equals(pendingRequest, otherCommandResult.pendingRequest)
-                && Objects.equals(personForDetails, otherCommandResult.personForDetails);
+                && Objects.equals(personForDetails, otherCommandResult.personForDetails)
+                && Objects.equals(followUpForDetails, otherCommandResult.followUpForDetails);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, pendingRequest, personForDetails);
+        return Objects.hash(feedbackToUser, showHelp, exit, pendingRequest, personForDetails, followUpForDetails);
     }
 
     @Override

@@ -56,7 +56,8 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        ModelSnapshot snapshot = pendingRequest == null ? new ModelSnapshot(model) : pendingSnapshot;
+        ModelSnapshot snapshot = pendingRequest == null || pendingRequest.isReadOnly()
+                ? new ModelSnapshot(model) : pendingSnapshot;
         try {
             CommandResult commandResult;
             if (pendingRequest != null) {
@@ -66,7 +67,12 @@ public class LogicManager implements Logic {
                     clearPendingRequest();
                     return new CommandResult("Request cancelled. No contacts changed.");
                 }
-                commandResult = pendingRequest.respond(response, model);
+                if (pendingRequest.shouldRunAsCommand(response)) {
+                    clearPendingRequest();
+                    commandResult = contactFileParser.parseCommand(commandText).execute(model);
+                } else {
+                    commandResult = pendingRequest.respond(response, model);
+                }
             } else {
                 commandResult = parseAndExecute(commandText);
             }

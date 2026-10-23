@@ -3,6 +3,8 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -13,6 +15,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -114,6 +117,17 @@ public class ModelManager implements Model {
     @Override
     public ReadOnlyContactFile getContactFile() {
         return contactFile;
+    }
+
+    @Override
+    public List<FollowUpEntry> getPendingFollowUps() {
+        return contactFile.getPersonList().stream()
+                .flatMap(contact -> contact.getFollowUps().stream()
+                        .filter(action -> action.getStatus() == FollowUp.Status.PENDING)
+                        .map(action -> new FollowUpEntry(contact, action)))
+                .sorted(Comparator.comparing(entry -> entry.followUp().getDueDate().orElse(null),
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     @Override

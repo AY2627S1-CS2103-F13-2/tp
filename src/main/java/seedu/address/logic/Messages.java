@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 import seedu.address.logic.parser.Prefix;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -62,9 +63,24 @@ public class Messages {
     }
 
     /**
-     * Formats actions in stored order with their stable IDs and statuses.
+     * Formats actions in stored order with their stable IDs, statuses and due dates.
      */
     public static String formatFollowUps(Person person) {
-        return person.getFollowUps().stream().map(Object::toString).collect(Collectors.joining("\n"));
+        return person.getFollowUps().stream().map(Messages::formatFollowUp).collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Formats one action with an ISO due date or an explicit undated label and a current overdue indicator.
+     */
+    public static String formatFollowUp(FollowUp action) {
+        return action + " | " + action.getDueDate().map(date -> "Due: " + date).orElse("No due date")
+                + (action.isOverdue() ? " [OVERDUE]" : "");
+    }
+
+    /**
+     * Formats selected action details and the associated contact in the requested display order.
+     */
+    public static String formatFollowUpDetails(Person contact, FollowUp action, FieldOrder order) {
+        return "Selected follow-up:\n" + formatFollowUp(action) + "\nContact:\n" + format(contact, order);
     }
 }
