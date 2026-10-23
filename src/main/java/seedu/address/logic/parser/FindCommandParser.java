@@ -50,8 +50,7 @@ public class FindCommandParser implements Parser<FindCommand> {
             String eventValue = trimmedArgs.substring("/event".length()).trim();
 
             if (eventValue.isEmpty()) {
-                throw new ParseException(
-                        String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+                throw invalidFormat();
             }
 
             return new FindCommand(new EventContainsKeywordsPredicate(eventValue));
@@ -61,13 +60,12 @@ public class FindCommandParser implements Parser<FindCommand> {
             String nameValue = trimmedArgs.substring("/fuzzy".length()).trim();
 
             if (nameValue.isEmpty()) {
-                throw new ParseException(
-                        String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+                throw invalidFormat();
             }
 
             return new FindCommand(new FuzzyNamePredicate(nameValue));
         }
-      
+
         if (trimmedArgs.startsWith("/company") || trimmedArgs.startsWith("/role")) {
             return parseCompanyOrRoleSearch(trimmedArgs);
         }
