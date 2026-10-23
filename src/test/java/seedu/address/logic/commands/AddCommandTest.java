@@ -13,11 +13,15 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
+import seedu.address.model.FieldOrder;
+import seedu.address.model.FollowUpEntry;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyContactFile;
@@ -93,12 +97,19 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_duplicatePerson_throwsCommandException() {
-        Person validPerson = new PersonBuilder().build();
-        AddCommand addCommand = new AddCommand(validPerson);
-        ModelStub modelStub = new ModelStubWithPerson(validPerson);
+    public void execute_sameNameDifferentDetails_addSuccessful() throws Exception {
+        Model model = new ModelManager();
+        Person existing = new PersonBuilder().withName("Alice").withPhone("81111111")
+                .withEmail("alice@example.com").build();
+        Person toAdd = new PersonBuilder().withName("Alice").withPhone("82222222")
+                .withEmail("alice2@example.com").build();
+        model.addPerson(existing);
 
-        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+        CommandResult commandResult = new AddCommand(toAdd).execute(model);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(toAdd)),
+                commandResult.getFeedbackToUser());
+        assertEquals(List.of(existing, toAdd), model.getFilteredPersonList());
     }
 
     @Test
@@ -190,6 +201,26 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public List<FollowUpEntry> getPendingFollowUps() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public FieldOrder getFieldOrder() {
+            return FieldOrder.DEFAULT;
+        }
+
+        @Override
+        public void setFieldOrder(FieldOrder fieldOrder) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty() {
+            return new ReadOnlyObjectWrapper<>(FieldOrder.DEFAULT).getReadOnlyProperty();
+        }
+
+        @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");
         }
@@ -231,7 +262,8 @@ public class AddCommandTest {
 
         @Override
         public boolean hasPhone(Person person) {
-            throw new AssertionError("This method should not be called"); }
+            throw new AssertionError("This method should not be called.");
+        }
 
         @Override
         public void deletePerson(Person target) {
@@ -245,6 +277,11 @@ public class AddCommandTest {
 
         @Override
         public ObservableList<Person> getFilteredPersonList() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Predicate<Person> getPersonFilter() {
             throw new AssertionError("This method should not be called.");
         }
 

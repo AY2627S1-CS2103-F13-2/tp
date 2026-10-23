@@ -25,6 +25,29 @@ import seedu.address.testutil.PersonBuilder;
 public class PersonTest {
 
     @Test
+    public void constructor_existingSignature_defaultsToUnstarred() {
+        Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags());
+        assertFalse(person.isStarred());
+        assertEquals(NAME_ONLY, person);
+    }
+
+    @Test
+    public void starredStatus_changesDataButNotIdentity() {
+        Person starredAlice = new PersonBuilder(ALICE).withStarred(true).build();
+        Person starredAliceCopy = new PersonBuilder(starredAlice).build();
+
+        assertTrue(starredAlice.isStarred());
+        assertFalse(ALICE.isStarred());
+        assertTrue(ALICE.isSamePerson(starredAlice));
+        assertTrue(starredAlice.isSamePerson(ALICE));
+        assertNotEquals(ALICE, starredAlice);
+        assertNotEquals(starredAlice, ALICE);
+        assertEquals(starredAlice, starredAliceCopy);
+        assertEquals(starredAlice.hashCode(), starredAliceCopy.hashCode());
+        assertEquals(ALICE, new PersonBuilder(starredAlice).withStarred(false).build());
+    }
+
+    @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getTags().remove(0));
@@ -38,7 +61,7 @@ public class PersonTest {
         // null -> returns false
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name, all other attributes different -> returns true
+        // same name and email presence -> returns true
         Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
                 .withCompany(VALID_COMPANY_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
@@ -99,10 +122,29 @@ public class PersonTest {
         Person personWithoutEmail = new PersonBuilder().withName(VALID_NAME_BOB).withEmail(null).build();
         Person anotherPersonWithoutEmail = new PersonBuilder(ALICE).withEmail(null).build();
         assertFalse(personWithoutEmail.hasSameEmail(anotherPersonWithoutEmail));
+        assertFalse(personWithoutEmail.hasSameEmail(personWithoutEmail));
 
         // one email absent -> returns false
         assertFalse(personWithoutEmail.hasSameEmail(ALICE));
         assertFalse(ALICE.hasSameEmail(personWithoutEmail));
+    }
+
+    @Test
+    public void hasSamePhone_missingValues_returnsFalse() {
+        Person first = new PersonBuilder(ALICE).withPhone(null).build();
+        Person second = new PersonBuilder(BOB).withPhone(null).build();
+        assertFalse(first.hasSamePhone(second));
+        assertFalse(first.hasSamePhone(first));
+        assertFalse(first.hasSamePhone(ALICE));
+        assertFalse(ALICE.hasSamePhone(first));
+    }
+
+    @Test
+    public void equals_groupedPhone_hashCodesMatch() {
+        Person grouped = new PersonBuilder(ALICE).withPhone("+65 (9312)-1534").build();
+        Person compact = new PersonBuilder(ALICE).withPhone("+6593121534").build();
+        assertEquals(grouped, compact);
+        assertEquals(grouped.hashCode(), compact.hashCode());
     }
 
     @Test
@@ -167,8 +209,8 @@ public class PersonTest {
     }
 
     @Test
-    public void isSamePerson_nameOnlyPersonsWithSameName_returnsTrue() {
-        // identity is still the name, so two contacts with no other details still clash
+    public void isSamePerson_sameNameOnlyPersons_returnsTrue() {
+        // Identical contacts match even when they only have a name.
         Person otherNameOnly = new PersonBuilder(NAME_ONLY).build();
         assertTrue(NAME_ONLY.isSamePerson(otherNameOnly));
     }
@@ -189,7 +231,9 @@ public class PersonTest {
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
                 + ", tags=" + ALICE.getTags()
-                + ", events=" + ALICE.getEvents() + "}";
+                + ", events=" + ALICE.getEvents()
+                + ", followUps=" + ALICE.getFollowUps()
+                + ", starred=" + ALICE.isStarred() + "}";
         assertEquals(expected, ALICE.toString());
     }
 
