@@ -2,11 +2,13 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +57,36 @@ public class DropCommandTest {
         assertEquals(expectedResult.getFeedbackToUser(), confirmed.getFeedbackToUser());
         assertEquals(expectedPerson, model.getContactFile().getPersonList().getFirst());
         assertEquals(original.getEmail(), expectedPerson.getEmail());
+    }
+
+    @Test
+    public void execute_confirmedRequest_targetWasDeleted_rejectsStaleRequest() throws Exception {
+        Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
+        CommandResult prompt = new DropCommand(Index.fromOneBased(1),
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
+        model.deletePerson(original);
+
+        CommandException exception = assertThrows(CommandException.class,
+                () -> prompt.getPendingRequest().orElseThrow().respond("y", model));
+
+        assertEquals("Contacts changed. Start the drop request again.", exception.getMessage());
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_confirmedRequest_selectedValueWasRemoved_rejectsStaleRequest() throws Exception {
+        MutableTagsPerson target = new MutableTagsPerson(original);
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(target).build(), new UserPrefs());
+        CommandResult prompt = new DropCommand(Index.fromOneBased(1),
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
+        target.hideTags();
+
+        CommandException exception = assertThrows(CommandException.class,
+                () -> prompt.getPendingRequest().orElseThrow().respond("y", model));
+
+        assertEquals(String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND, "tag", "old", target.getName()),
+                exception.getMessage());
+        assertEquals(target, model.getContactFile().getPersonList().getFirst());
     }
 
     @Test
@@ -272,6 +304,22 @@ public class DropCommandTest {
     }
 
     @Test
+    public void execute_ambiguousName_selectedContactWasDeleted_rejectsStaleSelection() throws Exception {
+        Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
+        ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
+        Model model = new ModelManager(twoPeople, new UserPrefs());
+        CommandResult selection = new DropCommand("Jane",
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), true).execute(model);
+        model.deletePerson(janeSmith);
+
+        CommandException exception = assertThrows(CommandException.class,
+                () -> selection.getPendingRequest().orElseThrow().respond("2", model));
+
+        assertEquals("Contacts changed. Start the drop request again.", exception.getMessage());
+        assertEquals(List.of(original), model.getContactFile().getPersonList());
+    }
+
+    @Test
     public void equalsAndToString() {
         List<FieldValue> selections = List.of(new FieldValue(Field.TAG, new Tag("old")));
         DropCommand command = new DropCommand(Index.fromOneBased(1), selections, false);
@@ -284,5 +332,24 @@ public class DropCommandTest {
         assertTrue(command.toString().contains("targetIndex="));
         assertTrue(command.toString().contains("values="));
         assertTrue(command.toString().contains("confirmed=false"));
+    }
+
+    private static final class MutableTagsPerson extends Person {
+        private boolean tagsVisible = true;
+
+        private MutableTagsPerson(Person person) {
+            super(person.getName(), person.getCompany().orElse(null), person.getRole().orElse(null),
+                    person.getPhone().orElse(null), person.getEmail().orElse(null),
+                    person.getLinkedin().orElse(null), person.getIntroducer().orElse(null), person.getTags());
+        }
+
+        private void hideTags() {
+            tagsVisible = false;
+        }
+
+        @Override
+        public Set<Tag> getTags() {
+            return tagsVisible ? super.getTags() : Set.of();
+        }
     }
 }

@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
+import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -56,6 +58,21 @@ public class IntroduceCommandTest {
         assertTrue(confirmed.getFeedbackToUser().contains("New Introducer"));
         assertEquals(new Name("New Introducer"),
                 model.getContactFile().getPersonList().getFirst().getIntroducer().orElseThrow());
+    }
+
+    @Test
+    public void execute_confirmedRequest_targetWasDeleted_rejectsStaleRequest() throws Exception {
+        Person original = new PersonBuilder().withIntroducer("Old Introducer").build();
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(original).build(), new UserPrefs());
+        CommandResult prompt = new IntroduceCommand(Index.fromOneBased(1),
+                new Name("New Introducer"), false).execute(model);
+        model.deletePerson(original);
+
+        CommandException exception = assertThrows(CommandException.class,
+                () -> prompt.getPendingRequest().orElseThrow().respond("y", model));
+
+        assertEquals("Contacts changed. Start the introduce request again.", exception.getMessage());
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
     }
 
     @Test
