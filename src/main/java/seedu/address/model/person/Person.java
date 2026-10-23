@@ -2,8 +2,10 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -13,15 +15,12 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the contact file.
- * Guarantees: the name and the tag set are present and not null, field values are validated, immutable.
- * Every other field, including the introducer, is optional and may be absent.
+ * Guarantees: the name, tag set, events and ordered action list are present and immutable.
+ * Contact details other than the name are optional; all field values are validated.
  */
 public class Person {
 
-    // Identity fields
     private final Name name;
-
-    // Data fields
     private final Company company;
     private final Role role;
     private final Phone phone;
@@ -29,24 +28,95 @@ public class Person {
     private final Linkedin linkedin;
     private final Name introducer;
     private final Set<Tag> tags = new HashSet<>();
+    private final Set<Event> events = new HashSet<>();
+    private final List<FollowUp> followUps = new ArrayList<>();
+    private final boolean starred;
 
     /**
-     * Constructs a {@code Person}. Only {@code name} and {@code tags} are required; a networking
-     * contact is often captured with just a name and whatever details were exchanged, so
-     * {@code company}, {@code role}, {@code phone}, {@code email} and {@code linkedin} may be null.
+     * Constructs a person without events, follow-ups or starred status.
      */
-    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
-            Set<Tag> tags) {
-        this(name, company, role, phone, email, linkedin, null, tags);
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Set<Tag> tags) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, Set.of(), List.of(), false);
     }
 
     /**
-     * Constructs a {@code Person} with an optional introducer name.
+     * Constructs a person with an optional introducer name.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Name introducer, Set<Tag> tags) {
+        this(name, company, role, phone, email, linkedin,
+                introducer, tags, Set.of(), List.of(), false);
+    }
+
+    /**
+     * Constructs a person with follow-ups but without events or starred status.
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
-            Name introducer, Set<Tag> tags) {
+            Set<Tag> tags, List<FollowUp> followUps) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, Set.of(), followUps, false);
+    }
+
+    /**
+     * Constructs a person with events but without follow-ups or starred status.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Set<Tag> tags, Set<Event> events) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, events, List.of(), false);
+    }
+
+    /**
+     * Constructs a person with follow-ups but without events or starred status.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, List<FollowUp> followUps, boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, Set.of(), followUps, starred);
+    }
+
+    /**
+     * Constructs a person with starred status but without events or follow-ups.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
+            Set<Tag> tags, boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, Set.of(), List.of(), starred);
+    }
+
+    /**
+     * Constructs a person with introducer and follow-ups but without events.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Name introducer, Set<Tag> tags, List<FollowUp> followUps,
+            boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                introducer, tags, Set.of(), followUps, starred);
+    }
+
+    /**
+     * Constructs a person with events, follow-ups and starred status.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Set<Tag> tags, Set<Event> events,
+            List<FollowUp> followUps, boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, events, followUps, starred);
+    }
+
+    /**
+     * Constructs a person with introducer, events, follow-ups and starred status.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
+            List<FollowUp> followUps, boolean starred) {
         requireNonNull(name);
         requireNonNull(tags);
+        requireNonNull(events);
+        requireNonNull(followUps);
+
         this.name = name;
         this.company = company;
         this.role = role;
@@ -54,7 +124,20 @@ public class Person {
         this.email = email;
         this.linkedin = linkedin;
         this.introducer = introducer;
+        this.starred = starred;
+
         this.tags.addAll(tags);
+        this.events.addAll(events);
+        this.followUps.addAll(followUps);
+
+        Set<Integer> actionIds = new HashSet<>();
+        for (FollowUp action : this.followUps) {
+            requireNonNull(action);
+            if (!actionIds.add(action.getId())) {
+                throw new IllegalArgumentException(
+                        "Follow-up IDs must be unique within a contact.");
+            }
+        }
     }
 
     public Name getName() {
@@ -86,37 +169,104 @@ public class Person {
     }
 
     /**
-     * Returns an immutable tag set, which throws {@code UnsupportedOperationException}
-     * if modification is attempted.
+     * Returns an immutable tag set.
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
     }
 
     /**
-     * Returns true if both persons have the same name and both have an email or both do not.
-     * This defines a weaker notion of equality between two persons.
+     * Returns an immutable event set.
+     */
+    public Set<Event> getEvents() {
+        return Collections.unmodifiableSet(events);
+    }
+
+    /**
+     * Returns an immutable follow-up list.
+     */
+    public List<FollowUp> getFollowUps() {
+        return Collections.unmodifiableList(followUps);
+    }
+
+    /**
+     * Returns true if this person is starred.
+     */
+    public boolean isStarred() {
+        return starred;
+    }
+
+    /**
+     * Returns a copy with the requested starred status.
+     */
+    public Person withStarred(boolean starred) {
+        return new Person(name, company, role, phone, email, linkedin,
+                introducer, tags, events, followUps, starred);
+    }
+
+    /**
+     * Returns true if this person is associated with the given event.
+     */
+    public boolean hasEvent(Event event) {
+        requireNonNull(event);
+        return events.contains(event);
+    }
+
+    /**
+     * Returns a copy of this person with the given event added.
+     */
+    public Person withEvent(Event event) {
+        requireNonNull(event);
+
+        Set<Event> updatedEvents = new HashSet<>(events);
+        updatedEvents.add(event);
+
+        return new Person(name, company, role, phone, email, linkedin,
+                introducer, tags, updatedEvents, followUps, starred);
+    }
+
+    /**
+     * Returns a copy with the given follow-up appended.
+     */
+    public Person appendFollowUp(FollowUp action) {
+        requireNonNull(action);
+
+        List<FollowUp> updatedActions = new ArrayList<>(followUps);
+        if (updatedActions.contains(action)) {
+            throw new IllegalArgumentException("Follow-up already exists.");
+        }
+
+        updatedActions.add(action);
+        return new Person(name, company, role, phone, email, linkedin,
+                introducer, tags, events, updatedActions, starred);
+    }
+
+    /**
+     * Returns true if both persons have the same name and email presence.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
             return true;
         }
 
-        return otherPerson != null
-                && otherPerson.getName().equals(getName())
-                && otherPerson.getEmail().isPresent() == getEmail().isPresent();
+        if (otherPerson == null || !otherPerson.getName().equals(getName())) {
+            return false;
+        }
+
+        Optional<Email> otherEmail = otherPerson.getEmail();
+        Optional<Email> email = getEmail();
+        return otherEmail.isEmpty() && email.isEmpty()
+                || otherEmail.isPresent() && email.isPresent()
+                        && email.orElseThrow().matches(otherEmail.orElseThrow().value);
     }
 
     /**
-     * Returns true if both persons have the same phone.
-     * Phone number is normalised before checking
+     * Returns true if both persons have a phone and their normalized numbers match.
      */
     public boolean hasSamePhone(Person otherPerson) {
-        if (otherPerson == this) {
-            return true;
-        }
-
         return otherPerson != null
+                && getPhone().isPresent()
+                && otherPerson.getPhone().isPresent()
                 && otherPerson.getPhone().equals(getPhone());
     }
 
@@ -124,27 +274,19 @@ public class Person {
      * Returns true if both persons have the same email.
      */
     public boolean hasSameEmail(Person otherPerson) {
-        if (otherPerson == this) {
-            return true;
-        }
-
         return otherPerson != null
                 && getEmail().isPresent()
                 && otherPerson.getEmail().isPresent()
-                && otherPerson.getEmail().orElseThrow().value.equalsIgnoreCase(getEmail().orElseThrow().value);
+                && getEmail().orElseThrow()
+                        .matches(otherPerson.getEmail().orElseThrow().value);
     }
 
-    /**
-     * Returns true if both persons have the same identity and data fields.
-     * This defines a stronger notion of equality between two persons.
-     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
 
-        // instanceof handles nulls
         if (!(other instanceof Person otherPerson)) {
             return false;
         }
@@ -156,13 +298,16 @@ public class Person {
                 && Objects.equals(email, otherPerson.email)
                 && Objects.equals(linkedin, otherPerson.linkedin)
                 && Objects.equals(introducer, otherPerson.introducer)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && events.equals(otherPerson.events)
+                && followUps.equals(otherPerson.followUps)
+                && starred == otherPerson.starred;
     }
 
     @Override
     public int hashCode() {
-        // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, company, role, phone, email, linkedin, introducer, tags);
+        return Objects.hash(name, company, role, phone, email, linkedin,
+                introducer, tags, events, followUps, starred);
     }
 
     @Override
@@ -176,7 +321,9 @@ public class Person {
                 .add("linkedin", linkedin)
                 .add("introducer", introducer)
                 .add("tags", tags)
+                .add("events", events)
+                .add("followUps", followUps)
+                .add("starred", starred)
                 .toString();
     }
-
 }

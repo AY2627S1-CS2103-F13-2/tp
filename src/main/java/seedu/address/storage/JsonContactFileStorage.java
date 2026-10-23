@@ -3,15 +3,17 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
-import seedu.address.commons.util.FileUtil;
 import seedu.address.commons.util.JsonUtil;
+import seedu.address.model.ContactFile;
 import seedu.address.model.ReadOnlyContactFile;
 
 /**
@@ -23,6 +25,9 @@ public class JsonContactFileStorage {
 
     private Path filePath;
 
+    /**
+     * Creates storage for the given active contact file.
+     */
     public JsonContactFileStorage(Path filePath) {
         this.filePath = filePath;
     }
@@ -66,6 +71,7 @@ public class JsonContactFileStorage {
 
     /**
      * Saves the given {@link ReadOnlyContactFile} to the storage.
+     *
      * @param contactFile cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
@@ -82,8 +88,40 @@ public class JsonContactFileStorage {
         requireNonNull(contactFile);
         requireNonNull(filePath);
 
-        FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableContactFile(contactFile), filePath);
+        Path target = filePath.toAbsolutePath().normalize();
+        Files.createDirectories(target.getParent());
+        Path temporary = Files.createTempFile(target.getParent(), ".astra-save-", ".tmp");
+        try {
+            writeCandidate(contactFile, temporary);
+            verifyCandidate(contactFile, temporary);
+            replaceActiveFile(temporary, target);
+        } finally {
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (IOException cleanupFailure) {
+                logger.warning("Could not remove temporary contact file: " + cleanupFailure.getMessage());
+            }
+        }
+    }
+
+    void writeCandidate(ReadOnlyContactFile contactFile, Path temporary) throws IOException {
+        JsonUtil.saveJsonFile(new JsonSerializableContactFile(contactFile), temporary);
+    }
+
+    void verifyCandidate(ReadOnlyContactFile contactFile, Path temporary) throws IOException {
+        try {
+            ReadOnlyContactFile reloaded = readContactFile(temporary)
+                    .orElseThrow(() -> new IOException("Temporary contact file is missing."));
+            if (!new ContactFile(contactFile).equals(reloaded)) {
+                throw new IOException("Temporary contact file does not match the requested data.");
+            }
+        } catch (DataLoadingException e) {
+            throw new IOException("Could not validate temporary contact file.", e);
+        }
+    }
+
+    void replaceActiveFile(Path temporary, Path target) throws IOException {
+        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**

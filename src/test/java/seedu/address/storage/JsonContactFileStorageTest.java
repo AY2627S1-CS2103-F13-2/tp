@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -112,6 +113,21 @@ public class JsonContactFileStorageTest {
     }
 
     @Test
+    public void readAndSaveContactFile_sameNameWithDifferentContactDetails_success() throws Exception {
+        Path filePath = testFolder.resolve("SameNameContactFile.json");
+        ContactFile original = new ContactFile();
+        original.addPerson(new PersonBuilder().withName("Alex Smith").withPhone("81111111")
+                .withEmail("alex.one@example.com").build());
+        original.addPerson(new PersonBuilder().withName("Alex Smith").withPhone("82222222")
+                .withEmail("alex.two@example.com").build());
+        JsonContactFileStorage storage = new JsonContactFileStorage(filePath);
+
+        storage.saveContactFile(original);
+
+        assertEquals(original, new ContactFile(storage.readContactFile().orElseThrow()));
+    }
+
+    @Test
     public void readAndSaveContactFile_personWithIntroducer_success() throws Exception {
         Path filePath = testFolder.resolve("TempContactFile.json");
         ContactFile original = new ContactFile();
@@ -122,6 +138,27 @@ public class JsonContactFileStorageTest {
         ReadOnlyContactFile readBack = jsonContactFileStorage.readContactFile(filePath).get();
 
         assertEquals(original, new ContactFile(readBack));
+    }
+
+    @Test
+    public void readAndSaveContactFile_starredStatus_preservedOnReloadAndStartup() throws Exception {
+        Path filePath = testFolder.resolve("StarredContactFile.json");
+        Person starredAlice = new PersonBuilder(ALICE).withStarred(true).build();
+        ContactFile original = new ContactFile();
+        original.addPerson(starredAlice);
+        original.addPerson(NAME_ONLY);
+        JsonContactFileStorage storage = new JsonContactFileStorage(filePath);
+
+        storage.saveContactFile(original);
+
+        assertEquals(original, new ContactFile(storage.readContactFile().orElseThrow()));
+        assertEquals(List.of(starredAlice, NAME_ONLY), storage.loadForStartup().contacts());
+
+        original.setPerson(starredAlice, ALICE);
+        storage.saveContactFile(original);
+
+        assertEquals(original, new ContactFile(storage.readContactFile().orElseThrow()));
+        assertEquals(List.of(ALICE, NAME_ONLY), storage.loadForStartup().contacts());
     }
 
     @Test

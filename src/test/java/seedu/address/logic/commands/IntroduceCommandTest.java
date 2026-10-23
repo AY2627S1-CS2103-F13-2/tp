@@ -92,7 +92,7 @@ public class IntroduceCommandTest {
     }
 
     @Test
-    public void execute_ambiguousName_displaysMatchesWithoutUpdating() throws Exception {
+    public void execute_ambiguousName_selectingIndexUpdatesOnlySelectedContact() throws Exception {
         Person first = new PersonBuilder().withName("Alex Chen").withEmail("alex.chen@example.com").build();
         Person second = new PersonBuilder().withName("Alex Chan").withEmail("alex.chan@example.com").build();
         ContactFile contactFile = new ContactFileBuilder().withPerson(first).withPerson(second).build();
@@ -104,8 +104,39 @@ public class IntroduceCommandTest {
         assertEquals(first, model.getFilteredPersonList().get(0));
         assertEquals(second, model.getFilteredPersonList().get(1));
         assertTrue(result.getFeedbackToUser().contains("2 contacts found:"));
-        assertTrue(result.getFeedbackToUser().contains("introduce"));
+        assertTrue(result.getFeedbackToUser().contains("Enter a contact number"));
+        assertTrue(result.getPendingRequest().isPresent());
         assertFalse(model.getContactFile().getPersonList().get(0).getIntroducer().isPresent());
+
+        CommandResult invalid = result.getPendingRequest().orElseThrow().respond("3", model);
+        assertTrue(invalid.getPendingRequest().isPresent());
+        assertFalse(model.getContactFile().getPersonList().get(1).getIntroducer().isPresent());
+
+        CommandResult selected = result.getPendingRequest().orElseThrow().respond("2", model);
+        assertTrue(selected.getFeedbackToUser().contains("Alex Chan"));
+        assertFalse(selected.getPendingRequest().isPresent());
+        assertFalse(model.getContactFile().getPersonList().get(0).getIntroducer().isPresent());
+        assertEquals(new Name("Jane Smith"),
+                model.getContactFile().getPersonList().get(1).getIntroducer().orElseThrow());
+    }
+
+    @Test
+    public void execute_ambiguousName_replacementRequestsConfirmation() throws Exception {
+        Person first = new PersonBuilder().withName("Alex Chen").withEmail("alex.chen@example.com").build();
+        Person second = new PersonBuilder().withName("Alex Chan").withEmail("alex.chan@example.com")
+                .withIntroducer("Old Introducer").build();
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(first).withPerson(second).build(),
+                new UserPrefs());
+
+        CommandResult selection = new IntroduceCommand("Alex", new Name("New Introducer"), false).execute(model);
+        CommandResult chosen = selection.getPendingRequest().orElseThrow().respond("2", model);
+
+        assertEquals(String.format(IntroduceCommand.MESSAGE_CONFIRM_REPLACEMENT,
+                second.getName(), "Old Introducer", "New Introducer", second.getName()),
+                chosen.getFeedbackToUser());
+        assertFalse(chosen.getPendingRequest().isPresent());
+        assertEquals(new Name("Old Introducer"),
+                model.getContactFile().getPersonList().get(1).getIntroducer().orElseThrow());
     }
 
     @Test

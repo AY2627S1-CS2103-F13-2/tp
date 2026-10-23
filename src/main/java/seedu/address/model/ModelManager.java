@@ -3,13 +3,18 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -21,6 +26,7 @@ public class ModelManager implements Model {
     private final ContactFile contactFile;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final ReadOnlyObjectWrapper<FieldOrder> fieldOrder;
 
     /**
      * Initializes a ModelManager with the given contactFile and userPrefs.
@@ -32,9 +38,13 @@ public class ModelManager implements Model {
 
         this.contactFile = new ContactFile(contactFile);
         this.userPrefs = new UserPrefs(userPrefs);
+        fieldOrder = new ReadOnlyObjectWrapper<>(this.userPrefs.getFieldOrder());
         filteredPersons = new FilteredList<>(this.contactFile.getPersonList());
     }
 
+    /**
+     * Creates an empty model with default preferences.
+     */
     public ModelManager() {
         this(new ContactFile(), new UserPrefs());
     }
@@ -57,6 +67,22 @@ public class ModelManager implements Model {
         userPrefs.setGuiSettings(guiSettings);
     }
 
+    @Override
+    public FieldOrder getFieldOrder() {
+        return fieldOrder.get();
+    }
+
+    @Override
+    public void setFieldOrder(FieldOrder order) {
+        userPrefs.setFieldOrder(requireNonNull(order));
+        fieldOrder.set(order);
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty() {
+        return fieldOrder.getReadOnlyProperty();
+    }
+
     //=========== ContactFile ================================================================================
 
     @Override
@@ -67,6 +93,17 @@ public class ModelManager implements Model {
     @Override
     public ReadOnlyContactFile getContactFile() {
         return contactFile;
+    }
+
+    @Override
+    public List<FollowUpEntry> getPendingFollowUps() {
+        return contactFile.getPersonList().stream()
+                .flatMap(contact -> contact.getFollowUps().stream()
+                        .filter(action -> action.getStatus() == FollowUp.Status.PENDING)
+                        .map(action -> new FollowUpEntry(contact, action)))
+                .sorted(Comparator.comparing(entry -> entry.followUp().getDueDate().orElse(null),
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     @Override
@@ -112,6 +149,12 @@ public class ModelManager implements Model {
     @Override
     public ObservableList<Person> getFilteredPersonList() {
         return filteredPersons;
+    }
+
+    @Override
+    public Predicate<Person> getPersonFilter() {
+        Predicate<? super Person> predicate = filteredPersons.getPredicate();
+        return predicate == null ? null : predicate::test;
     }
 
     @Override

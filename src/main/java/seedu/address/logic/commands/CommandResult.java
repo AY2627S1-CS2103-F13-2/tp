@@ -3,8 +3,11 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Person;
 
 /**
  * Represents the result of a command execution.
@@ -13,14 +16,21 @@ public class CommandResult {
 
     private final String feedbackToUser;
 
-    /** Help information should be shown to the user. */
+    /**
+     * Indicates whether help information should be shown.
+     */
     private final boolean showHelp;
 
-    /** The application should exit. */
+    /**
+     * Indicates whether the application should exit.
+     */
     private final boolean exit;
 
     /** Whether the contact file should be saved after this command. */
     private final boolean saveContactFile;
+    private final PendingRequest pendingRequest;
+    private final Person personForDetails;
+    private final FollowUp followUpForDetails;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
@@ -33,10 +43,14 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields and save behavior.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile) {
-        this.feedbackToUser = requireNonNull(feedbackToUser);
-        this.showHelp = showHelp;
-        this.exit = exit;
-        this.saveContactFile = saveContactFile;
+        this(feedbackToUser, showHelp, exit, saveContactFile, null, null, null);
+    }
+
+    /**
+     * Constructs a result that asks Logic to retain a request without saving contact data.
+     */
+    public CommandResult(String feedbackToUser, PendingRequest pendingRequest) {
+        this(feedbackToUser, false, false, false, requireNonNull(pendingRequest), null, null);
     }
 
     /**
@@ -45,6 +59,49 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser) {
         this(feedbackToUser, false, false);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
+            Person personForDetails) {
+        this(feedbackToUser, showHelp, exit, true, pendingRequest, personForDetails, null);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
+            Person personForDetails, FollowUp followUpForDetails) {
+        this(feedbackToUser, showHelp, exit, true, pendingRequest, personForDetails, followUpForDetails);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
+            PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails) {
+        this.feedbackToUser = requireNonNull(feedbackToUser);
+        this.showHelp = showHelp;
+        this.exit = exit;
+        this.saveContactFile = saveContactFile;
+        this.pendingRequest = pendingRequest;
+        this.personForDetails = personForDetails;
+        this.followUpForDetails = followUpForDetails;
+    }
+
+    /**
+     * Creates a detail result retaining the contact for presentation refresh without another view command.
+     */
+    public static CommandResult createPersonDetails(String feedbackToUser, Person person) {
+        return new CommandResult(feedbackToUser, false, false, null, requireNonNull(person));
+    }
+
+    /**
+     * Retains a selected action and contact so display-order changes preserve both sets of details.
+     */
+    public static CommandResult createFollowUpDetails(String feedbackToUser, Person person, FollowUp action) {
+        return new CommandResult(feedbackToUser, false, false, null, requireNonNull(person), requireNonNull(action));
+    }
+
+    public Optional<FollowUp> getFollowUpForDetails() {
+        return Optional.ofNullable(followUpForDetails);
+    }
+
+    public Optional<Person> getPersonForDetails() {
+        return Optional.ofNullable(personForDetails);
     }
 
     public String getFeedbackToUser() {
@@ -63,6 +120,10 @@ public class CommandResult {
         return saveContactFile;
     }
 
+    public Optional<PendingRequest> getPendingRequest() {
+        return Optional.ofNullable(pendingRequest);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -77,12 +138,16 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
-                && saveContactFile == otherCommandResult.saveContactFile;
+                && saveContactFile == otherCommandResult.saveContactFile
+                && Objects.equals(pendingRequest, otherCommandResult.pendingRequest)
+                && Objects.equals(personForDetails, otherCommandResult.personForDetails)
+                && Objects.equals(followUpForDetails, otherCommandResult.followUpForDetails);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, saveContactFile);
+        return Objects.hash(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest, personForDetails,
+                followUpForDetails);
     }
 
     @Override

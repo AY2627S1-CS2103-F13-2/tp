@@ -38,7 +38,7 @@ public class Phone {
     }
 
     /**
-     * Returns true if a given string is a valid phone number, once normalised.
+     * Returns true if a given string is a valid phone number, once normalized.
      */
     public static boolean isValidPhone(String test) {
         String normalised = StringUtil.normalise(test);
@@ -78,6 +78,13 @@ public class Phone {
         return value;
     }
 
+    /**
+     * Returns whether {@code candidate} contains the same complete number, ignoring grouping characters.
+     */
+    public boolean matches(String candidate) {
+        return StringUtil.normalisePhone(value).equals(StringUtil.normalisePhone(candidate));
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -89,14 +96,12 @@ public class Phone {
             return false;
         }
 
-        return StringUtil.normalisePhone(value)
-                            .equals(StringUtil
-                                .normalisePhone(otherPhone.value));
+        return matches(otherPhone.value);
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return StringUtil.normalisePhone(value).hashCode();
     }
 
 }

@@ -73,7 +73,7 @@ public class AddCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PHONE);
         }
         model.addPerson(toAdd);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd, model.getFieldOrder())));
     }
 
     @Override

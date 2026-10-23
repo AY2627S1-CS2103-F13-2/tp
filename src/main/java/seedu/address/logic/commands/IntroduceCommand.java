@@ -88,13 +88,20 @@ public class IntroduceCommand extends Command {
             switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
                 case PersonNameResolver.Outcome.Unique unique -> personToUpdate = unique.person();
                 case PersonNameResolver.Outcome.Several several -> {
-                    return new CommandResult(several.message());
+                    List<Person> matches = List.copyOf(model.getFilteredPersonList());
+                    PendingRequest request = new PersonSelectionRequest(matches,
+                            person -> recordIntroducer(model, person, person.getName().toString()));
+                    return new CommandResult(request.getPrompt(), request);
                 }
             }
         }
 
+        String target = targetName == null ? Integer.toString(targetIndex.getOneBased()) : targetName;
+        return recordIntroducer(model, personToUpdate, target);
+    }
+
+    private CommandResult recordIntroducer(Model model, Person personToUpdate, String target) {
         if (personToUpdate.getIntroducer().isPresent() && !confirmed) {
-            String target = targetName == null ? Integer.toString(targetIndex.getOneBased()) : targetName;
             return new CommandResult(String.format(MESSAGE_CONFIRM_REPLACEMENT,
                     personToUpdate.getName(), personToUpdate.getIntroducer().orElseThrow(), introducer,
                     target));
@@ -107,7 +114,9 @@ public class IntroduceCommand extends Command {
                 personToUpdate.getEmail().orElse(null),
                 personToUpdate.getLinkedin().orElse(null),
                 introducer,
-                personToUpdate.getTags());
+                personToUpdate.getTags(),
+                personToUpdate.getFollowUps(),
+                personToUpdate.isStarred());
         model.setPerson(personToUpdate, updatedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_RECORDED, Messages.format(updatedPerson)));

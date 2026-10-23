@@ -38,7 +38,9 @@ public final class PersonNameResolver {
      */
     public sealed interface Outcome {
 
-        /** Exactly one contact matched, and it is the one the user meant. */
+        /**
+         * Carries the only matching contact.
+         */
         record Unique(Person person) implements Outcome {}
 
         /**
@@ -58,10 +60,10 @@ public final class PersonNameResolver {
      * is expected to restore the full list afterwards; when no contact matches, the full list is
      * restored here, since there is nothing left to show.
      *
-     * @param model contact file to search, and whose displayed list is filtered to the matches
-     * @param targetName name as the user typed it, matched case-insensitively and need not be in full
-     * @param commandWord word the user typed, used to tell them how to retry when the name is ambiguous
-     * @throws CommandException if no contact matches {@code targetName}
+     * @param model Contact file to search, and whose displayed list is filtered to the matches.
+     * @param targetName Name as the user typed it, matched case-insensitively and need not be in full.
+     * @param commandWord Word the user typed, used to explain how to retry when the name is ambiguous.
+     * @throws CommandException if no contact matches {@code targetName}.
      */
     public static Outcome resolve(Model model, String targetName, String commandWord) throws CommandException {
         requireNonNull(model);
@@ -85,11 +87,20 @@ public final class PersonNameResolver {
     }
 
     /**
+     * Returns all matching stored contacts without changing the current display.
+     */
+    public static List<Person> findMatches(Model model, String targetName) {
+        return model.getContactFile().getPersonList().stream()
+                .filter(new NameContainsKeywordsPredicate(List.of(targetName)))
+                .toList();
+    }
+
+    /**
      * Returns the given contacts as numbered lines of their name, company and email, skipping details
      * they do not have, e.g. "1. John Lim - Google - john.lim@example.com", separated by em dashes. Name alone is
      * rarely enough to tell two matches apart, which is the whole reason the list is being shown.
      */
-    private static String formatNumberedList(List<Person> persons) {
+    static String formatNumberedList(List<Person> persons) {
         StringBuilder list = new StringBuilder();
         for (int i = 0; i < persons.size(); i++) {
             Person person = persons.get(i);

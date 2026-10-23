@@ -3,11 +3,35 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.model.person.FollowUp;
+
 public class CommandResultTest {
+    @Test
+    public void followUpDetails_retainsContextAndUsesItInEquality() {
+        FollowUp action = new FollowUp(1, "Call", FollowUp.Status.PENDING);
+        CommandResult result = CommandResult.createFollowUpDetails("feedback", ALICE, action);
+        CommandResult same = CommandResult.createFollowUpDetails("feedback", ALICE, action);
+        assertEquals(ALICE, result.getPersonForDetails().orElseThrow());
+        assertEquals(action, result.getFollowUpForDetails().orElseThrow());
+        assertEquals(result, same);
+        assertEquals(result.hashCode(), same.hashCode());
+        assertNotEquals(result, CommandResult.createPersonDetails("feedback", ALICE));
+        assertNotEquals(result, CommandResult.createFollowUpDetails("feedback", BENSON, action));
+        assertNotEquals(result, CommandResult.createFollowUpDetails("feedback", ALICE,
+                new FollowUp(2, "Other", FollowUp.Status.PENDING)));
+        assertTrue(new CommandResult("feedback").getFollowUpForDetails().isEmpty());
+        assertThrows(NullPointerException.class, () -> CommandResult.createFollowUpDetails(null, ALICE, action));
+        assertThrows(NullPointerException.class, () -> CommandResult.createFollowUpDetails("feedback", null, action));
+        assertThrows(NullPointerException.class, () -> CommandResult.createFollowUpDetails("feedback", ALICE, null));
+    }
+
     @Test
     public void equals() {
         CommandResult commandResult = new CommandResult("feedback");
