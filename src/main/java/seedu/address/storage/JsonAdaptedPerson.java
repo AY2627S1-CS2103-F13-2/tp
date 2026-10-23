@@ -13,6 +13,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Event;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -36,9 +37,40 @@ class JsonAdaptedPerson {
     private final String linkedin;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
+    private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
+    private final boolean starred;
 
     /**
-     * Constructs a JsonAdaptedPerson with the given person details.
+     * Constructs a JsonAdaptedPerson without events, follow-ups or starred status.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags) {
+        this(name, company, role, phone, email, linkedin,
+                tags, null, null, false);
+    }
+
+    /**
+     * Constructs a JsonAdaptedPerson with follow-ups.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags,
+            List<JsonAdaptedFollowUp> followUps) {
+        this(name, company, role, phone, email, linkedin,
+                tags, null, followUps, false);
+    }
+
+    /**
+     * Constructs a JsonAdaptedPerson with starred status.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags,
+            boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                tags, null, null, starred);
+    }
+
+    /**
+     * Jackson constructor containing all contact data.
      */
     @JsonCreator
     public JsonAdaptedPerson(
@@ -49,13 +81,16 @@ class JsonAdaptedPerson {
             @JsonProperty("email") String email,
             @JsonProperty("linkedin") String linkedin,
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
-            @JsonProperty("events") List<JsonAdaptedEvent> events) {
+            @JsonProperty("events") List<JsonAdaptedEvent> events,
+            @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
+            @JsonProperty("starred") boolean starred) {
         this.name = name;
         this.company = company;
         this.role = role;
         this.phone = phone;
         this.email = email;
         this.linkedin = linkedin;
+        this.starred = starred;
 
         if (tags != null) {
             this.tags.addAll(tags);
@@ -64,22 +99,10 @@ class JsonAdaptedPerson {
         if (events != null) {
             this.events.addAll(events);
         }
-    }
 
-    /**
-     * Constructs a JsonAdaptedPerson without events.
-     *
-     * This constructor preserves compatibility with existing tests and callers.
-     */
-    public JsonAdaptedPerson(
-            String name,
-            String company,
-            String role,
-            String phone,
-            String email,
-            String linkedin,
-            List<JsonAdaptedTag> tags) {
-        this(name, company, role, phone, email, linkedin, tags, null);
+        if (followUps != null) {
+            this.followUps.addAll(followUps);
+        }
     }
 
     /**
@@ -92,6 +115,7 @@ class JsonAdaptedPerson {
         phone = source.getPhone().map(value -> value.value).orElse(null);
         email = source.getEmail().map(value -> value.value).orElse(null);
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
+        starred = source.isStarred();
 
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
@@ -100,6 +124,10 @@ class JsonAdaptedPerson {
         events.addAll(source.getEvents().stream()
                 .map(JsonAdaptedEvent::new)
                 .collect(Collectors.toList()));
+
+        source.getFollowUps().stream()
+                .map(JsonAdaptedFollowUp::new)
+                .forEach(followUps::add);
     }
 
     /**
@@ -109,20 +137,19 @@ class JsonAdaptedPerson {
      */
     public Person toModelType() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
-
         for (JsonAdaptedTag tag : tags) {
             personTags.add(tag.toModelType());
         }
 
         final List<Event> personEvents = new ArrayList<>();
-
         for (JsonAdaptedEvent event : events) {
             personEvents.add(event.toModelType());
         }
 
         if (name == null) {
             throw new IllegalValueException(
-                    String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName()));
+                    String.format(MISSING_FIELD_MESSAGE_FORMAT,
+                            Name.class.getSimpleName()));
         }
 
         if (!Name.isValidName(name)) {
@@ -178,6 +205,24 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
         final Set<Event> modelEventSet = new HashSet<>(personEvents);
+        final List<FollowUp> modelFollowUps = new ArrayList<>();
+        final Set<Integer> actionIds = new HashSet<>();
+
+        for (JsonAdaptedFollowUp action : followUps) {
+            if (action == null) {
+                throw new IllegalValueException(
+                        "Follow-up entries must not be null.");
+            }
+
+            FollowUp modelAction = action.toModelType();
+
+            if (!actionIds.add(modelAction.getId())) {
+                throw new IllegalValueException(
+                        "Follow-up IDs must be unique within a contact.");
+            }
+
+            modelFollowUps.add(modelAction);
+        }
 
         return new Person(
                 modelName,
@@ -187,6 +232,8 @@ class JsonAdaptedPerson {
                 modelEmail,
                 modelLinkedin,
                 modelTags,
-                modelEventSet);
+                modelEventSet,
+                modelFollowUps,
+                starred);
     }
 }

@@ -85,4 +85,13 @@ public class PhoneTest {
         // unequal values should not be required to differ, but these ones do
         assertNotEquals(new Phone("999").hashCode(), new Phone("995").hashCode());
     }
+
+    @Test
+    public void equals_groupingDiffers_hashCodesMatch() {
+        Phone grouped = new Phone("+65 (9312)-1534");
+        Phone compact = new Phone("+6593121534");
+        assertEquals(grouped, compact);
+        assertEquals(grouped.hashCode(), compact.hashCode());
+        assertNotEquals(compact, new Phone("6593121534"));
+    }
 }

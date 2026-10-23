@@ -61,10 +61,6 @@ public class UniquePersonList implements Iterable<Person> {
      */
     public void add(Person toAdd) {
         requireNonNull(toAdd);
-        //TODO: Name does not uniquely identify a person so do not throw error
-        if (contains(toAdd)) {
-            throw new DuplicatePersonException();
-        }
         internalList.add(toAdd);
     }
 

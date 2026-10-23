@@ -9,4 +9,6 @@ public interface ReadOnlyUserPrefs {
 
     GuiSettings getGuiSettings();
 
+    FieldOrder getFieldOrder();
+
 }

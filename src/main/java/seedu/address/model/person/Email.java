@@ -53,6 +53,13 @@ public class Email {
         return StringUtil.normalise(test).matches(VALIDATION_REGEX);
     }
 
+    /**
+     * Returns whether {@code candidate} is the same complete address, ignoring letter case.
+     */
+    public boolean matches(String candidate) {
+        return value.equalsIgnoreCase(StringUtil.normalise(candidate));
+    }
+
     @Override
     public String toString() {
         return value;

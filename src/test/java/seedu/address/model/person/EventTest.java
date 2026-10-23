@@ -116,4 +116,14 @@ public class EventTest {
 
         assertEquals("NUS Career Fair (2026-10-20)", event.toString());
     }
+
+    @Test
+    public void isValidName_nullName_returnsFalse() {
+        assertFalse(Event.isValidName(null));
+    }
+
+    @Test
+    public void isValidDate_nullDate_returnsFalse() {
+        assertFalse(Event.isValidDate(null));
+    }
 }

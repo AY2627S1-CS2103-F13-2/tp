@@ -12,6 +12,7 @@ import seedu.address.commons.core.GuiSettings;
 public class UserPrefs implements ReadOnlyUserPrefs {
 
     private GuiSettings guiSettings = new GuiSettings();
+    private FieldOrder fieldOrder = FieldOrder.DEFAULT;
 
     /**
      * Creates a {@code UserPrefs} with default values.
@@ -24,6 +25,7 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     public UserPrefs(ReadOnlyUserPrefs userPrefs) {
         requireNonNull(userPrefs);
         setGuiSettings(userPrefs.getGuiSettings());
+        setFieldOrder(userPrefs.getFieldOrder());
     }
 
     public GuiSettings getGuiSettings() {
@@ -33,6 +35,14 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     public void setGuiSettings(GuiSettings guiSettings) {
         requireNonNull(guiSettings);
         this.guiSettings = guiSettings;
+    }
+
+    public FieldOrder getFieldOrder() {
+        return fieldOrder;
+    }
+
+    public void setFieldOrder(FieldOrder fieldOrder) {
+        this.fieldOrder = requireNonNull(fieldOrder);
     }
 
     @Override
@@ -46,17 +56,17 @@ public class UserPrefs implements ReadOnlyUserPrefs {
             return false;
         }
 
-        return guiSettings.equals(otherUserPrefs.guiSettings);
+        return guiSettings.equals(otherUserPrefs.guiSettings) && fieldOrder.equals(otherUserPrefs.fieldOrder);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(guiSettings);
+        return Objects.hash(guiSettings, fieldOrder);
     }
 
     @Override
     public String toString() {
-        return "Gui Settings : " + guiSettings;
+        return "Gui Settings : " + guiSettings + "; Field Order : " + fieldOrder;
     }
 
 }
