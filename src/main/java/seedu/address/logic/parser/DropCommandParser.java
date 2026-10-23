@@ -27,11 +27,18 @@ public class DropCommandParser implements Parser<DropCommand> {
     public DropCommand parse(String args) throws ParseException {
         requireNonNull(args);
         String arguments = args.trim();
+        boolean confirmed = arguments.endsWith(DropCommand.CONFIRM_OPTION)
+                && arguments.length() > DropCommand.CONFIRM_OPTION.length()
+                && Character.isWhitespace(arguments.charAt(arguments.length() - DropCommand.CONFIRM_OPTION.length()
+                - 1));
+        if (confirmed) {
+            arguments = arguments.substring(0, arguments.length() - DropCommand.CONFIRM_OPTION.length()).trim();
+        }
         Target target = parseTarget(arguments);
         List<DropCommand.FieldValue> values = parseValues(arguments.substring(target.fieldsStart()));
         return target.index() == null
-                ? new DropCommand(target.name(), values, false)
-                : new DropCommand(target.index(), values, false);
+                ? new DropCommand(target.name(), values, confirmed)
+                : new DropCommand(target.index(), values, confirmed);
     }
 
     private static Target parseTarget(String args) throws ParseException {
