@@ -21,12 +21,15 @@ import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
@@ -147,10 +150,27 @@ public class ContactFileParserTest {
     }
 
     @Test
+    public void parseCommand_followups_acceptsOnlyNoArguments() throws Exception {
+        assertTrue(parser.parseCommand("followups") instanceof PendingFollowUpsCommand);
+        assertTrue(parser.parseCommand("  followups \t ") instanceof PendingFollowUpsCommand);
+        String error = String.format(MESSAGE_INVALID_COMMAND_FORMAT, PendingFollowUpsCommand.MESSAGE_USAGE);
+        for (String input : List.of("followups 1", "followups a/Call", "followups d/2026-10-25")) {
+            assertThrows(ParseException.class, error, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
     public void parseCommand_view() throws Exception {
         assertEquals(
                 new ViewCommand(Index.fromOneBased(1)),
                 parser.parseCommand(ViewCommand.COMMAND_WORD + " 1"));
+        assertEquals(new ViewCommand("Alice Pauline"), parser.parseCommand("view Alice Pauline"));
+    }
+
+    @Test
+    public void parseCommand_introduce() throws Exception {
+        assertEquals(new IntroduceCommand("Jane Smith", new Name("Jane Doe"), false),
+                parser.parseCommand(IntroduceCommand.COMMAND_WORD + " Jane Smith i/Jane Doe"));
     }
 
     @Test
@@ -164,5 +184,6 @@ public class ContactFileParserTest {
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("record 1 i/Jane Doe"));
     }
 }

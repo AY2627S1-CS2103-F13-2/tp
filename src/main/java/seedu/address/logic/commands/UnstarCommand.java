@@ -76,10 +76,7 @@ public class UnstarCommand extends Command {
             return new CommandResult(String.format(MESSAGE_NOT_STARRED, personToUnstar.getName()));
         }
 
-        Person unstarredPerson = new Person(personToUnstar.getName(), personToUnstar.getCompany().orElse(null),
-                personToUnstar.getRole().orElse(null), personToUnstar.getPhone().orElse(null),
-                personToUnstar.getEmail().orElse(null), personToUnstar.getLinkedin().orElse(null),
-                personToUnstar.getTags(), false);
+        Person unstarredPerson = personToUnstar.withStarred(false);
         model.setPerson(personToUnstar, unstarredPerson);
         return new CommandResult(String.format(MESSAGE_SUCCESS, unstarredPerson.getName()));
     }

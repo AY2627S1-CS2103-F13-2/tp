@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_COMPANY;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_INTRODUCER;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LINKEDIN;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
@@ -31,6 +32,7 @@ public class AddCommand extends Command {
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_LINKEDIN + "LINKEDIN] "
+            + "[" + PREFIX_INTRODUCER + "INTRODUCER] "
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " "
             + PREFIX_NAME + "John Doe "
@@ -39,6 +41,7 @@ public class AddCommand extends Command {
             + PREFIX_PHONE + "98765432 "
             + PREFIX_EMAIL + "johnd@example.com "
             + PREFIX_LINKEDIN + "linkedin.com/in/johndoe "
+            + PREFIX_INTRODUCER + "Jane Smith "
             + PREFIX_TAG + "careerfair "
             + PREFIX_TAG + "owesMoney";
 
@@ -62,11 +65,6 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        //TODO:If same name exist in the contact prompt user if he/she wants to update that contact
-        if (model.hasPerson(toAdd)) {
-            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
-        }
-
         if (model.hasEmail(toAdd)) {
             throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
         }
@@ -75,7 +73,7 @@ public class AddCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PHONE);
         }
         model.addPerson(toAdd);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd, model.getFieldOrder())));
     }
 
     @Override

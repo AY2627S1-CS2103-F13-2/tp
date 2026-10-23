@@ -1,12 +1,19 @@
 package seedu.address.ui;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import seedu.address.logic.Messages;
+import seedu.address.model.FieldOrder;
 import seedu.address.model.person.Person;
 
 /**
@@ -29,6 +36,10 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private HBox cardPane;
     @FXML
+    private HBox nameRow;
+    @FXML
+    private VBox fields;
+    @FXML
     private Label name;
     @FXML
     private Label id;
@@ -43,12 +54,23 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label linkedin;
     @FXML
+    private Label introducer;
+    @FXML
     private FlowPane tags;
+    @FXML
+    private Label followUps;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
      */
     public PersonCard(Person person, int displayedIndex) {
+        this(person, displayedIndex, FieldOrder.DEFAULT);
+    }
+
+    /**
+     * Creates a contact card with every present field arranged in the global order.
+     */
+    public PersonCard(Person person, int displayedIndex, FieldOrder order) {
         super(FXML);
         this.person = person;
         id.setText(displayedIndex + ". ");
@@ -58,9 +80,27 @@ public class PersonCard extends UiPart<Region> {
         setOptionalLabel(phone, person.getPhone().map(value -> value.value).orElse(null));
         setOptionalLabel(email, person.getEmail().map(value -> value.value).orElse(null));
         setOptionalLabel(linkedin, person.getLinkedin().map(value -> value.value).orElse(null));
+        setOptionalLabel(introducer, person.getIntroducer().map(value -> "Introduced by: " + value).orElse(null));
+        setOptionalLabel(followUps, person.getFollowUps().isEmpty() ? null
+                : "Follow-ups:\n" + Messages.formatFollowUps(person));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+        tags.setVisible(!person.getTags().isEmpty());
+        tags.setManaged(!person.getTags().isEmpty());
+        Map<FieldOrder.Field, Node> rows = Map.of(
+                FieldOrder.Field.NAME, nameRow, FieldOrder.Field.TAGS, tags,
+                FieldOrder.Field.COMPANY, company, FieldOrder.Field.ROLE, role,
+                FieldOrder.Field.PHONE, phone, FieldOrder.Field.EMAIL, email,
+                FieldOrder.Field.LINKEDIN, linkedin, FieldOrder.Field.FOLLOWUPS, followUps);
+        List<Node> orderedRows = new ArrayList<>();
+        order.getFields().forEach(field -> {
+            orderedRows.add(rows.get(field));
+            if (field == FieldOrder.Field.LINKEDIN && person.getIntroducer().isPresent()) {
+                orderedRows.add(introducer);
+            }
+        });
+        fields.getChildren().setAll(orderedRows);
     }
 
     /**

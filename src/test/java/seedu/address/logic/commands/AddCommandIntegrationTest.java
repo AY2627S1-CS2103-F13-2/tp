@@ -39,10 +39,15 @@ public class AddCommandIntegrationTest {
     }
 
     @Test
-    public void execute_duplicatePerson_throwsCommandException() {
-        Person personInList = model.getContactFile().getPersonList().get(0);
-        assertCommandFailure(new AddCommand(personInList), model,
-                AddCommand.MESSAGE_DUPLICATE_PERSON);
+    public void execute_newPersonWithIntroducer_success() {
+        Person validPerson = new PersonBuilder().withIntroducer("O'Brien-Smith").build();
+
+        Model expectedModel = new ModelManager(model.getContactFile(), new UserPrefs());
+        expectedModel.addPerson(validPerson);
+
+        assertCommandSuccess(new AddCommand(validPerson), model,
+                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+                expectedModel);
     }
 
     @Test

@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
@@ -39,6 +41,7 @@ import javafx.stage.Window;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.model.FieldOrder;
 import seedu.address.model.person.Person;
 import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.RecoveryArchive;
@@ -378,10 +381,17 @@ class UiManagerTest {
      * Supplies contacts without connecting UI tests to persistent storage.
      */
     private static class LogicStub implements Logic {
+        private final ReadOnlyObjectWrapper<FieldOrder> fieldOrder = new ReadOnlyObjectWrapper<>(FieldOrder.DEFAULT);
+
         private final ObservableList<Person> contacts;
 
         LogicStub(List<Person> contacts) {
             this.contacts = FXCollections.observableArrayList(contacts);
+        }
+
+        @Override
+        public ReadOnlyObjectProperty<FieldOrder> getFieldOrderProperty() {
+            return fieldOrder.getReadOnlyProperty();
         }
 
         @Override
