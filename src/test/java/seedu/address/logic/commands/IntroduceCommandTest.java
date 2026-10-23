@@ -61,15 +61,15 @@ public class IntroduceCommandTest {
     }
 
     @Test
-    public void execute_confirmedRequest_targetWasDeleted_rejectsStaleRequest() throws Exception {
+    public void execute_deletedTarget_rejectsStaleRequest() throws Exception {
         Person original = new PersonBuilder().withIntroducer("Old Introducer").build();
         Model model = new ModelManager(new ContactFileBuilder().withPerson(original).build(), new UserPrefs());
         CommandResult prompt = new IntroduceCommand(Index.fromOneBased(1),
                 new Name("New Introducer"), false).execute(model);
         model.deletePerson(original);
 
-        CommandException exception = assertThrows(CommandException.class,
-                () -> prompt.getPendingRequest().orElseThrow().respond("y", model));
+        CommandException exception = assertThrows(CommandException.class, () ->
+                prompt.getPendingRequest().orElseThrow().respond("y", model));
 
         assertEquals("Contacts changed. Start the introduce request again.", exception.getMessage());
         assertTrue(model.getContactFile().getPersonList().isEmpty());

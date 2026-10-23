@@ -60,29 +60,29 @@ public class DropCommandTest {
     }
 
     @Test
-    public void execute_confirmedRequest_targetWasDeleted_rejectsStaleRequest() throws Exception {
+    public void execute_deletedTarget_rejectsStaleRequest() throws Exception {
         Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
         CommandResult prompt = new DropCommand(Index.fromOneBased(1),
                 List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
         model.deletePerson(original);
 
-        CommandException exception = assertThrows(CommandException.class,
-                () -> prompt.getPendingRequest().orElseThrow().respond("y", model));
+        CommandException exception = assertThrows(CommandException.class, () ->
+                prompt.getPendingRequest().orElseThrow().respond("y", model));
 
         assertEquals("Contacts changed. Start the drop request again.", exception.getMessage());
         assertTrue(model.getContactFile().getPersonList().isEmpty());
     }
 
     @Test
-    public void execute_confirmedRequest_selectedValueWasRemoved_rejectsStaleRequest() throws Exception {
+    public void execute_removedValue_rejectsStaleRequest() throws Exception {
         MutableTagsPerson target = new MutableTagsPerson(original);
         Model model = new ModelManager(new ContactFileBuilder().withPerson(target).build(), new UserPrefs());
         CommandResult prompt = new DropCommand(Index.fromOneBased(1),
                 List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
         target.hideTags();
 
-        CommandException exception = assertThrows(CommandException.class,
-                () -> prompt.getPendingRequest().orElseThrow().respond("y", model));
+        CommandException exception = assertThrows(CommandException.class, () ->
+                prompt.getPendingRequest().orElseThrow().respond("y", model));
 
         assertEquals(String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND, "tag", "old", target.getName()),
                 exception.getMessage());
@@ -304,7 +304,7 @@ public class DropCommandTest {
     }
 
     @Test
-    public void execute_ambiguousName_selectedContactWasDeleted_rejectsStaleSelection() throws Exception {
+    public void execute_deletedCandidate_rejectsStaleSelection() throws Exception {
         Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
         ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
         Model model = new ModelManager(twoPeople, new UserPrefs());
@@ -312,8 +312,8 @@ public class DropCommandTest {
                 List.of(new FieldValue(Field.TAG, new Tag("old"))), true).execute(model);
         model.deletePerson(janeSmith);
 
-        CommandException exception = assertThrows(CommandException.class,
-                () -> selection.getPendingRequest().orElseThrow().respond("2", model));
+        CommandException exception = assertThrows(CommandException.class, () ->
+                selection.getPendingRequest().orElseThrow().respond("2", model));
 
         assertEquals("Contacts changed. Start the drop request again.", exception.getMessage());
         assertEquals(List.of(original), model.getContactFile().getPersonList());
