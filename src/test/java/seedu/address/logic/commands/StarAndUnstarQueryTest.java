@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,8 @@ import seedu.address.logic.parser.ContactFileParser;
 import seedu.address.logic.parser.FindCommandParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
+import seedu.address.model.person.Event;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
@@ -40,6 +43,32 @@ public class StarAndUnstarQueryTest {
                 assertEquals(List.of(expected, BENSON), model.getContactFile().getPersonList());
                 assertEquals(String.format(starred ? StarCommand.MESSAGE_SUCCESS : UnstarCommand.MESSAGE_SUCCESS,
                         ALICE.getName()), result.getFeedbackToUser());
+            }
+        }
+    }
+
+    @Test
+    public void execute_upstreamFindQueries_preservesEventsAndDatedFollowUps() throws Exception {
+        Event event = new Event("Tech Meetup", "2026-10-20");
+        FollowUp action = new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING,
+                LocalDate.of(2026, 10, 25));
+        for (boolean starred : List.of(true, false)) {
+            for (String query : List.of("/company Acme", "/role Analyst", "/company Acme /role Analyst",
+                    "/event Tech Meetup", "/fuzzy Alice Pauline")) {
+                Model model = new ModelManager();
+                Person original = new PersonBuilder(ALICE).withCompany("Acme").withRole("Analyst")
+                        .withFollowUps(action).withStarred(!starred).build().withEvent(event);
+                model.addPerson(original);
+                model.addPerson(BENSON);
+                model.updateFilteredPersonList(person -> person.equals(BENSON));
+
+                parser.parseCommand(commandWord(starred) + " " + query).execute(model);
+
+                Person updated = model.getFilteredPersonList().getFirst();
+                assertEquals(List.of(original.withStarred(starred)), model.getFilteredPersonList());
+                assertEquals(original.getEvents(), updated.getEvents());
+                assertEquals(List.of(action), updated.getFollowUps());
+                assertSame(BENSON, model.getContactFile().getPersonList().get(1));
             }
         }
     }
@@ -116,6 +145,15 @@ public class StarAndUnstarQueryTest {
             assertThrows(NullPointerException.class, () -> queryCommand(null, starred));
             assertThrows(NullPointerException.class, () -> command.execute(null));
         }
+    }
+
+    @Test
+    public void toString_queryCommand_identifiesSearchCriteria() throws Exception {
+        FindCommand find = new FindCommandParser().parse("Alice");
+        assertEquals(StarCommand.class.getCanonicalName() + "{findCommand=" + find + "}",
+                new StarCommand(find).toString());
+        assertEquals(UnstarCommand.class.getCanonicalName() + "{findCommand=" + find + "}",
+                new UnstarCommand(find).toString());
     }
 
     private Command queryCommand(FindCommand find, boolean starred) {
