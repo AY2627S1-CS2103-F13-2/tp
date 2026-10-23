@@ -82,8 +82,13 @@ public class PersonTest {
         // null -> returns false
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name and email presence -> returns true
+        // same name and different email address -> returns false
         Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
+                .withCompany(VALID_COMPANY_BOB).withTags(VALID_TAG_HUSBAND).build();
+        assertFalse(ALICE.isSamePerson(editedAlice));
+
+        // same name and same email with other details changed -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB)
                 .withCompany(VALID_COMPANY_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
@@ -100,6 +105,26 @@ public class PersonTest {
         String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
         editedBob = new PersonBuilder(BOB).withName(nameWithTrailingSpaces).build();
         assertTrue(BOB.isSamePerson(editedBob));
+    }
+
+    @Test
+    public void isSamePerson_sameNameDifferentPhoneAndEmail_returnsFalse() {
+        Person first = new PersonBuilder().withName("Alex Smith").withPhone("81111111")
+                .withEmail("alex.one@example.com").build();
+        Person second = new PersonBuilder().withName("Alex Smith").withPhone("82222222")
+                .withEmail("alex.two@example.com").build();
+
+        assertFalse(first.isSamePerson(second));
+        assertFalse(second.isSamePerson(first));
+    }
+
+    @Test
+    public void isSamePerson_sameNameAndEmailIgnoringCase_returnsTrue() {
+        Person first = new PersonBuilder().withName("Alex Smith").withEmail("alex@example.com").build();
+        Person second = new PersonBuilder().withName("Alex Smith").withEmail("ALEX@EXAMPLE.COM").build();
+
+        assertTrue(first.isSamePerson(second));
+        assertTrue(second.isSamePerson(first));
     }
 
     @Test

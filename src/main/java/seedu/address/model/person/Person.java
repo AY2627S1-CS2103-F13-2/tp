@@ -162,7 +162,7 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name and both have an email or both do not.
+     * Returns true if both persons have the same name and email address.
      * This defines a weaker notion of equality between two persons.
      */
     public boolean isSamePerson(Person otherPerson) {
@@ -170,9 +170,15 @@ public class Person {
             return true;
         }
 
-        return otherPerson != null
-                && otherPerson.getName().equals(getName())
-                && otherPerson.getEmail().isPresent() == getEmail().isPresent();
+        if (otherPerson == null || !otherPerson.getName().equals(getName())) {
+            return false;
+        }
+
+        Optional<Email> otherEmail = otherPerson.getEmail();
+        Optional<Email> email = getEmail();
+        return otherEmail.isEmpty() && email.isEmpty()
+                || otherEmail.isPresent() && email.isPresent()
+                        && email.orElseThrow().matches(otherEmail.orElseThrow().value);
     }
 
     /**
