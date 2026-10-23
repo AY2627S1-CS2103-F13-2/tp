@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
@@ -109,6 +110,26 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_storageThrowsRuntimeException_restoresModel() {
+        JsonContactFileStorage contactFileStorage =
+                new JsonContactFileStorage(temporaryFolder.resolve("RuntimeExceptionContactFile.json")) {
+                    @Override
+                    public void saveContactFile(ReadOnlyContactFile contactFile) {
+                        throw new IllegalStateException("dummy runtime exception");
+                    }
+                };
+        StorageManager storage = new StorageManager(contactFileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("RuntimeExceptionUserPrefs.json")));
+        logic = new LogicManager(model, storage);
+
+        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY
+                + PHONE_DESC_AMY + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY;
+
+        assertThrows(IllegalStateException.class, () -> logic.execute(addCommand));
+        assertEquals(new ModelManager(), model);
+    }
+
+    @Test
     public void execute_dropWithoutConfirmation_doesNotSaveContactFile() throws Exception {
         Person person = new PersonBuilder().withTags("outdated", "keep").build();
         model = new ModelManager(new ContactFileBuilder().withPerson(person).build(), new UserPrefs());
@@ -133,6 +154,15 @@ public class LogicManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void setGuiSettings_updatesModel() {
+        GuiSettings guiSettings = new GuiSettings(900, 700, 30, 40);
+
+        logic.setGuiSettings(guiSettings);
+
+        assertEquals(guiSettings, model.getGuiSettings());
     }
 
     /**

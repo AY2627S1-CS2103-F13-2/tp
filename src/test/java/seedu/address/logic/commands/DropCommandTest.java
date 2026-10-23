@@ -142,11 +142,44 @@ public class DropCommandTest {
 
     @Test
     public void execute_valueWithWrongModelType_isReportedAsNotFound() {
-        Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
-        assertCommandFailure(new DropCommand(Index.fromOneBased(1),
-                        List.of(new FieldValue(Field.TAG, new Email("wrong@example.com"))), true),
-                model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND,
-                        "tag", "wrong@example.com", "Jane Doe"));
+        List<FieldValue> selections = List.of(
+                new FieldValue(Field.COMPANY, new Email("wrong@example.com")),
+                new FieldValue(Field.ROLE, new Email("wrong@example.com")),
+                new FieldValue(Field.PHONE, new Email("wrong@example.com")),
+                new FieldValue(Field.EMAIL, new Tag("wrong")),
+                new FieldValue(Field.LINKEDIN, new Email("wrong@example.com")),
+                new FieldValue(Field.TAG, new Email("wrong@example.com")),
+                new FieldValue(Field.INTRODUCER, new Email("wrong@example.com")));
+
+        for (FieldValue selection : selections) {
+            Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
+            assertCommandFailure(new DropCommand(Index.fromOneBased(1), List.of(selection), true),
+                    model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND,
+                            selection.field().getDisplayName(), selection.displayValue(), "Jane Doe"));
+        }
+    }
+
+    @Test
+    public void execute_unmatchedValueForEveryField_isReportedAsNotFound() {
+        Person withIntroducer = new PersonBuilder(original).withIntroducer("Old Introducer").build();
+        ContactFile file = new ContactFileBuilder().withPerson(withIntroducer).build();
+        List<FieldValue> selections = List.of(
+                new FieldValue(Field.COMPANY,
+                        new Company(withIntroducer.getCompany().orElseThrow().value + " missing")),
+                new FieldValue(Field.ROLE, new Role(withIntroducer.getRole().orElseThrow().value + " missing")),
+                new FieldValue(Field.PHONE, new Phone("9999999999")),
+                new FieldValue(Field.EMAIL, new Email(withIntroducer.getEmail().orElseThrow().value + ".missing")),
+                new FieldValue(Field.LINKEDIN,
+                        new Linkedin(withIntroducer.getLinkedin().orElseThrow().value + "missing")),
+                new FieldValue(Field.TAG, new Tag("missing")),
+                new FieldValue(Field.INTRODUCER, new Name("Missing Introducer")));
+
+        for (FieldValue selection : selections) {
+            Model model = new ModelManager(new ContactFile(file), new UserPrefs());
+            assertCommandFailure(new DropCommand(Index.fromOneBased(1), List.of(selection), true),
+                    model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND,
+                            selection.field().getDisplayName(), selection.displayValue(), withIntroducer.getName()));
+        }
     }
 
     @Test
