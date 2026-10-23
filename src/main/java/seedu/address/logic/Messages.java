@@ -44,8 +44,13 @@ public class Messages {
      * Formats full details in the requested order, omitting absent fields.
      */
     public static String format(Person person, FieldOrder order) {
-        return order.getFields().stream().map(field -> formatField(person, field))
+        String details = order.getFields().stream().map(field -> formatField(person, field))
                 .filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
+        if (person.getIntroducer().isPresent()) {
+            String introducer = "Introduced by: " + person.getIntroducer().orElseThrow();
+            details = details.isEmpty() ? introducer : details + "; " + introducer;
+        }
+        return details;
     }
 
     private static String formatField(Person person, FieldOrder.Field field) {

@@ -18,6 +18,7 @@ import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.FollowUpCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.OrderCommand;
 import seedu.address.logic.commands.PendingFollowUpsCommand;
@@ -65,6 +66,7 @@ public class ContactFileParser {
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
+            case IntroduceCommand.COMMAND_WORD -> new IntroduceCommandParser().parse(arguments);
             case StarCommand.COMMAND_WORD -> new StarCommandParser().parse(arguments);
             case UnstarCommand.COMMAND_WORD -> new UnstarCommandParser().parse(arguments);
             case StarredCommand.COMMAND_WORD -> new StarredCommand();

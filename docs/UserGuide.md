@@ -113,9 +113,10 @@ Format: `help`
 
 Adds a person to the contact file.
 
-Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
+Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​`
 
-* Only the name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -123,6 +124,7 @@ A person can have any number of tags, including zero.
 
 Examples:
 * `add n/John Doe c/Acme r/Software Engineer p/98765432 e/johnd@example.com l/linkedin.com/in/johndoe`
+* `add n/John Doe i/O'Brien-Smith` Adds John Doe and records O'Brien-Smith as the introducer.
 * `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`
 * `add n/Hans Gruber` — just a name, when that is all you got before the conversation moved on.
 
@@ -189,6 +191,21 @@ Examples:
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
 *  `edit 3 c/ r/` Removes the company and role of the 3rd person.
+
+### Introducing a person: `introduce`
+
+Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
+
+Format: `introduce NAME i/INTRODUCER [--confirm]`
+
+* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
+* Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
+* If an introducer is already recorded, Astra displays that name and asks before replacing it. Confirm by repeating the command with `--confirm` at the end.
+* Astra displays the updated contact after recording the introducer.
+
+Examples:
+* `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
+* `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
 ### Locating persons: `find`
 
@@ -544,7 +561,7 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
+**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com i/Jane Smith t/colleague`
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)

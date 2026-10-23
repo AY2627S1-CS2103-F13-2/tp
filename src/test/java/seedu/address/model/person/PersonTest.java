@@ -16,6 +16,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,26 @@ public class PersonTest {
         Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags());
         assertFalse(person.isStarred());
         assertEquals(NAME_ONLY, person);
+    }
+
+    @Test
+    public void constructor_withStarredStatus_defaultsToNoFollowUps() {
+        Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags(), true);
+
+        assertTrue(person.isStarred());
+        assertTrue(person.getFollowUps().isEmpty());
+        assertEquals(Optional.empty(), person.getIntroducer());
+    }
+
+    @Test
+    public void constructor_withFollowUpsAndStarredStatus_preservesBoth() {
+        FollowUp followUp = new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING);
+        Person person = new Person(NAME_ONLY.getName(), null, null, null, null, null, NAME_ONLY.getTags(),
+                List.of(followUp), true);
+
+        assertTrue(person.isStarred());
+        assertEquals(List.of(followUp), person.getFollowUps());
+        assertEquals(Optional.empty(), person.getIntroducer());
     }
 
     @Test
@@ -61,8 +82,13 @@ public class PersonTest {
         // null -> returns false
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name and email presence -> returns true
+        // same name and different email address -> returns false
         Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
+                .withCompany(VALID_COMPANY_BOB).withTags(VALID_TAG_HUSBAND).build();
+        assertFalse(ALICE.isSamePerson(editedAlice));
+
+        // same name and same email with other details changed -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB)
                 .withCompany(VALID_COMPANY_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
@@ -79,6 +105,26 @@ public class PersonTest {
         String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
         editedBob = new PersonBuilder(BOB).withName(nameWithTrailingSpaces).build();
         assertTrue(BOB.isSamePerson(editedBob));
+    }
+
+    @Test
+    public void isSamePerson_sameNameDifferentPhoneAndEmail_returnsFalse() {
+        Person first = new PersonBuilder().withName("Alex Smith").withPhone("81111111")
+                .withEmail("alex.one@example.com").build();
+        Person second = new PersonBuilder().withName("Alex Smith").withPhone("82222222")
+                .withEmail("alex.two@example.com").build();
+
+        assertFalse(first.isSamePerson(second));
+        assertFalse(second.isSamePerson(first));
+    }
+
+    @Test
+    public void isSamePerson_sameNameAndEmailIgnoringCase_returnsTrue() {
+        Person first = new PersonBuilder().withName("Alex Smith").withEmail("alex@example.com").build();
+        Person second = new PersonBuilder().withName("Alex Smith").withEmail("ALEX@EXAMPLE.COM").build();
+
+        assertTrue(first.isSamePerson(second));
+        assertTrue(second.isSamePerson(first));
     }
 
     @Test
@@ -177,6 +223,9 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        editedAlice = new PersonBuilder(ALICE).withIntroducer("Jane Doe").build();
+        assertFalse(ALICE.equals(editedAlice));
+
         // different address -> returns false
         editedAlice = new PersonBuilder(ALICE).withCompany(VALID_COMPANY_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
@@ -205,6 +254,7 @@ public class PersonTest {
         assertEquals(Optional.empty(), NAME_ONLY.getPhone());
         assertEquals(Optional.empty(), NAME_ONLY.getEmail());
         assertEquals(Optional.empty(), NAME_ONLY.getLinkedin());
+        assertEquals(Optional.empty(), NAME_ONLY.getIntroducer());
         assertTrue(NAME_ONLY.getTags().isEmpty());
     }
 
@@ -230,6 +280,7 @@ public class PersonTest {
                 + ", phone=" + ALICE.getPhone().orElse(null)
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
+                + ", introducer=" + ALICE.getIntroducer().orElse(null)
                 + ", tags=" + ALICE.getTags()
                 + ", events=" + ALICE.getEvents()
                 + ", followUps=" + ALICE.getFollowUps()

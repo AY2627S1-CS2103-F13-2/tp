@@ -35,6 +35,7 @@ class JsonAdaptedPerson {
     private final String phone;
     private final String email;
     private final String linkedin;
+    private final String introducer;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
     private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
@@ -44,29 +45,39 @@ class JsonAdaptedPerson {
      * Constructs a JsonAdaptedPerson without events, follow-ups or starred status.
      */
     public JsonAdaptedPerson(String name, String company, String role, String phone,
-            String email, String linkedin, List<JsonAdaptedTag> tags) {
+            String email, String linkedin,
+            List<JsonAdaptedTag> tags) {
         this(name, company, role, phone, email, linkedin,
-                tags, null, null, false);
+                null, tags, null, null, false);
+    }
+
+    /**
+     * Creates an adapted contact with an optional introducer and default action metadata.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            String introducer, List<JsonAdaptedTag> tags) {
+        this(name, company, role, phone, email, linkedin,
+                introducer, tags, null, null, false);
     }
 
     /**
      * Constructs a JsonAdaptedPerson with follow-ups.
      */
     public JsonAdaptedPerson(String name, String company, String role, String phone,
-            String email, String linkedin, List<JsonAdaptedTag> tags,
-            List<JsonAdaptedFollowUp> followUps) {
+            String email, String linkedin,
+            List<JsonAdaptedTag> tags, List<JsonAdaptedFollowUp> followUps) {
         this(name, company, role, phone, email, linkedin,
-                tags, null, followUps, false);
+                null, tags, null, followUps, false);
     }
 
     /**
      * Constructs a JsonAdaptedPerson with starred status.
      */
     public JsonAdaptedPerson(String name, String company, String role, String phone,
-            String email, String linkedin, List<JsonAdaptedTag> tags,
-            boolean starred) {
+            String email, String linkedin,
+            List<JsonAdaptedTag> tags, boolean starred) {
         this(name, company, role, phone, email, linkedin,
-                tags, null, null, starred);
+                null, tags, null, null, starred);
     }
 
     /**
@@ -80,6 +91,7 @@ class JsonAdaptedPerson {
             @JsonProperty("phone") String phone,
             @JsonProperty("email") String email,
             @JsonProperty("linkedin") String linkedin,
+            @JsonProperty("introducer") String introducer,
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("events") List<JsonAdaptedEvent> events,
             @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
@@ -90,6 +102,7 @@ class JsonAdaptedPerson {
         this.phone = phone;
         this.email = email;
         this.linkedin = linkedin;
+        this.introducer = introducer;
         this.starred = starred;
 
         if (tags != null) {
@@ -106,6 +119,17 @@ class JsonAdaptedPerson {
     }
 
     /**
+     * Constructs a JsonAdaptedPerson with events and follow-ups.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags,
+            List<JsonAdaptedEvent> events, List<JsonAdaptedFollowUp> followUps,
+            boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                null, tags, events, followUps, starred);
+    }
+
+    /**
      * Converts a given Person into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
@@ -115,6 +139,7 @@ class JsonAdaptedPerson {
         phone = source.getPhone().map(value -> value.value).orElse(null);
         email = source.getEmail().map(value -> value.value).orElse(null);
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
+        introducer = source.getIntroducer().map(value -> value.fullName).orElse(null);
         starred = source.isStarred();
 
         tags.addAll(source.getTags().stream()
@@ -203,6 +228,15 @@ class JsonAdaptedPerson {
             modelLinkedin = new Linkedin(linkedin);
         }
 
+        final Name modelIntroducer;
+        if (introducer == null) {
+            modelIntroducer = null;
+        } else if (!Name.isValidName(introducer)) {
+            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
+        } else {
+            modelIntroducer = new Name(introducer);
+        }
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
         final Set<Event> modelEventSet = new HashSet<>(personEvents);
         final List<FollowUp> modelFollowUps = new ArrayList<>();
@@ -223,7 +257,6 @@ class JsonAdaptedPerson {
 
             modelFollowUps.add(modelAction);
         }
-
         return new Person(
                 modelName,
                 modelCompany,
@@ -231,6 +264,7 @@ class JsonAdaptedPerson {
                 modelPhone,
                 modelEmail,
                 modelLinkedin,
+                modelIntroducer,
                 modelTags,
                 modelEventSet,
                 modelFollowUps,

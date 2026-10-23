@@ -21,6 +21,7 @@ import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.StarCommand;
@@ -28,6 +29,7 @@ import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
@@ -166,6 +168,12 @@ public class ContactFileParserTest {
     }
 
     @Test
+    public void parseCommand_introduce() throws Exception {
+        assertEquals(new IntroduceCommand("Jane Smith", new Name("Jane Doe"), false),
+                parser.parseCommand(IntroduceCommand.COMMAND_WORD + " Jane Smith i/Jane Doe"));
+    }
+
+    @Test
     public void parseCommand_unrecognisedInput_throwsParseException() {
         Executable unrecognisedInput = () -> parser.parseCommand("");
         assertThrows(ParseException.class,
@@ -176,5 +184,6 @@ public class ContactFileParserTest {
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("record 1 i/Jane Doe"));
     }
 }
