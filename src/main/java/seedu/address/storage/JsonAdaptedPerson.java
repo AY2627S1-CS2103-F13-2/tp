@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Event;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
@@ -25,7 +26,8 @@ import seedu.address.model.tag.Tag;
  */
 class JsonAdaptedPerson {
 
-    public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
+    public static final String MISSING_FIELD_MESSAGE_FORMAT =
+            "Person's %s field is missing!";
 
     private final String name;
     private final String company;
@@ -34,41 +36,52 @@ class JsonAdaptedPerson {
     private final String email;
     private final String linkedin;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
-    private final boolean starred;
+    private final List<JsonAdaptedEvent> events = new ArrayList<>();
     private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
+    private final boolean starred;
 
     /**
-     * Constructs a {@code JsonAdaptedPerson} with the given person details.
+     * Constructs a JsonAdaptedPerson without events, follow-ups or starred status.
      */
-    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
-            List<JsonAdaptedTag> tags) {
-        this(name, company, role, phone, email, linkedin, tags, null);
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags) {
+        this(name, company, role, phone, email, linkedin,
+                tags, null, null, false);
     }
 
     /**
-     * Creates an adapted contact, defaulting absent action history to an empty list for older files.
+     * Constructs a JsonAdaptedPerson with follow-ups.
      */
-    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
-            List<JsonAdaptedTag> tags, List<JsonAdaptedFollowUp> followUps) {
-        this(name, company, role, phone, email, linkedin, tags, followUps, false);
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags,
+            List<JsonAdaptedFollowUp> followUps) {
+        this(name, company, role, phone, email, linkedin,
+                tags, null, followUps, false);
     }
 
     /**
-     * Creates an adapted contact with starred status and no action history.
+     * Constructs a JsonAdaptedPerson with starred status.
      */
-    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
-            List<JsonAdaptedTag> tags, boolean starred) {
-        this(name, company, role, phone, email, linkedin, tags, null, starred);
+    public JsonAdaptedPerson(String name, String company, String role, String phone,
+            String email, String linkedin, List<JsonAdaptedTag> tags,
+            boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                tags, null, null, starred);
     }
 
     /**
-     * Reads both metadata fields; absent fields retain legacy defaults.
+     * Jackson constructor containing all contact data.
      */
     @JsonCreator
-    public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("company") String company,
-            @JsonProperty("role") String role, @JsonProperty("phone") String phone,
-            @JsonProperty("email") String email, @JsonProperty("linkedin") String linkedin,
+    public JsonAdaptedPerson(
+            @JsonProperty("name") String name,
+            @JsonProperty("company") String company,
+            @JsonProperty("role") String role,
+            @JsonProperty("phone") String phone,
+            @JsonProperty("email") String email,
+            @JsonProperty("linkedin") String linkedin,
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
+            @JsonProperty("events") List<JsonAdaptedEvent> events,
             @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
             @JsonProperty("starred") boolean starred) {
         this.name = name;
@@ -78,16 +91,22 @@ class JsonAdaptedPerson {
         this.email = email;
         this.linkedin = linkedin;
         this.starred = starred;
+
         if (tags != null) {
             this.tags.addAll(tags);
         }
+
+        if (events != null) {
+            this.events.addAll(events);
+        }
+
         if (followUps != null) {
             this.followUps.addAll(followUps);
         }
     }
 
     /**
-     * Converts a given {@code Person} into this class for Jackson use.
+     * Converts a given Person into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
         name = source.getName().fullName;
@@ -97,18 +116,24 @@ class JsonAdaptedPerson {
         email = source.getEmail().map(value -> value.value).orElse(null);
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
         starred = source.isStarred();
+
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
-        source.getFollowUps().stream().map(JsonAdaptedFollowUp::new).forEach(followUps::add);
+
+        events.addAll(source.getEvents().stream()
+                .map(JsonAdaptedEvent::new)
+                .collect(Collectors.toList()));
+
+        source.getFollowUps().stream()
+                .map(JsonAdaptedFollowUp::new)
+                .forEach(followUps::add);
     }
 
     /**
-     * Converts this Jackson-friendly adapted person object into the model's {@code Person} object.
-     * Every field other than the name is optional, so a missing value is read back as an absent field
-     * rather than rejected.
+     * Converts this Jackson-friendly adapted person object into the model's Person object.
      *
-     * @throws IllegalValueException if there were any data constraints violated in the adapted person.
+     * @throws IllegalValueException if data constraints are violated
      */
     public Person toModelType() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
@@ -116,12 +141,21 @@ class JsonAdaptedPerson {
             personTags.add(tag.toModelType());
         }
 
-        if (name == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName()));
+        final List<Event> personEvents = new ArrayList<>();
+        for (JsonAdaptedEvent event : events) {
+            personEvents.add(event.toModelType());
         }
+
+        if (name == null) {
+            throw new IllegalValueException(
+                    String.format(MISSING_FIELD_MESSAGE_FORMAT,
+                            Name.class.getSimpleName()));
+        }
+
         if (!Name.isValidName(name)) {
             throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
         }
+
         final Name modelName = new Name(name);
 
         final Company modelCompany;
@@ -170,20 +204,36 @@ class JsonAdaptedPerson {
         }
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        List<FollowUp> modelFollowUps = new ArrayList<>();
-        Set<Integer> actionIds = new HashSet<>();
+        final Set<Event> modelEventSet = new HashSet<>(personEvents);
+        final List<FollowUp> modelFollowUps = new ArrayList<>();
+        final Set<Integer> actionIds = new HashSet<>();
+
         for (JsonAdaptedFollowUp action : followUps) {
             if (action == null) {
-                throw new IllegalValueException("Follow-up entries must not be null.");
+                throw new IllegalValueException(
+                        "Follow-up entries must not be null.");
             }
+
             FollowUp modelAction = action.toModelType();
+
             if (!actionIds.add(modelAction.getId())) {
-                throw new IllegalValueException("Follow-up IDs must be unique within a contact.");
+                throw new IllegalValueException(
+                        "Follow-up IDs must be unique within a contact.");
             }
+
             modelFollowUps.add(modelAction);
         }
-        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin,
-                modelTags, modelFollowUps, starred);
-    }
 
+        return new Person(
+                modelName,
+                modelCompany,
+                modelRole,
+                modelPhone,
+                modelEmail,
+                modelLinkedin,
+                modelTags,
+                modelEventSet,
+                modelFollowUps,
+                starred);
+    }
 }

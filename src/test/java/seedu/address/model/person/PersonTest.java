@@ -230,7 +230,9 @@ public class PersonTest {
                 + ", phone=" + ALICE.getPhone().orElse(null)
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
-                + ", tags=" + ALICE.getTags() + ", followUps=" + ALICE.getFollowUps()
+                + ", tags=" + ALICE.getTags()
+                + ", events=" + ALICE.getEvents()
+                + ", followUps=" + ALICE.getFollowUps()
                 + ", starred=" + ALICE.isStarred() + "}";
         assertEquals(expected, ALICE.toString());
     }

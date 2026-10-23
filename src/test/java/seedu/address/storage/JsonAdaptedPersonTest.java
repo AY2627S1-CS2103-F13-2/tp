@@ -136,4 +136,43 @@ public class JsonAdaptedPersonTest {
         assertThrows(IllegalValueException.class, person::toModelType);
     }
 
+    @Test
+    public void toModelType_withEvents_returnsEvents() throws Exception {
+        List<JsonAdaptedEvent> events = List.of(
+                new JsonAdaptedEvent("NUS Career Fair", "2026-10-20"));
+
+        JsonAdaptedPerson person = new JsonAdaptedPerson(
+                VALID_NAME,
+                VALID_COMPANY,
+                VALID_ROLE,
+                VALID_PHONE,
+                VALID_EMAIL,
+                VALID_LINKEDIN,
+                VALID_TAGS,
+                events,
+                null,
+                false);
+
+        assertEquals(1, person.toModelType().getEvents().size());
+        assertEquals(
+                "NUS Career Fair",
+                person.toModelType().getEvents().iterator().next().getName());
+    }
+
+    @Test
+    public void toModelType_nullEvents_returnsPersonWithoutEvents() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(
+                VALID_NAME,
+                VALID_COMPANY,
+                VALID_ROLE,
+                VALID_PHONE,
+                VALID_EMAIL,
+                VALID_LINKEDIN,
+                VALID_TAGS,
+                null,
+                null,
+                false);
+
+        assertEquals(0, person.toModelType().getEvents().size());
+    }
 }
