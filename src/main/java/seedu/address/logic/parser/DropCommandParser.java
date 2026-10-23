@@ -26,19 +26,12 @@ public class DropCommandParser implements Parser<DropCommand> {
     @Override
     public DropCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        ParsedArguments parsed = removeConfirmationOption(args.trim());
-        Target target = parseTarget(parsed.arguments());
-        List<DropCommand.FieldValue> values = parseValues(parsed.arguments().substring(target.fieldsStart()));
+        String arguments = args.trim();
+        Target target = parseTarget(arguments);
+        List<DropCommand.FieldValue> values = parseValues(arguments.substring(target.fieldsStart()));
         return target.index() == null
-                ? new DropCommand(target.name(), values, parsed.confirmed())
-                : new DropCommand(target.index(), values, parsed.confirmed());
-    }
-
-    private static ParsedArguments removeConfirmationOption(String args) {
-        String suffix = " " + DropCommand.CONFIRM_OPTION;
-        boolean confirmed = args.endsWith(suffix);
-        String arguments = confirmed ? args.substring(0, args.length() - suffix.length()).trim() : args;
-        return new ParsedArguments(arguments, confirmed);
+                ? new DropCommand(target.name(), values, false)
+                : new DropCommand(target.index(), values, false);
     }
 
     private static Target parseTarget(String args) throws ParseException {
@@ -123,8 +116,6 @@ public class DropCommandParser implements Parser<DropCommand> {
     private static ParseException invalidFormat() {
         return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DropCommand.MESSAGE_USAGE));
     }
-
-    private record ParsedArguments(String arguments, boolean confirmed) {}
 
     private record Target(Index index, String name, int fieldsStart) {}
 }

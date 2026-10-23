@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
+import seedu.address.commons.util.StringUtil;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -30,24 +31,22 @@ import seedu.address.model.tag.Tag;
 public class DropCommand extends Command {
 
     public static final String COMMAND_WORD = "drop";
-    public static final String CONFIRM_OPTION = "--confirm";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Removes selected detail values from a contact after confirmation.\n"
-            + "Parameters: INDEX or NAME [FIELD/VALUE]... [" + CONFIRM_OPTION + "]\n"
+            + "Parameters: INDEX or NAME [FIELD/VALUE]...\n"
             + "Fields: " + CliSyntax.PREFIX_COMPANY + " " + CliSyntax.PREFIX_ROLE + " "
             + CliSyntax.PREFIX_PHONE + " " + CliSyntax.PREFIX_EMAIL + " "
             + CliSyntax.PREFIX_LINKEDIN + " " + CliSyntax.PREFIX_TAG + " "
             + CliSyntax.PREFIX_INTRODUCER + "\n"
             + "Example: " + COMMAND_WORD + " 1 " + CliSyntax.PREFIX_TAG + "oldtag\n"
             + "Example: " + COMMAND_WORD + " Jane Doe " + CliSyntax.PREFIX_EMAIL
-            + "jane@example.com " + CONFIRM_OPTION;
+            + "jane@example.com";
 
     public static final String MESSAGE_EMPTY_CONTACT_FILE = "There are no contacts to update.";
     public static final String MESSAGE_NO_VALUES = "At least one detail value to remove must be provided.";
     public static final String MESSAGE_VALUE_NOT_FOUND =
             "The selected %1$s value \"%2$s\" is not saved for %3$s.";
-    public static final String MESSAGE_CONFIRM_REMOVAL = "Remove the following detail(s) from %1$s?\n%2$s\n"
-            + "To confirm, run: %3$s";
+    public static final String MESSAGE_CONFIRM_REMOVAL = "Remove the following detail(s) from %1$s?\n%2$s";
     public static final String MESSAGE_REMOVED = "Removed the selected detail(s) from contact:\n%1$s";
 
     /**
@@ -146,11 +145,17 @@ public class DropCommand extends Command {
             switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
                 case PersonNameResolver.Outcome.Unique unique -> person = unique.person();
                 case PersonNameResolver.Outcome.Several several -> {
-                    return new CommandResult(several.message(), false, false, false);
+                    List<Person> matches = List.copyOf(model.getFilteredPersonList());
+                    PendingRequest request = new DropSelectionRequest(matches);
+                    return new CommandResult(request.getPrompt(), request);
                 }
             }
         }
 
+        return removeSelectedValues(model, person);
+    }
+
+    private CommandResult removeSelectedValues(Model model, Person person) throws CommandException {
         for (FieldValue selected : values) {
             if (!containsValue(person, selected)) {
                 throw new CommandException(String.format(MESSAGE_VALUE_NOT_FOUND,
@@ -159,16 +164,75 @@ public class DropCommand extends Command {
         }
 
         if (!confirmed) {
-            return new CommandResult(String.format(MESSAGE_CONFIRM_REMOVAL, person.getName(),
-                    formatValues(values), makeConfirmationCommand()), false, false, false);
+            String preview = String.format(MESSAGE_CONFIRM_REMOVAL, person.getName(), formatValues(values));
+            PendingRequest request = new ConfirmationRequest(preview,
+                    new ConfirmedDropCommand(person, targetName != null));
+            return new CommandResult(request.getPrompt(), request);
         }
 
+        return applyRemoval(model, person, targetName != null);
+    }
+
+    private CommandResult applyRemoval(Model model, Person person, boolean restoreFilteredList) {
         Person updatedPerson = removeValues(person, values);
         model.setPerson(person, updatedPerson);
-        if (targetName != null) {
+        if (restoreFilteredList) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
         return new CommandResult(String.format(MESSAGE_REMOVED, Messages.format(updatedPerson)));
+    }
+
+    private final class ConfirmedDropCommand extends Command {
+        private final Person target;
+        private final boolean restoreFilteredList;
+
+        private ConfirmedDropCommand(Person target, boolean restoreFilteredList) {
+            this.target = target;
+            this.restoreFilteredList = restoreFilteredList;
+        }
+
+        @Override
+        public CommandResult execute(Model model) throws CommandException {
+            if (!model.getContactFile().getPersonList().contains(target)) {
+                throw new CommandException("Contacts changed. Start the drop request again.");
+            }
+            for (FieldValue selected : values) {
+                if (!containsValue(target, selected)) {
+                    throw new CommandException(String.format(MESSAGE_VALUE_NOT_FOUND,
+                            selected.field().getDisplayName(), selected.displayValue(), target.getName()));
+                }
+            }
+            return applyRemoval(model, target, restoreFilteredList);
+        }
+    }
+
+    private final class DropSelectionRequest implements PendingRequest {
+        private final List<Person> candidates;
+
+        private DropSelectionRequest(List<Person> candidates) {
+            this.candidates = List.copyOf(candidates);
+        }
+
+        @Override
+        public String getPrompt() {
+            return candidates.size() + " contacts found:\n" + PersonNameResolver.formatNumberedList(candidates)
+                    + "\nEnter a contact number, or n/cancel to stop.";
+        }
+
+        @Override
+        public CommandResult respond(String response, Model model) throws CommandException {
+            if (StringUtil.isNonZeroUnsignedInteger(response)) {
+                int index = Integer.parseInt(response) - 1;
+                if (index < candidates.size()) {
+                    Person selected = candidates.get(index);
+                    if (!model.getContactFile().getPersonList().contains(selected)) {
+                        throw new CommandException("Contacts changed. Start the drop request again.");
+                    }
+                    return removeSelectedValues(model, selected);
+                }
+            }
+            return new CommandResult("Enter a number from the displayed candidates.\n" + getPrompt(), this);
+        }
     }
 
     private boolean containsValue(Person person, FieldValue selected) {
@@ -216,14 +280,6 @@ public class DropCommand extends Command {
         return values.stream()
                 .map(value -> "- " + value.field().getDisplayName() + ": " + value.displayValue())
                 .collect(Collectors.joining("\n"));
-    }
-
-    private String makeConfirmationCommand() {
-        String target = targetName == null ? Integer.toString(targetIndex.getOneBased()) : targetName;
-        String selections = values.stream()
-                .map(value -> " " + value.field().getPrefix() + value.displayValue())
-                .collect(Collectors.joining());
-        return COMMAND_WORD + " " + target + selections + " " + CONFIRM_OPTION;
     }
 
     @Override

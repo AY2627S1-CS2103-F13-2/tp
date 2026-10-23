@@ -2,11 +2,13 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,20 +44,49 @@ public class DropCommandTest {
         CommandResult prompt = new DropCommand(Index.fromOneBased(1), selections, false).execute(model);
 
         assertTrue(prompt.getFeedbackToUser().contains("Remove the following detail(s) from Jane Doe?"));
-        assertTrue(prompt.getFeedbackToUser().contains("drop 1 t/old --confirm"));
+        assertTrue(prompt.getFeedbackToUser().contains("Confirm? (y/n; cancel to stop)"));
+        assertTrue(prompt.getPendingRequest().isPresent());
         assertFalse(prompt.shouldSaveContactFile());
         assertEquals(original, model.getContactFile().getPersonList().getFirst());
 
         Person expectedPerson = new PersonBuilder(original).withTags("keep").build();
-        Model expectedModel = new ModelManager(new ContactFile(contactFile), new UserPrefs());
-        expectedModel.setPerson(original, expectedPerson);
         CommandResult expectedResult = new CommandResult(
                 String.format(DropCommand.MESSAGE_REMOVED, seedu.address.logic.Messages.format(expectedPerson)));
 
-        assertCommandSuccess(new DropCommand(Index.fromOneBased(1), selections, true), model,
-                expectedResult, expectedModel);
+        CommandResult confirmed = prompt.getPendingRequest().orElseThrow().respond("y", model);
+        assertEquals(expectedResult.getFeedbackToUser(), confirmed.getFeedbackToUser());
         assertEquals(expectedPerson, model.getContactFile().getPersonList().getFirst());
         assertEquals(original.getEmail(), expectedPerson.getEmail());
+    }
+
+    @Test
+    public void execute_deletedTarget_rejectsStaleRequest() throws Exception {
+        Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
+        CommandResult prompt = new DropCommand(Index.fromOneBased(1),
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
+        model.deletePerson(original);
+
+        CommandException exception = assertThrows(CommandException.class, () ->
+                prompt.getPendingRequest().orElseThrow().respond("y", model));
+
+        assertEquals("Contacts changed. Start the drop request again.", exception.getMessage());
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_removedValue_rejectsStaleRequest() throws Exception {
+        MutableTagsPerson target = new MutableTagsPerson(original);
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(target).build(), new UserPrefs());
+        CommandResult prompt = new DropCommand(Index.fromOneBased(1),
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
+        target.hideTags();
+
+        CommandException exception = assertThrows(CommandException.class, () ->
+                prompt.getPendingRequest().orElseThrow().respond("y", model));
+
+        assertEquals(String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND, "tag", "old", target.getName()),
+                exception.getMessage());
+        assertEquals(target, model.getContactFile().getPersonList().getFirst());
     }
 
     @Test
@@ -142,11 +173,44 @@ public class DropCommandTest {
 
     @Test
     public void execute_valueWithWrongModelType_isReportedAsNotFound() {
-        Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
-        assertCommandFailure(new DropCommand(Index.fromOneBased(1),
-                        List.of(new FieldValue(Field.TAG, new Email("wrong@example.com"))), true),
-                model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND,
-                        "tag", "wrong@example.com", "Jane Doe"));
+        List<FieldValue> selections = List.of(
+                new FieldValue(Field.COMPANY, new Email("wrong@example.com")),
+                new FieldValue(Field.ROLE, new Email("wrong@example.com")),
+                new FieldValue(Field.PHONE, new Email("wrong@example.com")),
+                new FieldValue(Field.EMAIL, new Tag("wrong")),
+                new FieldValue(Field.LINKEDIN, new Email("wrong@example.com")),
+                new FieldValue(Field.TAG, new Email("wrong@example.com")),
+                new FieldValue(Field.INTRODUCER, new Email("wrong@example.com")));
+
+        for (FieldValue selection : selections) {
+            Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
+            assertCommandFailure(new DropCommand(Index.fromOneBased(1), List.of(selection), true),
+                    model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND,
+                            selection.field().getDisplayName(), selection.displayValue(), "Jane Doe"));
+        }
+    }
+
+    @Test
+    public void execute_unmatchedValueForEveryField_isReportedAsNotFound() {
+        Person withIntroducer = new PersonBuilder(original).withIntroducer("Old Introducer").build();
+        ContactFile file = new ContactFileBuilder().withPerson(withIntroducer).build();
+        List<FieldValue> selections = List.of(
+                new FieldValue(Field.COMPANY,
+                        new Company(withIntroducer.getCompany().orElseThrow().value + " missing")),
+                new FieldValue(Field.ROLE, new Role(withIntroducer.getRole().orElseThrow().value + " missing")),
+                new FieldValue(Field.PHONE, new Phone("9999999999")),
+                new FieldValue(Field.EMAIL, new Email(withIntroducer.getEmail().orElseThrow().value + ".missing")),
+                new FieldValue(Field.LINKEDIN,
+                        new Linkedin(withIntroducer.getLinkedin().orElseThrow().value + "missing")),
+                new FieldValue(Field.TAG, new Tag("missing")),
+                new FieldValue(Field.INTRODUCER, new Name("Missing Introducer")));
+
+        for (FieldValue selection : selections) {
+            Model model = new ModelManager(new ContactFile(file), new UserPrefs());
+            assertCommandFailure(new DropCommand(Index.fromOneBased(1), List.of(selection), true),
+                    model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND,
+                            selection.field().getDisplayName(), selection.displayValue(), withIntroducer.getName()));
+        }
     }
 
     @Test
@@ -196,17 +260,63 @@ public class DropCommandTest {
     }
 
     @Test
-    public void execute_ambiguousName_doesNotChangeContactsOrRequestSave() throws CommandException {
+    public void execute_ambiguousName_selectionRemovesValuesFromSelectedContact() throws CommandException {
         Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
         ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
         Model model = new ModelManager(twoPeople, new UserPrefs());
 
-        CommandResult result = new DropCommand("Jane",
+        CommandResult selection = new DropCommand("Jane",
                 List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
 
-        assertTrue(result.getFeedbackToUser().startsWith("2 contacts found:"));
+        assertTrue(selection.getFeedbackToUser().startsWith("2 contacts found:"));
+        assertTrue(selection.getPendingRequest().isPresent());
+        assertEquals(2, model.getFilteredPersonList().size());
+
+        CommandResult result = selection.getPendingRequest().orElseThrow().respond("2", model);
+
+        assertTrue(result.getFeedbackToUser().contains("Remove the following detail(s) from Jane Smith?"));
+        assertTrue(result.getPendingRequest().isPresent());
         assertFalse(result.shouldSaveContactFile());
         assertEquals(2, model.getContactFile().getPersonList().size());
+        assertEquals(original, model.getContactFile().getPersonList().getFirst());
+        assertEquals(janeSmith, model.getContactFile().getPersonList().get(1));
+
+        result.getPendingRequest().orElseThrow().respond("y", model);
+
+        assertEquals(original, model.getContactFile().getPersonList().getFirst());
+        assertEquals(new PersonBuilder(janeSmith).withTags().build(),
+                model.getContactFile().getPersonList().get(1));
+    }
+
+    @Test
+    public void execute_ambiguousName_invalidSelectionKeepsRequestWithoutChangingContacts() throws Exception {
+        Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
+        ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
+        Model model = new ModelManager(twoPeople, new UserPrefs());
+
+        CommandResult selection = new DropCommand("Jane",
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), true).execute(model);
+        CommandResult invalid = selection.getPendingRequest().orElseThrow().respond("3", model);
+
+        assertTrue(invalid.getFeedbackToUser().startsWith("Enter a number from the displayed candidates."));
+        assertTrue(invalid.getPendingRequest().isPresent());
+        assertEquals(twoPeople.getPersonList(), model.getContactFile().getPersonList());
+    }
+
+    @Test
+    public void execute_deletedCandidate_rejectsStaleSelection() throws Exception {
+        Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
+        ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
+        Model model = new ModelManager(twoPeople, new UserPrefs());
+        CommandResult selection = new DropCommand("Jane",
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), true).execute(model);
+        model.deletePerson(janeSmith);
+
+        CommandException exception = assertThrows(CommandException.class, () ->
+                selection.getPendingRequest().orElseThrow().respond("2", model));
+
+        assertEquals("Contacts changed. Start the drop request again.", exception.getMessage());
+        assertEquals(List.of(original), model.getContactFile().getPersonList());
     }
 
     @Test
@@ -222,5 +332,24 @@ public class DropCommandTest {
         assertTrue(command.toString().contains("targetIndex="));
         assertTrue(command.toString().contains("values="));
         assertTrue(command.toString().contains("confirmed=false"));
+    }
+
+    private static final class MutableTagsPerson extends Person {
+        private boolean tagsVisible = true;
+
+        private MutableTagsPerson(Person person) {
+            super(person.getName(), person.getCompany().orElse(null), person.getRole().orElse(null),
+                    person.getPhone().orElse(null), person.getEmail().orElse(null),
+                    person.getLinkedin().orElse(null), person.getIntroducer().orElse(null), person.getTags());
+        }
+
+        private void hideTags() {
+            tagsVisible = false;
+        }
+
+        @Override
+        public Set<Tag> getTags() {
+            return tagsVisible ? super.getTags() : Set.of();
+        }
     }
 }

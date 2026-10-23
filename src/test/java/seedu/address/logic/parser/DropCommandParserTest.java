@@ -31,10 +31,10 @@ public class DropCommandParserTest {
     }
 
     @Test
-    public void parse_validNameWithEmailAndConfirmation_returnsConfirmedDropCommand() {
-        assertParseSuccess(parser, "Jane Doe e/jane@example.com --confirm",
+    public void parse_validNameWithEmail_returnsDropCommand() {
+        assertParseSuccess(parser, "Jane Doe e/jane@example.com",
                 new DropCommand("Jane Doe", List.of(
-                        new DropCommand.FieldValue(DropCommand.Field.EMAIL, new Email("jane@example.com"))), true));
+                        new DropCommand.FieldValue(DropCommand.Field.EMAIL, new Email("jane@example.com"))), false));
     }
 
     @Test
@@ -48,7 +48,7 @@ public class DropCommandParserTest {
     @Test
     public void parse_validAllFieldTypes_returnsDropCommand() {
         assertParseSuccess(parser, "Jane Doe c/Acme r/Engineer p/91234567 e/jane@example.com "
-                        + "l/linkedin.com/in/jane t/old i/Old Introducer --confirm",
+                        + "l/linkedin.com/in/jane t/old i/Old Introducer",
                 new DropCommand("Jane Doe", List.of(
                         new DropCommand.FieldValue(DropCommand.Field.COMPANY, new Company("Acme")),
                         new DropCommand.FieldValue(DropCommand.Field.ROLE, new Role("Engineer")),
@@ -58,7 +58,7 @@ public class DropCommandParserTest {
                                 new Linkedin("linkedin.com/in/jane")),
                         new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("old")),
                         new DropCommand.FieldValue(DropCommand.Field.INTRODUCER, new Name("Old Introducer"))),
-                        true));
+                        false));
     }
 
     @Test

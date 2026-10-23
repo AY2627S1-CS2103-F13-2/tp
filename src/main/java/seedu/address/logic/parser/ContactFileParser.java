@@ -16,12 +16,19 @@ import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.ExitCommand;
+import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.FindCommand;
+import seedu.address.logic.commands.FollowUpCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.OrderCommand;
+import seedu.address.logic.commands.PendingFollowUpsCommand;
+import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UndoCommand;
+import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
@@ -74,8 +81,21 @@ public class ContactFileParser {
             case DropCommand.COMMAND_WORD -> new DropCommandParser().parse(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
             case IntroduceCommand.COMMAND_WORD -> new IntroduceCommandParser().parse(arguments);
+            case StarCommand.COMMAND_WORD -> new StarCommandParser().parse(arguments);
+            case UnstarCommand.COMMAND_WORD -> new UnstarCommandParser().parse(arguments);
+            case StarredCommand.COMMAND_WORD -> new StarredCommand();
             case ClearCommand.COMMAND_WORD -> new ClearCommandParser().parse(arguments);
+            case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
+            case FollowUpCommand.COMMAND_WORD -> new FollowUpCommandParser().parse(arguments);
+            case PendingFollowUpsCommand.COMMAND_WORD -> {
+                if (!arguments.isBlank()) {
+                    throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                            PendingFollowUpsCommand.MESSAGE_USAGE));
+                }
+                yield new PendingFollowUpsCommand();
+            }
+            case OrderCommand.COMMAND_WORD -> new OrderCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommand();
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
             case HelpCommand.COMMAND_WORD -> new HelpCommand();

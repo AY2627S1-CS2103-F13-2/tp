@@ -11,9 +11,19 @@ import seedu.address.testutil.PersonBuilder;
 public class ContactFieldPredicateTest {
 
     @Test
+    public void test_groupedPhone_usesNormalizedWholeNumber() {
+        Person person = new PersonBuilder().withPhone("+65 (9123)-4567").build();
+        assertTrue(new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "+6591234567").test(person));
+        assertFalse(new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "6591234567").test(person));
+        assertFalse(new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567").test(person));
+    }
+
+    @Test
     public void test_phoneMatches_returnsTrue() {
         ContactFieldPredicate predicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "91234567");
 
         Person person = new PersonBuilder()
                 .withPhone("91234567")
@@ -25,7 +35,9 @@ public class ContactFieldPredicateTest {
     @Test
     public void test_phoneDoesNotMatch_returnsFalse() {
         ContactFieldPredicate predicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "91234567");
 
         Person person = new PersonBuilder()
                 .withPhone("98765432")
@@ -37,9 +49,11 @@ public class ContactFieldPredicateTest {
     @Test
     public void test_phoneMissing_returnsFalse() {
         ContactFieldPredicate predicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "91234567");
 
-        Person person = new PersonBuilder().build();
+        Person person = new PersonBuilder().withPhone(null).build();
 
         assertFalse(predicate.test(person));
     }
@@ -99,18 +113,124 @@ public class ContactFieldPredicateTest {
     }
 
     @Test
+    public void test_companyPartialMatch_returnsTrue() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.COMPANY,
+                        "goo");
+
+        Person person = new PersonBuilder()
+                .withCompany("Google")
+                .build();
+
+        assertTrue(predicate.test(person));
+    }
+
+    @Test
+    public void test_companyMatchingIsCaseInsensitive_returnsTrue() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.COMPANY,
+                        "GOOGLE");
+
+        Person person = new PersonBuilder()
+                .withCompany("Google")
+                .build();
+
+        assertTrue(predicate.test(person));
+    }
+
+    @Test
+    public void test_companyDoesNotMatch_returnsFalse() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.COMPANY,
+                        "Apple");
+
+        Person person = new PersonBuilder()
+                .withCompany("Google")
+                .build();
+
+        assertFalse(predicate.test(person));
+    }
+
+    @Test
+    public void test_companyMissing_returnsFalse() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.COMPANY,
+                        "Google");
+
+        Person person = new PersonBuilder()
+                .withCompany(null)
+                .build();
+
+        assertFalse(predicate.test(person));
+    }
+
+    @Test
+    public void test_rolePartialMatch_returnsTrue() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.ROLE,
+                        "engineer");
+
+        Person person = new PersonBuilder()
+                .withRole("Software Engineer")
+                .build();
+
+        assertTrue(predicate.test(person));
+    }
+
+    @Test
+    public void test_roleDoesNotMatch_returnsFalse() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.ROLE,
+                        "Manager");
+
+        Person person = new PersonBuilder()
+                .withRole("Software Engineer")
+                .build();
+
+        assertFalse(predicate.test(person));
+    }
+
+    @Test
+    public void test_roleMissing_returnsFalse() {
+        ContactFieldPredicate predicate =
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.ROLE,
+                        "Engineer");
+
+        Person person = new PersonBuilder()
+                .withRole(null)
+                .build();
+
+        assertFalse(predicate.test(person));
+    }
+
+    @Test
     public void equals() {
         ContactFieldPredicate firstPredicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "91234567");
 
         ContactFieldPredicate samePredicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "91234567");
 
         ContactFieldPredicate differentFieldPredicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.EMAIL, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.EMAIL,
+                        "91234567");
 
         ContactFieldPredicate differentQueryPredicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "98765432");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "98765432");
 
         assertTrue(firstPredicate.equals(firstPredicate));
         assertTrue(firstPredicate.equals(samePredicate));
@@ -123,7 +243,9 @@ public class ContactFieldPredicateTest {
     @Test
     public void toStringMethod() {
         ContactFieldPredicate predicate =
-                new ContactFieldPredicate(ContactFieldPredicate.Field.PHONE, "91234567");
+                new ContactFieldPredicate(
+                        ContactFieldPredicate.Field.PHONE,
+                        "91234567");
 
         String expected = ContactFieldPredicate.class.getCanonicalName()
                 + "{field=PHONE, query=91234567}";

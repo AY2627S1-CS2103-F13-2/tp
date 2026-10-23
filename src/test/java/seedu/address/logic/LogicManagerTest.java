@@ -23,10 +23,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.StarCommand;
+import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -80,6 +83,24 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_starAndUnstar_persistsStatusThroughSaveFlow() throws Exception {
+        model.addPerson(AMY);
+        JsonContactFileStorage savedContacts =
+                new JsonContactFileStorage(temporaryFolder.resolve("contactFile.json"));
+        Person starredAmy = new PersonBuilder(AMY).withStarred(true).build();
+
+        assertEquals(String.format(StarCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("star 1").getFeedbackToUser());
+        assertEquals(starredAmy, model.getFilteredPersonList().getFirst());
+        assertEquals(starredAmy, savedContacts.readContactFile().orElseThrow().getPersonList().getFirst());
+
+        assertEquals(String.format(UnstarCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("unstar 1").getFeedbackToUser());
+        assertEquals(AMY, model.getFilteredPersonList().getFirst());
+        assertEquals(AMY, savedContacts.readContactFile().orElseThrow().getPersonList().getFirst());
+    }
+
+    @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
@@ -92,7 +113,27 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_dropWithoutConfirmation_doesNotSaveContactFile() throws Exception {
+    public void execute_storageThrowsRuntimeException_restoresModel() {
+        JsonContactFileStorage contactFileStorage =
+                new JsonContactFileStorage(temporaryFolder.resolve("RuntimeExceptionContactFile.json")) {
+                    @Override
+                    public void saveContactFile(ReadOnlyContactFile contactFile) {
+                        throw new IllegalStateException("dummy runtime exception");
+                    }
+                };
+        StorageManager storage = new StorageManager(contactFileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("RuntimeExceptionUserPrefs.json")));
+        logic = new LogicManager(model, storage);
+
+        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY
+                + PHONE_DESC_AMY + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY;
+
+        assertThrows(IllegalStateException.class, () -> logic.execute(addCommand));
+        assertEquals(new ModelManager(), model);
+    }
+
+    @Test
+    public void execute_dropConfirmationAcceptsYesAndNo() throws Exception {
         Person person = new PersonBuilder().withTags("outdated", "keep").build();
         model = new ModelManager(new ContactFileBuilder().withPerson(person).build(), new UserPrefs());
         AtomicInteger saveCount = new AtomicInteger();
@@ -105,12 +146,47 @@ public class LogicManagerTest {
         logic = new LogicManager(model, new StorageManager(countingStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
 
-        CommandResult result = logic.execute("drop 1 t/outdated");
+        String preview = "Remove the following detail(s) from " + person.getName() + "?\n"
+                + "- tag: outdated\nConfirm? (y/n; cancel to stop)";
+        assertEquals(preview, logic.execute("drop 1 t/outdated").getFeedbackToUser());
+        assertEquals("Request cancelled. No contacts changed.", logic.execute("n").getFeedbackToUser());
 
         assertEquals(0, saveCount.get());
         assertEquals(person, model.getContactFile().getPersonList().getFirst());
-        assertEquals("Remove the following detail(s) from " + person.getName() + "?\n"
-                + "- tag: outdated\nTo confirm, run: drop 1 t/outdated --confirm", result.getFeedbackToUser());
+
+        assertEquals(preview, logic.execute("drop 1 t/outdated").getFeedbackToUser());
+        logic.execute("y");
+        assertEquals(1, saveCount.get());
+        assertEquals(new PersonBuilder(person).withTags("keep").build(),
+                model.getContactFile().getPersonList().getFirst());
+    }
+
+    @Test
+    public void execute_introduceReplacementConfirmationAcceptsYesAndNo() throws Exception {
+        Person person = new PersonBuilder().withName("Jane Doe").withIntroducer("Old Introducer").build();
+        model = new ModelManager(new ContactFileBuilder().withPerson(person).build(), new UserPrefs());
+        AtomicInteger saveCount = new AtomicInteger();
+        JsonContactFileStorage countingStorage = new JsonContactFileStorage(temporaryFolder.resolve("contacts.json")) {
+            @Override
+            public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+                saveCount.incrementAndGet();
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(countingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        String preview = "The existing introducer for Jane Doe is Old Introducer. Replace it with New Introducer?"
+                + "\nConfirm? (y/n; cancel to stop)";
+        assertEquals(preview, logic.execute("introduce 1 i/New Introducer").getFeedbackToUser());
+        assertEquals("Request cancelled. No contacts changed.", logic.execute("n").getFeedbackToUser());
+        assertEquals(person, model.getContactFile().getPersonList().getFirst());
+        assertEquals(0, saveCount.get());
+
+        assertEquals(preview, logic.execute("introduce 1 i/New Introducer").getFeedbackToUser());
+        logic.execute("y");
+        assertEquals(1, saveCount.get());
+        assertEquals(new PersonBuilder(person).withIntroducer("New Introducer").build(),
+                model.getContactFile().getPersonList().getFirst());
     }
 
     @Test
@@ -148,6 +224,7 @@ public class LogicManagerTest {
         AtomicInteger saveCount = useCountingStorage();
 
         logic.execute("delete 1");
+        logic.execute("y");
         assertTrue(model.getContactFile().getPersonList().isEmpty());
         logic.execute("undo");
 
@@ -212,6 +289,15 @@ public class LogicManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void setGuiSettings_updatesModel() {
+        GuiSettings guiSettings = new GuiSettings(900, 700, 30, 40);
+
+        logic.setGuiSettings(guiSettings);
+
+        assertEquals(guiSettings, model.getGuiSettings());
     }
 
     /**
@@ -293,9 +379,7 @@ public class LogicManagerTest {
         // Triggers the saveContactFile method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY
                 + PHONE_DESC_AMY + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
         ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
     }
 
