@@ -32,12 +32,6 @@ public class IntroduceCommandParserTest {
     }
 
     @Test
-    public void parse_confirmedReplacement_returnsConfirmedCommand() {
-        assertParseSuccess(parser, "Jane Smith i/Jane Doe --confirm",
-                new IntroduceCommand("Jane Smith", new Name("Jane Doe"), true));
-    }
-
-    @Test
     public void parse_indexTarget_returnsCommand() {
         assertParseSuccess(parser, "2 i/Jane Doe",
                 new IntroduceCommand(Index.fromOneBased(2), new Name("Jane Doe"), false));
@@ -56,19 +50,11 @@ public class IntroduceCommandParserTest {
     }
 
     @Test
-    public void parse_confirmationMustBeFinalOption() {
-        assertParseSuccess(parser, "Jane Smith i/Jane Doe --confirm later",
-                new IntroduceCommand("Jane Smith", new Name("Jane Doe --confirm later"), false));
-        assertParseSuccess(parser, "Jane Smith i/Jane Doe --confirm-extra",
-                new IntroduceCommand("Jane Smith", new Name("Jane Doe --confirm-extra"), false));
-    }
-
-    @Test
     public void parse_missingOrInvalidName_fails() {
         assertParseFailure(parser, "   ", IntroduceCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "Jane Smith", String.format(
                 MESSAGE_INVALID_COMMAND_FORMAT, IntroduceCommand.MESSAGE_USAGE));
-        assertParseFailure(parser, "Jane Smith i/ --confirm", IntroduceCommand.MESSAGE_NAME_REQUIRED);
+        assertParseFailure(parser, "Jane Smith i/", IntroduceCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "Jane Smith i/   ", IntroduceCommand.MESSAGE_NAME_REQUIRED);
         assertParseFailure(parser, "Jane Smith i/Jane& Doe", Name.MESSAGE_CONSTRAINTS);
     }

@@ -42,18 +42,17 @@ public class DropCommandTest {
         CommandResult prompt = new DropCommand(Index.fromOneBased(1), selections, false).execute(model);
 
         assertTrue(prompt.getFeedbackToUser().contains("Remove the following detail(s) from Jane Doe?"));
-        assertTrue(prompt.getFeedbackToUser().contains("drop 1 t/old --confirm"));
+        assertTrue(prompt.getFeedbackToUser().contains("Confirm? (y/n; cancel to stop)"));
+        assertTrue(prompt.getPendingRequest().isPresent());
         assertFalse(prompt.shouldSaveContactFile());
         assertEquals(original, model.getContactFile().getPersonList().getFirst());
 
         Person expectedPerson = new PersonBuilder(original).withTags("keep").build();
-        Model expectedModel = new ModelManager(new ContactFile(contactFile), new UserPrefs());
-        expectedModel.setPerson(original, expectedPerson);
         CommandResult expectedResult = new CommandResult(
                 String.format(DropCommand.MESSAGE_REMOVED, seedu.address.logic.Messages.format(expectedPerson)));
 
-        assertCommandSuccess(new DropCommand(Index.fromOneBased(1), selections, true), model,
-                expectedResult, expectedModel);
+        CommandResult confirmed = prompt.getPendingRequest().orElseThrow().respond("y", model);
+        assertEquals(expectedResult.getFeedbackToUser(), confirmed.getFeedbackToUser());
         assertEquals(expectedPerson, model.getContactFile().getPersonList().getFirst());
         assertEquals(original.getEmail(), expectedPerson.getEmail());
     }
@@ -229,17 +228,47 @@ public class DropCommandTest {
     }
 
     @Test
-    public void execute_ambiguousName_doesNotChangeContactsOrRequestSave() throws CommandException {
+    public void execute_ambiguousName_selectionRemovesValuesFromSelectedContact() throws CommandException {
         Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
         ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
         Model model = new ModelManager(twoPeople, new UserPrefs());
 
-        CommandResult result = new DropCommand("Jane",
+        CommandResult selection = new DropCommand("Jane",
                 List.of(new FieldValue(Field.TAG, new Tag("old"))), false).execute(model);
 
-        assertTrue(result.getFeedbackToUser().startsWith("2 contacts found:"));
+        assertTrue(selection.getFeedbackToUser().startsWith("2 contacts found:"));
+        assertTrue(selection.getPendingRequest().isPresent());
+        assertEquals(2, model.getFilteredPersonList().size());
+
+        CommandResult result = selection.getPendingRequest().orElseThrow().respond("2", model);
+
+        assertTrue(result.getFeedbackToUser().contains("Remove the following detail(s) from Jane Smith?"));
+        assertTrue(result.getPendingRequest().isPresent());
         assertFalse(result.shouldSaveContactFile());
         assertEquals(2, model.getContactFile().getPersonList().size());
+        assertEquals(original, model.getContactFile().getPersonList().getFirst());
+        assertEquals(janeSmith, model.getContactFile().getPersonList().get(1));
+
+        result.getPendingRequest().orElseThrow().respond("y", model);
+
+        assertEquals(original, model.getContactFile().getPersonList().getFirst());
+        assertEquals(new PersonBuilder(janeSmith).withTags().build(),
+                model.getContactFile().getPersonList().get(1));
+    }
+
+    @Test
+    public void execute_ambiguousName_invalidSelectionKeepsRequestWithoutChangingContacts() throws Exception {
+        Person janeSmith = new PersonBuilder().withName("Jane Smith").withTags("old").build();
+        ContactFile twoPeople = new ContactFileBuilder().withPerson(original).withPerson(janeSmith).build();
+        Model model = new ModelManager(twoPeople, new UserPrefs());
+
+        CommandResult selection = new DropCommand("Jane",
+                List.of(new FieldValue(Field.TAG, new Tag("old"))), true).execute(model);
+        CommandResult invalid = selection.getPendingRequest().orElseThrow().respond("3", model);
+
+        assertTrue(invalid.getFeedbackToUser().startsWith("Enter a number from the displayed candidates."));
+        assertTrue(invalid.getPendingRequest().isPresent());
+        assertEquals(twoPeople.getPersonList(), model.getContactFile().getPersonList());
     }
 
     @Test

@@ -21,17 +21,14 @@ import seedu.address.model.person.Person;
 public class IntroduceCommand extends Command {
 
     public static final String COMMAND_WORD = "introduce";
-    public static final String CONFIRM_OPTION = "--confirm";
     public static final String MESSAGE_NAME_REQUIRED = "An introducer's name is required.";
     public static final String MESSAGE_RECORDED = "Recorded introducer for contact:\n%1$s";
     public static final String MESSAGE_CONFIRM_REPLACEMENT =
-            "The existing introducer for %1$s is %2$s. To replace it with %3$s, run: "
-                    + COMMAND_WORD + " %4$s " + PREFIX_INTRODUCER + "%3$s " + CONFIRM_OPTION;
+            "The existing introducer for %1$s is %2$s. Replace it with %3$s?";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Records who introduced a contact.\n"
-            + "Parameters: NAME " + PREFIX_INTRODUCER + "INTRODUCER [" + CONFIRM_OPTION + "]\n"
+            + "Parameters: NAME " + PREFIX_INTRODUCER + "INTRODUCER\n"
             + "Use a displayed index in place of NAME to select one of several matching contacts.\n"
-            + "Use " + CONFIRM_OPTION + " to confirm replacing an existing introducer.\n"
             + "Example: " + COMMAND_WORD + " John Doe " + PREFIX_INTRODUCER + "Jane Smith";
 
     private final Index targetIndex;
@@ -90,23 +87,28 @@ public class IntroduceCommand extends Command {
                 case PersonNameResolver.Outcome.Several several -> {
                     List<Person> matches = List.copyOf(model.getFilteredPersonList());
                     PendingRequest request = new PersonSelectionRequest(matches,
-                            person -> recordIntroducer(model, person, person.getName().toString()));
+                            person -> recordIntroducer(model, person));
                     return new CommandResult(request.getPrompt(), request);
                 }
             }
         }
 
-        String target = targetName == null ? Integer.toString(targetIndex.getOneBased()) : targetName;
-        return recordIntroducer(model, personToUpdate, target);
+        return recordIntroducer(model, personToUpdate);
     }
 
-    private CommandResult recordIntroducer(Model model, Person personToUpdate, String target) {
+    private CommandResult recordIntroducer(Model model, Person personToUpdate) {
         if (personToUpdate.getIntroducer().isPresent() && !confirmed) {
-            return new CommandResult(String.format(MESSAGE_CONFIRM_REPLACEMENT,
-                    personToUpdate.getName(), personToUpdate.getIntroducer().orElseThrow(), introducer,
-                    target));
+            String preview = String.format(MESSAGE_CONFIRM_REPLACEMENT,
+                    personToUpdate.getName(), personToUpdate.getIntroducer().orElseThrow(), introducer);
+            PendingRequest request = new ConfirmationRequest(preview,
+                    new ConfirmedIntroduceCommand(personToUpdate));
+            return new CommandResult(request.getPrompt(), request);
         }
 
+        return applyIntroducer(model, personToUpdate);
+    }
+
+    private CommandResult applyIntroducer(Model model, Person personToUpdate) {
         Person updatedPerson = new Person(personToUpdate.getName(),
                 personToUpdate.getCompany().orElse(null),
                 personToUpdate.getRole().orElse(null),
@@ -120,6 +122,22 @@ public class IntroduceCommand extends Command {
         model.setPerson(personToUpdate, updatedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_RECORDED, Messages.format(updatedPerson)));
+    }
+
+    private final class ConfirmedIntroduceCommand extends Command {
+        private final Person target;
+
+        private ConfirmedIntroduceCommand(Person target) {
+            this.target = target;
+        }
+
+        @Override
+        public CommandResult execute(Model model) throws CommandException {
+            if (!model.getContactFile().getPersonList().contains(target)) {
+                throw new CommandException("Contacts changed. Start the introduce request again.");
+            }
+            return applyIntroducer(model, target);
+        }
     }
 
     @Override
