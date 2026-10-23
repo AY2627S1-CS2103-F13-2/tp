@@ -55,7 +55,7 @@ public class FindCommandParser implements Parser<FindCommand> {
 
             return new FindCommand(new EventContainsKeywordsPredicate(eventValue));
         }
-      
+
         if (trimmedArgs.startsWith("/company") || trimmedArgs.startsWith("/role")) {
             return parseCompanyOrRoleSearch(trimmedArgs);
         }
