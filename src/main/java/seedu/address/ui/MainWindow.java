@@ -19,6 +19,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -40,6 +41,7 @@ public class MainWindow extends UiPart<Stage> {
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
     private Person personForDetails;
+    private FollowUp followUpForDetails;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -125,7 +127,7 @@ public class MainWindow extends UiPart<Stage> {
         resultDisplay = new ResultDisplay();
         logic.getFieldOrderProperty().addListener((observable, previous, current) -> {
             if (personForDetails != null) {
-                resultDisplay.setFeedbackToUser(Messages.format(personForDetails, current));
+                resultDisplay.setFeedbackToUser(formatDetails(current));
             }
         });
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -195,9 +197,10 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("Result: " + commandResult.getFeedbackToUser());
             String feedback = commandResult.getFeedbackToUser();
             if (!previousOrder.equals(logic.getFieldOrderProperty().get()) && personForDetails != null) {
-                feedback += "\n" + Messages.format(personForDetails, logic.getFieldOrderProperty().get());
+                feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
             } else {
                 personForDetails = commandResult.getPersonForDetails().orElse(null);
+                followUpForDetails = commandResult.getFollowUpForDetails().orElse(null);
             }
             resultDisplay.setFeedbackToUser(feedback);
 
@@ -214,10 +217,15 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             String feedback = e.getMessage();
             if (personForDetails != null) {
-                feedback += "\n" + Messages.format(personForDetails, logic.getFieldOrderProperty().get());
+                feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
             }
             resultDisplay.setFeedbackToUser(feedback);
             throw e;
         }
+    }
+
+    private String formatDetails(FieldOrder order) {
+        return followUpForDetails == null ? Messages.format(personForDetails, order)
+                : Messages.formatFollowUpDetails(personForDetails, followUpForDetails, order);
     }
 }
