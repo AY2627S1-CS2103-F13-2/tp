@@ -14,9 +14,13 @@ import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.FieldOrder;
+import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Person;
 
 /**
  * The Main Window. Provides the basic application layout containing
@@ -36,6 +40,8 @@ public class MainWindow extends UiPart<Stage> {
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private Person personForDetails;
+    private FollowUp followUpForDetails;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -115,10 +121,15 @@ public class MainWindow extends UiPart<Stage> {
      * contact-file load.
      */
     void fillInnerParts(String startupFeedback) {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getFieldOrderProperty());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         resultDisplay = new ResultDisplay();
+        logic.getFieldOrderProperty().addListener((observable, previous, current) -> {
+            if (personForDetails != null) {
+                resultDisplay.setFeedbackToUser(formatDetails(current));
+            }
+        });
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
@@ -181,9 +192,17 @@ public class MainWindow extends UiPart<Stage> {
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
+            FieldOrder previousOrder = logic.getFieldOrderProperty().get();
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
-            resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
+            String feedback = commandResult.getFeedbackToUser();
+            if (!previousOrder.equals(logic.getFieldOrderProperty().get()) && personForDetails != null) {
+                feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
+            } else {
+                personForDetails = commandResult.getPersonForDetails().orElse(null);
+                followUpForDetails = commandResult.getFollowUpForDetails().orElse(null);
+            }
+            resultDisplay.setFeedbackToUser(feedback);
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -196,8 +215,17 @@ public class MainWindow extends UiPart<Stage> {
             return commandResult;
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
-            resultDisplay.setFeedbackToUser(e.getMessage());
+            String feedback = e.getMessage();
+            if (personForDetails != null) {
+                feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
+            }
+            resultDisplay.setFeedbackToUser(feedback);
             throw e;
         }
+    }
+
+    private String formatDetails(FieldOrder order) {
+        return followUpForDetails == null ? Messages.format(personForDetails, order)
+                : Messages.formatFollowUpDetails(personForDetails, followUpForDetails, order);
     }
 }

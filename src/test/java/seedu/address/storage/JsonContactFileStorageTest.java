@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,6 +23,7 @@ import seedu.address.commons.util.FileUtil;
 import seedu.address.model.ContactFile;
 import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonContactFileStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonContactFileStorageTest");
@@ -108,6 +110,27 @@ public class JsonContactFileStorageTest {
         jsonContactFileStorage.saveContactFile(original, filePath);
         ReadOnlyContactFile readBack = jsonContactFileStorage.readContactFile(filePath).get();
         assertEquals(original, new ContactFile(readBack));
+    }
+
+    @Test
+    public void readAndSaveContactFile_starredStatus_preservedOnReloadAndStartup() throws Exception {
+        Path filePath = testFolder.resolve("StarredContactFile.json");
+        Person starredAlice = new PersonBuilder(ALICE).withStarred(true).build();
+        ContactFile original = new ContactFile();
+        original.addPerson(starredAlice);
+        original.addPerson(NAME_ONLY);
+        JsonContactFileStorage storage = new JsonContactFileStorage(filePath);
+
+        storage.saveContactFile(original);
+
+        assertEquals(original, new ContactFile(storage.readContactFile().orElseThrow()));
+        assertEquals(List.of(starredAlice, NAME_ONLY), storage.loadForStartup().contacts());
+
+        original.setPerson(starredAlice, ALICE);
+        storage.saveContactFile(original);
+
+        assertEquals(original, new ContactFile(storage.readContactFile().orElseThrow()));
+        assertEquals(List.of(ALICE, NAME_ONLY), storage.loadForStartup().contacts());
     }
 
     @Test

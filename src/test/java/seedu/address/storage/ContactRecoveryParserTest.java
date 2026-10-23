@@ -26,7 +26,7 @@ class ContactRecoveryParserTest {
                 {"persons": [
                   {"name": "", "phone": "12345", "email": "shared@example.com"},
                   {"name": "First", "phone": "+12 (345)", "email": "shared@example.com"},
-                  {"name": "Phone conflict", "phone": "123-45", "email": "free@example.com"},
+                  {"name": "Phone conflict", "phone": "+123-45", "email": "free@example.com"},
                   {"name": "Email conflict", "phone": "67890", "email": "SHARED@example.com"},
                   {"name": "Next", "phone": "67890", "email": "free@example.com"},
                   {"name": "No keys"}
@@ -39,6 +39,18 @@ class ContactRecoveryParserTest {
                 .map(SkippedContact::recordNumber).toList());
         assertTrue(result.skippedContacts().get(1).reason().contains("retained record 2"));
         assertTrue(result.skippedContacts().get(2).reason().contains("retained record 2"));
+    }
+
+    @Test
+    void parse_leadingPlusDiffers_preservesPhoneEqualitySemantics() throws Exception {
+        ContactRecoveryResult result = parse("""
+                {"persons": [
+                  {"name": "With plus", "phone": "+12 (345)"},
+                  {"name": "Without plus", "phone": "12345"}
+                ]}
+                """);
+        assertEquals(2, result.getRecoveredCount());
+        assertEquals(0, result.getSkippedCount());
     }
 
     @Test

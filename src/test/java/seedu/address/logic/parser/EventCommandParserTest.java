@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.EventCommand;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Event;
 
 public class EventCommandParserTest {
@@ -64,5 +66,21 @@ public class EventCommandParserTest {
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
                         EventCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_missingAddKeyword_throwsParseException() {
+        assertParseFailure(
+                parser,
+                "1 ev/NUS Career Fair d/2026-10-20",
+                String.format(
+                        MESSAGE_INVALID_COMMAND_FORMAT,
+                        EventCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_duplicateEventName_throwsParseException() {
+        assertThrows(ParseException.class, () -> parser.parse("add 1 ev/NUS Career Fair "
+                + "ev/Tech Conference d/2026-10-20"));
     }
 }
