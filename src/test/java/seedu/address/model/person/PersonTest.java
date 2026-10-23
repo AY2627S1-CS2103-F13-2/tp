@@ -281,7 +281,9 @@ public class PersonTest {
                 + ", email=" + ALICE.getEmail().orElse(null)
                 + ", linkedin=" + ALICE.getLinkedin().orElse(null)
                 + ", introducer=" + ALICE.getIntroducer().orElse(null)
-                + ", tags=" + ALICE.getTags() + ", followUps=" + ALICE.getFollowUps()
+                + ", tags=" + ALICE.getTags()
+                + ", events=" + ALICE.getEvents()
+                + ", followUps=" + ALICE.getFollowUps()
                 + ", starred=" + ALICE.isStarred() + "}";
         assertEquals(expected, ALICE.toString());
     }
