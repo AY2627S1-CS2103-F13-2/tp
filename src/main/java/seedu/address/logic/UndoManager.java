@@ -5,17 +5,21 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.util.ArrayList;
 import java.util.List;
 
+import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Stores successful edit and deletion history for one application session.
+ * Stores successful data-changing command history for one application session.
  */
 public class UndoManager {
     public static final String MESSAGE_NOTHING_TO_UNDO = "There is nothing to undo.";
@@ -24,28 +28,47 @@ public class UndoManager {
     public static final String MESSAGE_UNDO_SUCCESS = "Restored contact:\n%1$s";
     public static final String MESSAGE_UNDO_CONFLICT =
             "The contact cannot be restored because it would violate contact uniqueness rules. No changes were made.";
-    public static final String MESSAGE_HISTORY_EMPTY = "There is no edit or deletion history.";
+    public static final String MESSAGE_HISTORY_EMPTY = "There is no data-changing command history.";
 
     private final List<HistoryEntry> history = new ArrayList<>();
     private HistoryEntry undoableEntry;
     private HistoryEntry pendingEntry;
 
     /**
-     * Records a successful edit or deletion, or invalidates the undo action when another command changed data.
+     * Records a successful data-changing command and updates the available undo action.
      */
     public void recordChange(Command command, List<Person> before, List<Person> after, String feedback) {
         if (before.equals(after)) {
             return;
         }
-        if (command instanceof EditCommand || command instanceof DeleteCommand) {
-            HistoryEntry entry = new HistoryEntry(command instanceof EditCommand ? "edit" : "deletion",
-                    feedback, before, after);
+        String action = getHistoryAction(command);
+        HistoryEntry entry = action == null ? null : new HistoryEntry(action, feedback, before, after);
+        if (entry != null) {
             history.add(entry);
+        }
+        if (command instanceof EditCommand || command instanceof DeleteCommand) {
             undoableEntry = entry;
         } else {
             undoableEntry = null;
         }
         pendingEntry = null;
+    }
+
+    private String getHistoryAction(Command command) {
+        if (command instanceof AddCommand) {
+            return "addition";
+        } else if (command instanceof EditCommand) {
+            return "edit";
+        } else if (command instanceof DeleteCommand) {
+            return "deletion";
+        } else if (command instanceof DropCommand) {
+            return "drop";
+        } else if (command instanceof ClearCommand) {
+            return "clear";
+        } else if (command instanceof IntroduceCommand) {
+            return "introduce";
+        }
+        return null;
     }
 
     /**
