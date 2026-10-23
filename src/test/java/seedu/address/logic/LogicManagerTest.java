@@ -194,13 +194,16 @@ public class LogicManagerTest {
         logic.execute("add n/Alice Smith p/12345678 t/outdated");
         logic.execute("view 1");
         logic.execute("drop 1 t/outdated");
+        logic.execute("n");
         assertFalse(logic.execute("history").getFeedbackToUser().contains("drop:"));
         logic.execute("drop 1 t/outdated --confirm");
         logic.execute("edit 1 p/87654321");
         logic.execute("introduce 1 i/Jane Doe");
         logic.execute("delete 1");
+        logic.execute("y");
         logic.execute("add n/Bob Jones");
         logic.execute("clear");
+        logic.execute("y");
 
         String history = logic.execute("history").getFeedbackToUser();
         assertTrue(history.contains("addition:"));

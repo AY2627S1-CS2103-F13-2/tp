@@ -38,6 +38,13 @@ public class DropCommandParserTest {
     }
 
     @Test
+    public void parse_confirmedDrop_returnsConfirmedCommand() {
+        assertParseSuccess(parser, "1 t/old --confirm",
+                new DropCommand(Index.fromOneBased(1), List.of(
+                        new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("old"))), true));
+    }
+
+    @Test
     public void parse_validIntroducer_returnsDropCommand() {
         assertParseSuccess(parser, "Jane Doe i/Old Introducer",
                 new DropCommand("Jane Doe", List.of(

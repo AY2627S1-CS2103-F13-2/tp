@@ -31,9 +31,11 @@ import seedu.address.model.tag.Tag;
 public class DropCommand extends Command {
 
     public static final String COMMAND_WORD = "drop";
+    public static final String CONFIRM_OPTION = "--confirm";
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Removes selected detail values from a contact after confirmation.\n"
-            + "Parameters: INDEX or NAME [FIELD/VALUE]...\n"
+            + ": Removes selected detail values from a contact after confirmation. Add " + CONFIRM_OPTION
+            + " to skip the preview.\n"
+            + "Parameters: INDEX or NAME [FIELD/VALUE]... [" + CONFIRM_OPTION + "]\n"
             + "Fields: " + CliSyntax.PREFIX_COMPANY + " " + CliSyntax.PREFIX_ROLE + " "
             + CliSyntax.PREFIX_PHONE + " " + CliSyntax.PREFIX_EMAIL + " "
             + CliSyntax.PREFIX_LINKEDIN + " " + CliSyntax.PREFIX_TAG + " "
