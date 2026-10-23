@@ -35,6 +35,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
+   * `followups`: Reviews pending actions across all contacts in due-date order.
 
    * `order name phone email company role tags linkedin followups`: Changes the field order for every contact.
 
@@ -338,7 +339,7 @@ Confirmed deletion cannot be undone. Check the preview before entering `y`.
 
 Adds a pending action to the contact at the currently displayed index.
 
-Format: `followup INDEX a/DESCRIPTION`
+Format: `followup INDEX a/DESCRIPTION [d/DATE]`
 
 * `INDEX` must be a positive number from the displayed list, including filtered
   results. The contact stays in the current view after adding an action.
@@ -346,30 +347,90 @@ Format: `followup INDEX a/DESCRIPTION`
   letter case and internal spacing are kept. Additional command prefixes such
   as `p/`, repeated `a/`, and `confirm/` are rejected. URLs such as
   `https://example.com/portfolio` can be part of the description.
+* Optionally add one `d/DATE` before or after `a/DESCRIPTION`. For example,
+  `followup 1 d/2026-10-30 a/Call back` is also accepted. Accepted formats are
+  `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
+  `d MMM yyyy` (`25 Oct 2026`). Month names use English three-letter abbreviations
+  and are case-insensitive. Slash-separated dates use day/month/year.
+  Omitting `d/` creates an action with no due date. Empty or repeated `d/`
+  parameters and impossible dates are rejected without saving an action;
+  date errors show the supported formats.
 * A new action is saved immediately with status `PENDING`. The response and
   contact card show the ordered list with stable IDs, for example
-  `#1 [PENDING] Send portfolio`. `view INDEX` also shows the full history.
+  `#1 [PENDING] Send portfolio | Due: 2026-10-25`. `view INDEX` also shows the full history.
+  All dates display as `yyyy-MM-dd`, regardless of the input format. Undated
+  actions display `No due date`. Past dates are accepted: pending actions due
+  before today show `[OVERDUE]`. Actions due today or later and completed
+  actions are not overdue. Today follows the computer's local date.
 * If an identical description already has a pending action, Astra shows it and
   asks **Add another?** Enter `y` to add another, or `n`/`cancel` to stop.
   Comparison is case-sensitive after trimming: `Call` and `call` are different.
+  A different due date still triggers confirmation for the same pending description.
+  The prompt shows the existing action and the requested date. Confirming creates
+  another action with the requested date and leaves the existing action unchanged.
   Other replies repeat the prompt; cancel before entering another command.
 * A completed action with the same description does not require confirmation.
-  Completed history is retained, but marking actions complete and assigning due
-  dates are not available in this version.
+  Completed history is retained. Marking actions complete and editing or deleting
+  individual follow-ups are not available in this version.
 * Actions survive restart and ordinary contact edits. A failed save preserves
-  the file, previous action history, and current view. Earlier contact files
-  without actions load with an empty history.
+  the file, previous action history, and current view.
 
 Example:
 
 ```text
-followup 1 a/Send portfolio
-followup 1 a/Send portfolio
+followup 1 a/Send portfolio d/25 Oct 2026
+followup 1 a/Send portfolio d/01/11/2026
 ```
 
-The first command adds `#1 [PENDING] Send portfolio`. The second asks whether
-another is wanted; enter `y` to add `#2`, or `n` to keep just `#1`. The original
+The first command adds `#1 [PENDING] Send portfolio | Due: 2026-10-25`.
+The second asks whether another is wanted; enter `y` to add `#2` due on
+`2026-11-01`, or `n` to keep just `#1`. The original
 command does not need to be repeated while answering the prompt.
+
+### Reviewing pending follow-ups: `followups`
+
+Lists incomplete follow-ups across all contacts, including contacts hidden by
+the current `find` or `filter` results. Your contact filter stays unchanged.
+
+Format: `followups`
+
+* Takes no arguments. Extra arguments are rejected with usage instructions.
+* Dated actions appear in ascending due-date order, followed by undated actions.
+* Equal dates retain contact order, then each contact's stored action order.
+  Undated actions retain that same order.
+* Each numbered entry shows the contact name, stable action ID, status,
+  description, and due date in `yyyy-MM-dd` format or `No due date`.
+* Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
+* Completed actions are excluded. If none remain, Astra displays
+  `No pending follow-ups remain.`
+* When entries are shown, enter a displayed number to open that follow-up's
+  details and its associated contact. Use the numbered row, not the action's
+  `#ID` or a contact index. The contact filter stays unchanged, even if the
+  selected contact is hidden by it.
+* Invalid numeric replies repeat the list and instructions. Non-number input
+  leaves selection and runs as a normal command: for example, `list`, `view 1`,
+  `help`, or `followup 1 a/Call`. Unknown or malformed commands show their usual
+  error and still end selection. Enter `n` or `cancel` to leave without running
+  another command. An empty result requires no reply.
+* Selection uses the exact order shown in the prompt. If the selected contact
+  or its follow-ups have changed or the contact was deleted, Astra asks you to
+  run `followups` again rather than opening stale details.
+* Running this command does not change or save contact data. Run it again to
+  refresh the results after selecting or cancelling, adding an action, or when
+  the day changes. Pending selections are not retained across restart.
+
+Example output (when today is 2026-10-21):
+
+```text
+Pending follow-ups (3):
+1. Alice | #2 [PENDING] Call | Due: 2026-10-19 [OVERDUE]
+2. Benson | #1 [PENDING] Send portfolio | Due: 2026-10-25
+3. Alice | #3 [PENDING] Check in | No due date
+Enter a follow-up number, another command, or n/cancel to stop.
+```
+
+Enter `2` to display Benson's `Send portfolio` action and full contact details.
+Enter `cancel` instead to leave the list without selecting an action.
 
 ### Clearing all entries: `clear`
 
@@ -511,7 +572,8 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
-**Follow-up** | `followup INDEX a/DESCRIPTION`<br> e.g., `followup 1 a/Send portfolio`; duplicate pending actions ask `y`/`n`/`cancel`
+**Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change

@@ -24,6 +24,7 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UnstarCommand;
@@ -176,6 +177,16 @@ public class ContactFileParserTest {
     }
 
     @Test
+    public void parseCommand_followups_acceptsOnlyNoArguments() throws Exception {
+        assertTrue(parser.parseCommand("followups") instanceof PendingFollowUpsCommand);
+        assertTrue(parser.parseCommand("  followups \t ") instanceof PendingFollowUpsCommand);
+        String error = String.format(MESSAGE_INVALID_COMMAND_FORMAT, PendingFollowUpsCommand.MESSAGE_USAGE);
+        for (String input : List.of("followups 1", "followups a/Call", "followups d/2026-10-25")) {
+            assertThrows(ParseException.class, error, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
     public void parseCommand_view() throws Exception {
         assertEquals(
                 new ViewCommand(Index.fromOneBased(1)),
@@ -200,7 +211,7 @@ public class ContactFileParserTest {
     public void isBuiltInCommandWord_everyParsedCommand_true() {
         // Every command the parser runs is a built-in word, so a shortcut can never hide it.
         for (String word : List.of("add", "edit", "delete", "view", "star", "unstar", "starred", "clear", "filter",
-                "find", "followup", "order", "list", "exit", "help", "alias")) {
+                "find", "followup", "followups", "order", "list", "exit", "help", "alias")) {
             assertTrue(ContactFileParser.isBuiltInCommandWord(word), word);
         }
         assertEquals("filter t/work", ContactFileParser.expandShortcut("filter t/work", Map.of("filter", "list")));

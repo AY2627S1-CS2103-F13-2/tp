@@ -26,6 +26,7 @@ import seedu.address.logic.commands.FollowUpCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.OrderCommand;
+import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UnstarCommand;
@@ -72,6 +73,13 @@ public class ContactFileParser {
         commands.put(FilterCommand.COMMAND_WORD, arguments -> new FilterCommandParser().parse(arguments));
         commands.put(FindCommand.COMMAND_WORD, arguments -> new FindCommandParser().parse(arguments));
         commands.put(FollowUpCommand.COMMAND_WORD, arguments -> new FollowUpCommandParser().parse(arguments));
+        commands.put(PendingFollowUpsCommand.COMMAND_WORD, arguments -> {
+            if (!arguments.isBlank()) {
+                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                        PendingFollowUpsCommand.MESSAGE_USAGE));
+            }
+            return new PendingFollowUpsCommand();
+        });
         commands.put(OrderCommand.COMMAND_WORD, arguments -> new OrderCommandParser().parse(arguments));
         commands.put(ListCommand.COMMAND_WORD, arguments -> new ListCommand());
         commands.put(ExitCommand.COMMAND_WORD, arguments -> new ExitCommand());
