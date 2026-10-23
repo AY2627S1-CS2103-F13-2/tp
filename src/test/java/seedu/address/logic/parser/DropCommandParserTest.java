@@ -45,6 +45,18 @@ public class DropCommandParserTest {
     }
 
     @Test
+    public void parse_confirmOptionWithoutArguments_fails() {
+        assertParseFailure(parser, "--confirm", invalidFormat);
+    }
+
+    @Test
+    public void parse_confirmOptionWithoutWhitespace_isTreatedAsFieldValue() {
+        assertParseSuccess(parser, "1 l/jane--confirm", new DropCommand(Index.fromOneBased(1),
+                List.of(new DropCommand.FieldValue(DropCommand.Field.LINKEDIN, new Linkedin("jane--confirm"))),
+                false));
+    }
+
+    @Test
     public void parse_validIntroducer_returnsDropCommand() {
         assertParseSuccess(parser, "Jane Doe i/Old Introducer",
                 new DropCommand("Jane Doe", List.of(
