@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -67,6 +69,22 @@ class PersonCardFollowUpTest {
     }
 
     @Test
+    void card_datedActions_showsDatesOverdueAndUndatedLabels() throws Exception {
+        FxTestUtil.runOnFxThread(() -> {
+            Person person = new PersonBuilder(ALICE).withFollowUps(
+                    new FollowUp(1, "Call", FollowUp.Status.PENDING, LocalDate.of(2000, 2, 29)),
+                    new FollowUp(2, "Send portfolio", FollowUp.Status.PENDING, LocalDate.of(9999, 12, 31)),
+                    new FollowUp(3, "Check in", FollowUp.Status.PENDING),
+                    new FollowUp(4, "Done", FollowUp.Status.COMPLETED, LocalDate.of(2000, 2, 29))).build();
+            Label label = (Label) new PersonCard(person, 1).getRoot().lookup("#followUps");
+            assertEquals("Follow-ups:\n#1 [PENDING] Call | Due: 2000-02-29 [OVERDUE]\n"
+                    + "#2 [PENDING] Send portfolio | Due: 9999-12-31\n"
+                    + "#3 [PENDING] Check in | No due date\n"
+                    + "#4 [COMPLETED] Done | Due: 2000-02-29", label.getText());
+        });
+    }
+
+    @Test
     void list_contactReplacement_refreshesExistingDisplayedCard() throws Exception {
         FxTestUtil.runOnFxThread(() -> {
             ObservableList<Person> people = FXCollections.observableArrayList(ALICE);
@@ -77,11 +95,12 @@ class PersonCardFollowUpTest {
             panel.getRoot().layout();
             Label before = (Label) panel.getRoot().lookup("#followUps");
             assertFalse(before.isManaged());
-            people.set(0, ALICE.appendFollowUp(new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING)));
+            people.set(0, ALICE.appendFollowUp(new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING,
+                    LocalDate.of(2000, 2, 29))));
             panel.getRoot().layout();
             Label after = (Label) panel.getRoot().lookup("#followUps");
             assertTrue(after.isManaged());
-            assertTrue(after.getText().contains("#1 [PENDING] Send portfolio"));
+            assertTrue(after.getText().contains("#1 [PENDING] Send portfolio | Due: 2000-02-29 [OVERDUE]"));
         });
     }
 }
