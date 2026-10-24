@@ -26,6 +26,8 @@ public class CommandResult {
      */
     private final boolean exit;
 
+    /** Whether the contact file should be saved after this command. */
+    private final boolean saveContactFile;
     private final PendingRequest pendingRequest;
     private final Person personForDetails;
     private final FollowUp followUpForDetails;
@@ -34,14 +36,21 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, null, null);
+        this(feedbackToUser, showHelp, exit, true);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified fields and save behavior.
+     */
+    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile) {
+        this(feedbackToUser, showHelp, exit, saveContactFile, null, null, null);
     }
 
     /**
      * Constructs a result that asks Logic to retain a request without saving contact data.
      */
     public CommandResult(String feedbackToUser, PendingRequest pendingRequest) {
-        this(feedbackToUser, false, false, requireNonNull(pendingRequest), null);
+        this(feedbackToUser, false, false, false, requireNonNull(pendingRequest), null, null);
     }
 
     /**
@@ -54,14 +63,20 @@ public class CommandResult {
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
             Person personForDetails) {
-        this(feedbackToUser, showHelp, exit, pendingRequest, personForDetails, null);
+        this(feedbackToUser, showHelp, exit, true, pendingRequest, personForDetails, null);
     }
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
             Person personForDetails, FollowUp followUpForDetails) {
+        this(feedbackToUser, showHelp, exit, true, pendingRequest, personForDetails, followUpForDetails);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
+            PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.saveContactFile = saveContactFile;
         this.pendingRequest = pendingRequest;
         this.personForDetails = personForDetails;
         this.followUpForDetails = followUpForDetails;
@@ -79,8 +94,8 @@ public class CommandResult {
      */
     public CommandResult withFeedbackPrefix(String prefix) {
         requireNonNull(prefix);
-        return new CommandResult(prefix + feedbackToUser, showHelp, exit, pendingRequest, personForDetails,
-                followUpForDetails);
+        return new CommandResult(prefix + feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                personForDetails, followUpForDetails);
     }
 
     /**
@@ -110,6 +125,10 @@ public class CommandResult {
         return exit;
     }
 
+    public boolean shouldSaveContactFile() {
+        return saveContactFile;
+    }
+
     public Optional<PendingRequest> getPendingRequest() {
         return Optional.ofNullable(pendingRequest);
     }
@@ -128,6 +147,7 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
+                && saveContactFile == otherCommandResult.saveContactFile
                 && Objects.equals(pendingRequest, otherCommandResult.pendingRequest)
                 && Objects.equals(personForDetails, otherCommandResult.personForDetails)
                 && Objects.equals(followUpForDetails, otherCommandResult.followUpForDetails);
@@ -135,7 +155,8 @@ public class CommandResult {
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, pendingRequest, personForDetails, followUpForDetails);
+        return Objects.hash(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest, personForDetails,
+                followUpForDetails);
     }
 
     @Override
@@ -144,6 +165,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("saveContactFile", saveContactFile)
                 .toString();
     }
 

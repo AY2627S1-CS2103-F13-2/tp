@@ -1,8 +1,13 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,5 +80,26 @@ public class AliasCommandParserTest {
         // shortcuts cannot stand for other shortcuts or for alias itself
         assertParseFailure(parser, " fn alias x list",
                 String.format(AliasCommandParser.MESSAGE_UNKNOWN_TARGET, TARGETS, "alias"));
+    }
+
+    @Test
+    public void validAliases_entriesBreakingRules_dropped() {
+        Map<String, String> loaded = new HashMap<>();
+        loaded.put("fn", "find /notes");
+        loaded.put("blank", "   ");
+        loaded.put(null, "list");
+        loaded.put("list", "clear");
+        loaded.put("bad", "search x");
+
+        assertEquals(Map.of("fn", "find /notes"), AliasCommandParser.validAliases(loaded));
+    }
+
+    @Test
+    public void validAliases_sameNameInDifferentCase_keepsOne() {
+        Map<String, String> loaded = new LinkedHashMap<>();
+        loaded.put("FN", "find /notes");
+        loaded.put("fn", "find /email");
+
+        assertEquals(Map.of("fn", "find /notes"), AliasCommandParser.validAliases(loaded));
     }
 }

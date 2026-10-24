@@ -13,22 +13,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.UndoManager;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.AliasCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.FollowUpCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.HistoryCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.OrderCommand;
 import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.StarredCommand;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -44,15 +49,6 @@ public class ContactFileParser {
     private static final Pattern BASIC_COMMAND_FORMAT =
             Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
     private static final Logger logger = LogsCenter.getLogger(ContactFileParser.class);
-
-    /**
-     * Creates the command for one command word from the arguments typed after it.
-     */
-    @FunctionalInterface
-    private interface CommandFactory {
-        Command create(String arguments) throws ParseException;
-    }
-
     /**
      * Every built-in command word and how to create its command. This is the only list of command words:
      * {@link #parseCommand(String)} and the shortcut checks both read it, so a new command added here can
@@ -60,31 +56,54 @@ public class ContactFileParser {
      */
     private static final Map<String, CommandFactory> COMMANDS = createCommands();
 
+    private final UndoManager undoManager;
+
+    public ContactFileParser() {
+        this(new UndoManager());
+    }
+
+    public ContactFileParser(UndoManager undoManager) {
+        this.undoManager = undoManager;
+    }
+
+    /**
+     * Creates the command for one command word from the arguments typed after it.
+     */
+    @FunctionalInterface
+    private interface CommandFactory {
+        Command create(ContactFileParser parser, String arguments) throws ParseException;
+    }
+
     private static Map<String, CommandFactory> createCommands() {
         Map<String, CommandFactory> commands = new LinkedHashMap<>();
-        commands.put(AddCommand.COMMAND_WORD, arguments -> new AddCommandParser().parse(arguments));
-        commands.put(EditCommand.COMMAND_WORD, arguments -> new EditCommandParser().parse(arguments));
-        commands.put(DeleteCommand.COMMAND_WORD, arguments -> new DeleteCommandParser().parse(arguments));
-        commands.put(ViewCommand.COMMAND_WORD, arguments -> new ViewCommandParser().parse(arguments));
-        commands.put(StarCommand.COMMAND_WORD, arguments -> new StarCommandParser().parse(arguments));
-        commands.put(UnstarCommand.COMMAND_WORD, arguments -> new UnstarCommandParser().parse(arguments));
-        commands.put(StarredCommand.COMMAND_WORD, arguments -> new StarredCommand());
-        commands.put(ClearCommand.COMMAND_WORD, arguments -> new ClearCommandParser().parse(arguments));
-        commands.put(FilterCommand.COMMAND_WORD, arguments -> new FilterCommandParser().parse(arguments));
-        commands.put(FindCommand.COMMAND_WORD, arguments -> new FindCommandParser().parse(arguments));
-        commands.put(FollowUpCommand.COMMAND_WORD, arguments -> new FollowUpCommandParser().parse(arguments));
-        commands.put(PendingFollowUpsCommand.COMMAND_WORD, arguments -> {
+        commands.put(AddCommand.COMMAND_WORD, (parser, arguments) -> new AddCommandParser().parse(arguments));
+        commands.put(EditCommand.COMMAND_WORD, (parser, arguments) -> new EditCommandParser().parse(arguments));
+        commands.put(DeleteCommand.COMMAND_WORD, (parser, arguments) -> new DeleteCommandParser().parse(arguments));
+        commands.put(DropCommand.COMMAND_WORD, (parser, arguments) -> new DropCommandParser().parse(arguments));
+        commands.put(ViewCommand.COMMAND_WORD, (parser, arguments) -> new ViewCommandParser().parse(arguments));
+        commands.put(IntroduceCommand.COMMAND_WORD, (parser, arguments) ->
+                new IntroduceCommandParser().parse(arguments));
+        commands.put(StarCommand.COMMAND_WORD, (parser, arguments) -> new StarCommandParser().parse(arguments));
+        commands.put(UnstarCommand.COMMAND_WORD, (parser, arguments) -> new UnstarCommandParser().parse(arguments));
+        commands.put(StarredCommand.COMMAND_WORD, (parser, arguments) -> new StarredCommand());
+        commands.put(ClearCommand.COMMAND_WORD, (parser, arguments) -> new ClearCommandParser().parse(arguments));
+        commands.put(FilterCommand.COMMAND_WORD, (parser, arguments) -> new FilterCommandParser().parse(arguments));
+        commands.put(FindCommand.COMMAND_WORD, (parser, arguments) -> new FindCommandParser().parse(arguments));
+        commands.put(FollowUpCommand.COMMAND_WORD, (parser, arguments) -> new FollowUpCommandParser().parse(arguments));
+        commands.put(PendingFollowUpsCommand.COMMAND_WORD, (parser, arguments) -> {
             if (!arguments.isBlank()) {
                 throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
                         PendingFollowUpsCommand.MESSAGE_USAGE));
             }
             return new PendingFollowUpsCommand();
         });
-        commands.put(OrderCommand.COMMAND_WORD, arguments -> new OrderCommandParser().parse(arguments));
-        commands.put(ListCommand.COMMAND_WORD, arguments -> new ListCommand());
-        commands.put(ExitCommand.COMMAND_WORD, arguments -> new ExitCommand());
-        commands.put(HelpCommand.COMMAND_WORD, arguments -> new HelpCommand());
-        commands.put(AliasCommand.COMMAND_WORD, arguments -> new AliasCommandParser().parse(arguments));
+        commands.put(OrderCommand.COMMAND_WORD, (parser, arguments) -> new OrderCommandParser().parse(arguments));
+        commands.put(ListCommand.COMMAND_WORD, (parser, arguments) -> new ListCommand());
+        commands.put(ExitCommand.COMMAND_WORD, (parser, arguments) -> new ExitCommand());
+        commands.put(HelpCommand.COMMAND_WORD, (parser, arguments) -> new HelpCommand());
+        commands.put(UndoCommand.COMMAND_WORD, (parser, arguments) -> parser.parseUndoCommand(arguments));
+        commands.put(HistoryCommand.COMMAND_WORD, (parser, arguments) -> parser.parseHistoryCommand(arguments));
+        commands.put(AliasCommand.COMMAND_WORD, (parser, arguments) -> new AliasCommandParser().parse(arguments));
         return Collections.unmodifiableMap(commands);
     }
 
@@ -157,6 +176,21 @@ public class ContactFileParser {
             logger.finer("This user input caused a ParseException: " + userInput);
             throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
         }
-        return factory.create(arguments);
+        return factory.create(this, arguments);
+    }
+
+    private UndoCommand parseUndoCommand(String arguments) throws ParseException {
+        String trimmedArguments = arguments.trim();
+        if (!trimmedArguments.isEmpty() && !UndoCommand.CONFIRM_OPTION.equals(trimmedArguments)) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE));
+        }
+        return new UndoCommand(undoManager, UndoCommand.CONFIRM_OPTION.equals(trimmedArguments));
+    }
+
+    private HistoryCommand parseHistoryCommand(String arguments) throws ParseException {
+        if (!arguments.trim().isEmpty()) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HistoryCommand.MESSAGE_USAGE));
+        }
+        return new HistoryCommand(undoManager);
     }
 }

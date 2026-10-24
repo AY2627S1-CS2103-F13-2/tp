@@ -99,7 +99,10 @@ public class DeleteCommand extends Command {
             }
             if (matches.size() > 1) {
                 model.updateFilteredPersonList(matches::contains);
-                request = new PersonSelectionRequest(matches, person -> createConfirmation(List.of(person), model));
+                request = new PersonSelectionRequest(matches, person -> {
+                    PendingRequest confirmation = createConfirmation(List.of(person), model);
+                    return new CommandResult(confirmation.getPrompt(), confirmation);
+                });
             } else {
                 request = createConfirmation(matches, model);
             }

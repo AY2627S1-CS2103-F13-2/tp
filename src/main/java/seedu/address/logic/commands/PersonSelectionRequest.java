@@ -10,19 +10,19 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Retains a numbered set of candidates and resolves a reply to a stable contact reference.
+ * Retains a numbered set of candidates and applies an action to the selected contact.
  */
 public final class PersonSelectionRequest implements PendingRequest {
 
     private final List<Person> candidates;
-    private final Function<Person, PendingRequest> nextRequest;
+    private final Function<Person, CommandResult> selectionAction;
 
     /**
-     * Copies candidates in display order and retains the request factory for a selected contact.
+     * Copies candidates in display order and retains the action to perform for a selected contact.
      */
-    public PersonSelectionRequest(List<Person> candidates, Function<Person, PendingRequest> nextRequest) {
+    public PersonSelectionRequest(List<Person> candidates, Function<Person, CommandResult> selectionAction) {
         this.candidates = List.copyOf(candidates);
-        this.nextRequest = requireNonNull(nextRequest);
+        this.selectionAction = requireNonNull(selectionAction);
     }
 
     @Override
@@ -36,8 +36,7 @@ public final class PersonSelectionRequest implements PendingRequest {
         if (StringUtil.isNonZeroUnsignedInteger(response)) {
             int index = Integer.parseInt(response) - 1;
             if (index < candidates.size()) {
-                PendingRequest request = nextRequest.apply(candidates.get(index));
-                return new CommandResult(request.getPrompt(), request);
+                return selectionAction.apply(candidates.get(index));
             }
         }
         return new CommandResult("Enter a number from the displayed candidates.\n" + getPrompt(), this);

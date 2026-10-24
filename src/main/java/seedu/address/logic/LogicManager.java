@@ -2,12 +2,14 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.PendingRequest;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -36,10 +38,13 @@ public class LogicManager implements Logic {
 
     private final Model model;
     private final Storage storage;
+    private final UndoManager undoManager;
     private final ContactFileParser contactFileParser;
 
     private PendingRequest pendingRequest;
     private ModelSnapshot pendingSnapshot;
+    private Command pendingCommand;
+    private List<Person> pendingPersonsBeforeCommand;
 
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
@@ -47,7 +52,8 @@ public class LogicManager implements Logic {
     public LogicManager(Model model, Storage storage) {
         this.model = model;
         this.storage = storage;
-        contactFileParser = new ContactFileParser();
+        undoManager = new UndoManager();
+        contactFileParser = new ContactFileParser(undoManager);
         // Shortcuts loaded from a hand-edited preferences file have not been checked yet.
         model.setCommandAliases(AliasCommandParser.validAliases(model.getCommandAliases()));
     }
@@ -58,6 +64,9 @@ public class LogicManager implements Logic {
 
         ModelSnapshot snapshot = pendingRequest == null || pendingRequest.isReadOnly()
                 ? new ModelSnapshot(model) : pendingSnapshot;
+        List<Person> personsBeforeCommand = pendingRequest != null && !pendingRequest.isReadOnly()
+                ? pendingPersonsBeforeCommand : List.copyOf(model.getContactFile().getPersonList());
+        Command command = pendingRequest == null ? null : pendingCommand;
         try {
             CommandResult commandResult;
             if (pendingRequest != null) {
@@ -69,19 +78,31 @@ public class LogicManager implements Logic {
                 }
                 if (pendingRequest.shouldRunAsCommand(response)) {
                     clearPendingRequest();
-                    commandResult = contactFileParser.parseCommand(commandText).execute(model);
+                    command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
+                    personsBeforeCommand = List.copyOf(model.getContactFile().getPersonList());
+                    commandResult = command.execute(model);
                 } else {
                     commandResult = pendingRequest.respond(response, model);
                 }
             } else {
-                commandResult = parseAndExecute(commandText);
+                String shortcutNote = shortcutNote(commandText);
+                try {
+                    command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
+                    commandResult = command.execute(model).withFeedbackPrefix(shortcutNote);
+                } catch (ParseException pe) {
+                    throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
+                } catch (CommandException ce) {
+                    throw shortcutNote.isEmpty() ? ce : new CommandException(shortcutNote + ce.getMessage(), ce);
+                }
             }
 
             if (commandResult.getPendingRequest().isPresent()) {
                 pendingRequest = commandResult.getPendingRequest().orElseThrow();
                 pendingSnapshot = snapshot;
+                pendingCommand = command;
+                pendingPersonsBeforeCommand = personsBeforeCommand;
             } else {
-                if (snapshot.hasDataChanged(model)) {
+                if (commandResult.shouldSaveContactFile() && snapshot.hasDataChanged(model)) {
                     storage.saveContactFile(model.getContactFile());
                 }
                 // Shortcuts and the field order live in the preferences file; save them now rather than
@@ -89,6 +110,8 @@ public class LogicManager implements Logic {
                 if (snapshot.hasPreferencesChanged(model)) {
                     storage.saveUserPrefs(model.getUserPrefs());
                 }
+                undoManager.recordChange(command, personsBeforeCommand, model.getContactFile().getPersonList(),
+                        commandResult.getFeedbackToUser());
                 clearPendingRequest();
             }
             return commandResult;
@@ -108,23 +131,13 @@ public class LogicManager implements Logic {
     }
 
     /**
-     * Expands a leading shortcut in {@code commandText}, then parses and runs the command. The result of a
-     * shortcut, and any error it causes, starts with the command it expanded to, since the user never typed it.
+     * Returns the note shown before the result of a command entered through a shortcut, or an empty string if
+     * {@code commandText} does not start with one. A shortcut's result, and any error it causes, starts with
+     * the command it expanded to, since the user never typed that command.
      */
-    private CommandResult parseAndExecute(String commandText) throws CommandException, ParseException {
+    private String shortcutNote(String commandText) {
         String expandedText = ContactFileParser.expandShortcut(commandText, model.getCommandAliases());
-        if (expandedText.equals(commandText)) {
-            return contactFileParser.parseCommand(commandText).execute(model);
-        }
-
-        String shortcutNote = String.format(MESSAGE_SHORTCUT_EXPANDED, expandedText.trim());
-        try {
-            return contactFileParser.parseCommand(expandedText).execute(model).withFeedbackPrefix(shortcutNote);
-        } catch (ParseException pe) {
-            throw new ParseException(shortcutNote + pe.getMessage(), pe);
-        } catch (CommandException ce) {
-            throw new CommandException(shortcutNote + ce.getMessage(), ce);
-        }
+        return expandedText.equals(commandText) ? "" : String.format(MESSAGE_SHORTCUT_EXPANDED, expandedText.trim());
     }
 
     private void restoreFailedRequest(ModelSnapshot snapshot) {
@@ -135,6 +148,8 @@ public class LogicManager implements Logic {
     private void clearPendingRequest() {
         pendingRequest = null;
         pendingSnapshot = null;
+        pendingCommand = null;
+        pendingPersonsBeforeCommand = null;
     }
 
     @Override

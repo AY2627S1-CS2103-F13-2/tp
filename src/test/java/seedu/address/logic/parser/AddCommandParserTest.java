@@ -31,6 +31,7 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_COMPANY;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_INTRODUCER;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LINKEDIN;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
@@ -76,6 +77,14 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_introducerPresent_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withIntroducer("O'Brien-Smith").withTags().build();
+
+        assertParseSuccess(parser, ALL_FIELDS_BOB + " i/O'Brien-Smith",
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_repeatedNonTagValue_failure() {
         String validExpectedPersonString = ALL_FIELDS_BOB + TAG_DESC_FRIEND;
 
@@ -103,12 +112,17 @@ public class AddCommandParserTest {
         assertParseFailure(parser, LINKEDIN_DESC_AMY + validExpectedPersonString,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_LINKEDIN));
 
+        // multiple introducers
+        assertParseFailure(parser, " i/Jane Doe" + validExpectedPersonString + " i/John Smith",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_INTRODUCER));
+
         // multiple fields repeated
         assertParseFailure(parser,
                 validExpectedPersonString + NAME_DESC_AMY + COMPANY_DESC_AMY + ROLE_DESC_AMY + PHONE_DESC_AMY
-                        + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY + validExpectedPersonString,
+                        + EMAIL_DESC_AMY + LINKEDIN_DESC_AMY + validExpectedPersonString
+                        + " i/Jane Doe i/John Doe",
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_NAME, PREFIX_COMPANY, PREFIX_ROLE,
-                        PREFIX_PHONE, PREFIX_EMAIL, PREFIX_LINKEDIN));
+                        PREFIX_PHONE, PREFIX_EMAIL, PREFIX_LINKEDIN, PREFIX_INTRODUCER));
 
         // invalid value followed by valid value
 
@@ -170,6 +184,12 @@ public class AddCommandParserTest {
                 .withRole(null).withPhone(null).withLinkedin(null).withTags().build();
         assertParseSuccess(parser, NAME_DESC_BOB + COMPANY_DESC_BOB + EMAIL_DESC_BOB,
                 new AddCommand(partialPerson));
+    }
+
+    @Test
+    public void parse_invalidIntroducer_failure() {
+        assertParseFailure(parser, NAME_DESC_BOB + " i/Jane& Smith", Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, NAME_DESC_BOB + " i/", Name.MESSAGE_CONSTRAINTS);
     }
 
     @Test

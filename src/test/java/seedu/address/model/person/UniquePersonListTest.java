@@ -38,11 +38,18 @@ public class UniquePersonListTest {
     }
 
     @Test
-    public void contains_personWithSameNameAndEmailPresenceInList_returnsTrue() {
+    public void contains_personWithSameNameAndEmailInList_returnsTrue() {
         uniquePersonList.add(ALICE);
         Person editedAlice = new PersonBuilder(ALICE).withCompany(VALID_COMPANY_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(uniquePersonList.contains(editedAlice));
+    }
+
+    @Test
+    public void contains_personWithSameNameButDifferentEmailInList_returnsFalse() {
+        uniquePersonList.add(ALICE);
+        Person otherAlice = new PersonBuilder(ALICE).withEmail("other@example.com").build();
+        assertFalse(uniquePersonList.contains(otherAlice));
     }
 
     @Test
