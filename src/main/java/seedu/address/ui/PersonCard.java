@@ -1,6 +1,8 @@
 package seedu.address.ui;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 import javafx.fxml.FXML;
@@ -52,6 +54,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label linkedin;
     @FXML
+    private Label introducer;
+    @FXML
     private FlowPane tags;
     @FXML
     private Label followUps;
@@ -76,6 +80,7 @@ public class PersonCard extends UiPart<Region> {
         setOptionalLabel(phone, person.getPhone().map(value -> value.value).orElse(null));
         setOptionalLabel(email, person.getEmail().map(value -> value.value).orElse(null));
         setOptionalLabel(linkedin, person.getLinkedin().map(value -> value.value).orElse(null));
+        setOptionalLabel(introducer, person.getIntroducer().map(value -> "Introduced by: " + value).orElse(null));
         setOptionalLabel(followUps, person.getFollowUps().isEmpty() ? null
                 : "Follow-ups:\n" + Messages.formatFollowUps(person));
         person.getTags().stream()
@@ -88,7 +93,14 @@ public class PersonCard extends UiPart<Region> {
                 FieldOrder.Field.COMPANY, company, FieldOrder.Field.ROLE, role,
                 FieldOrder.Field.PHONE, phone, FieldOrder.Field.EMAIL, email,
                 FieldOrder.Field.LINKEDIN, linkedin, FieldOrder.Field.FOLLOWUPS, followUps);
-        fields.getChildren().setAll(order.getFields().stream().map(rows::get).toList());
+        List<Node> orderedRows = new ArrayList<>();
+        order.getFields().forEach(field -> {
+            orderedRows.add(rows.get(field));
+            if (field == FieldOrder.Field.LINKEDIN && person.getIntroducer().isPresent()) {
+                orderedRows.add(introducer);
+            }
+        });
+        fields.getChildren().setAll(orderedRows);
     }
 
     /**

@@ -113,9 +113,10 @@ Format: `help`
 
 Adds a person to the contact file.
 
-Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
+Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​`
 
-* Only the name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
+* Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -123,6 +124,7 @@ A person can have any number of tags, including zero.
 
 Examples:
 * `add n/John Doe c/Acme r/Software Engineer p/98765432 e/johnd@example.com l/linkedin.com/in/johndoe`
+* `add n/John Doe i/O'Brien-Smith` Adds John Doe and records O'Brien-Smith as the introducer.
 * `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`
 * `add n/Hans Gruber` — just a name, when that is all you got before the conversation moved on.
 
@@ -136,7 +138,7 @@ Format: `list`
 
 Marks a contact as important so you can retrieve it later with `starred`.
 
-Format: `star INDEX`
+Format: `star INDEX` or `star QUERY`
 
 * `INDEX` must be a positive integer from the currently displayed list.
 * If the contact is already starred, Astra reports that status without changing contact data.
@@ -144,11 +146,22 @@ Format: `star INDEX`
 
 Example: `find Betsy` followed by `star 1` stars the 1st search result.
 
+Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`](#locating-persons-find): a name, `/contact PHONE_NUMBER`, or `/email EMAIL`.
+
+* Queries search all contacts and replace the current displayed filter with the search results.
+* One match: the contact's starred status is updated. If it already has the requested status, Astra reports this without changing contact data.
+* Multiple matches: Astra displays the results without changing any contacts and asks you to retry with `star INDEX` or `unstar INDEX`.
+* No matches: Astra displays an empty list and reports `Contact not found.`
+* Numeric input is treated as an index. As with other index commands, input beginning with an integer must be a single positive index.
+
+Examples: `star Alex`, `star /contact 87438807`, and `unstar /email alex@example.com`.
+
+
 ### Removing a contact's star: `unstar`
 
 Removes a contact's starred status.
 
-Format: `unstar INDEX`
+Format: `unstar INDEX` or `unstar QUERY`
 
 * `INDEX` must be a positive integer from the currently displayed list.
 * If the contact is not starred, Astra reports that status without changing contact data.
@@ -189,6 +202,38 @@ Examples:
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
 *  `edit 3 c/ r/` Removes the company and role of the 3rd person.
+
+### Removing selected details: `drop`
+
+Removes only the explicitly selected detail values from a contact, after confirmation.
+
+Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`
+
+* `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them and makes no changes.
+* Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
+* Astra first displays the proposed removal. Repeat the command with `--confirm` to apply it. Until confirmed, the contact file is unchanged and not saved.
+* Repeating `t/TAG` removes only those selected tags; all other tags and contact details are retained.
+
+Examples:
+* `drop 1 t/outdated` Shows the selected tag removal for the 1st contact.
+* `drop 1 t/outdated --confirm` Removes that tag while keeping the contact's other tags.
+* `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
+* `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
+
+### Introducing a person: `introduce`
+
+Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
+
+Format: `introduce NAME i/INTRODUCER [--confirm]`
+
+* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
+* Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
+* If an introducer is already recorded, Astra displays that name and asks before replacing it. Confirm by repeating the command with `--confirm` at the end.
+* Astra displays the updated contact after recording the introducer.
+
+Examples:
+* `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
+* `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
 ### Locating persons: `find`
 
@@ -331,8 +376,34 @@ Examples:
 * `delete /email alice@example.com bob@example.com`, then `y` deletes both
   contacts in one save if every address resolves successfully.
 
+### Undoing an edit or deletion: `undo`
+
+Reverses the most recent successful edit or deletion in the current Astra session.
+
+Format: `undo [--confirm]`
+
+* Run `undo` to see which edit or deletion will be reversed. Nothing changes until you confirm.
+* Run `undo --confirm` to restore the contact information. Astra displays the restored contact and saves the contact file.
+* Only edits and deletions can be undone. Adding, clearing, or otherwise changing contact data after an edit or deletion makes that earlier change unavailable to undo.
+* If restoring the information would violate contact uniqueness rules, Astra reports the conflict and makes no changes.
+* Undo history is kept only for the current session and is cleared when Astra closes.
+
+Examples:
+* `edit 1 p/91234567`, followed by `undo`, previews the edit that would be reversed.
+* `undo --confirm` restores the previous phone number after the preview.
+* `delete John Lim`, followed by `undo` and `undo --confirm`, restores John Lim.
+
+### Viewing edit and deletion history: `history`
+
+Shows the edit and deletion history recorded during the current Astra session, including changes that have been undone.
+
+Format: `history`
+
+* The history is cleared when Astra closes.
+* Only edits and deletions are included.
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-Confirmed deletion cannot be undone. Check the preview before entering `y`.
+Review the deletion preview before entering `y`. Undo is available only for the
+most recent edit or deletion and is cleared by any later contact data change.
 </div>
 
 ### Recording a follow-up: `followup`
@@ -565,11 +636,15 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com t/colleague`
+**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com i/Jane Smith t/colleague`
 **Alias** | `alias SHORTCUT COMMAND…​`, `alias /replace SHORTCUT COMMAND…​`, `alias /remove SHORTCUT`, or `alias` (lists shortcuts)<br> e.g., `alias fe find /email`
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
+**Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
+**Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
+**Undo** | `undo` to preview the most recent edit or deletion; `undo --confirm` to restore it
+**History** | `history`
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
@@ -577,7 +652,7 @@ Action | Format, Examples
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
-**Star** | `star INDEX`<br> e.g., `star 2`
-**Unstar** | `unstar INDEX`<br> e.g., `unstar 1`
+**Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
+**Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`
 **Help** | `help`

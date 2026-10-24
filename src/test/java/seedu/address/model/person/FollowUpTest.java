@@ -138,7 +138,7 @@ class FollowUpTest {
         assertThrows(IllegalArgumentException.class, () -> contact.appendFollowUp(pending));
         assertThrows(NullPointerException.class, () -> contact.appendFollowUp(null));
         assertThrows(NullPointerException.class, () -> new Person(ALICE.getName(), null, null, null, null,
-                null, ALICE.getTags(), null));
+                null, ALICE.getTags(), (List<FollowUp>) null));
     }
 
     @Test
