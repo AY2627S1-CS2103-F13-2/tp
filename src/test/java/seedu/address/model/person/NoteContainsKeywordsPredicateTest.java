@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 
@@ -17,6 +18,11 @@ public class NoteContainsKeywordsPredicateTest {
     private static final Interaction COFFEE = new Interaction(LocalDate.of(2026, 10, 15), "Coffee chat");
 
     private final Person alice = ALICE.withInteraction(INTERNSHIP).withInteraction(COFFEE);
+
+    @Test
+    public void constructor_noKeywords_throwsAssertionError() {
+        assertThrows(AssertionError.class, () -> new NoteContainsKeywordsPredicate(List.of()));
+    }
 
     @Test
     public void test_anyKeywordInAnyNoteIgnoringCase_returnsTrue() {
