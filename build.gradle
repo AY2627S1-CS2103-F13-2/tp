@@ -24,8 +24,16 @@ checkstyle {
     toolVersion = '14.1.0'
 }
 
+// Java ignores assert statements unless it is started with -ea, which would make
+// every assertion in the code silently useless. Turn them on for all JVMs Gradle
+// starts: the test suites and the run/runShadow tasks that launch the app.
+tasks.withType(JavaExec).configureEach {
+    enableAssertions = true
+}
+
 test {
     useJUnitPlatform()
+    enableAssertions = true
     // Use the declared JavaFX libraries even when the JDK bundles another JavaFX version.
     jvmArgs '--limit-modules', 'java.se,jdk.unsupported,jdk.management'
     // Exercise real JavaFX controls without requiring a desktop display in CI.
