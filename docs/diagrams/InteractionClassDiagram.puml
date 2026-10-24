@@ -1,0 +1,45 @@
+@startuml
+!include style.puml
+!pragma layout smetana
+skinparam arrowThickness 1.1
+skinparam classAttributeIconSize 0
+skinparam classAttributeFontColor #000000
+
+package Logic <<Rectangle>> {
+class LogCommand LOGIC_COLOR
+}
+
+package Model <<Rectangle>> {
+class Person MODEL_COLOR_T1 {
+  +getInteractions() : List<Interaction>
+  +withInteraction(i : Interaction) : Person
+  +withInteractions(list : List<Interaction>) : Person
+  +hasInteraction(i : Interaction) : boolean
+}
+class Interaction MODEL_COLOR_T1 {
+  -date : LocalDate
+  -note : String
+  +getDate() : LocalDate
+  +getNote() : String
+  +isSameInteraction(other : Interaction) : boolean
+}
+}
+
+package Storage <<Rectangle>> {
+class JsonAdaptedPerson STORAGE_COLOR
+class JsonAdaptedInteraction STORAGE_COLOR_T1 {
+  -date : String
+  -note : String
+  +toModelType() : Interaction
+}
+}
+
+Person *--> "*\n{ordered by date}" Interaction
+LogCommand ..> Person : adds to
+JsonAdaptedPerson *--> "*" JsonAdaptedInteraction
+JsonAdaptedInteraction ..> Interaction : converts to
+
+show Person methods
+show Interaction members
+show JsonAdaptedInteraction members
+@enduml

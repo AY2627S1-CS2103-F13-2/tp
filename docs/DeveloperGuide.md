@@ -302,7 +302,7 @@ Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 
 ### Display-field order (UC26)
 
-`FieldOrder` is an immutable permutation of all eight supported fields. Its
+`FieldOrder` is an immutable permutation of all nine supported fields. Its
 constructor validates field count, case-insensitive names, and uniqueness;
 partial orders cannot hide fields. The default matches the original card order
 with follow-ups last. `UserPrefs` stores this global value and includes it in
@@ -348,6 +348,47 @@ the user's explicit saved choice. Contact sorting remains outside UC26.
 The editable diagram source is `docs/diagrams/FieldOrderActivityDiagram.dot`.
 
 ![Changing the contact field order](images/FieldOrderActivityDiagram.svg)
+
+### Interaction history (UC10)
+
+Each `Person` holds an immutable list of `Interaction`s, kept in date order, oldest first. An
+`Interaction` is a `LocalDate` and a non-blank note; two interactions are the same if they have the same date
+and the same note, ignoring letter case. The class diagram below shows where interactions sit across the
+components.
+
+![Classes involved in the interaction history](images/InteractionClassDiagram.png)
+
+`Person` has one constructor that takes every field. `withInteraction`, `withInteractions`, `appendFollowUp`,
+`withStarred` and `withEvent` all go through it, as do `edit`, `drop` and `introduce`, so changing one part of a
+contact never drops another, such as logging an interaction on a contact with follow-ups.
+
+The sequence diagram below shows how `log 1 nt/Coffee chat` is handled.
+
+![Interactions inside the Logic, Model and Storage components for `log 1 nt/Coffee chat`](images/LogSequenceDiagram.png)
+
+1. `ContactFileParser` passes the arguments to `LogCommandParser`, which fills in today's date when `d/` is left
+   out and rejects a future date or a blank note before any `LogCommand` is created.
+2. `LogCommand` finds the contact through `PersonNameResolver#resolveTarget`, by displayed index or by name. A
+   name that matches several contacts lists them and changes nothing.
+3. If the contact already has the same interaction, the command fails and the contact file is left unchanged.
+   Otherwise `Person#withInteraction` returns a new `Person`, and `Model#setPerson` replaces the old one.
+4. The displayed list keeps its filter, so an index still points to the same contact on the next command.
+5. `LogicManager` saves the contact file because the contact data changed.
+
+`Messages#format` shows the history as a numbered list, and it is one of the fields `order` can move, so it
+appears wherever full details are shown. `JsonAdaptedInteraction` stores the date as `YYYY-MM-DD`. A contact
+file written before this feature has no `interactions` field, which loads as an empty history. Loading applies
+the same rules as `log`: a future date, a blank note or a repeated interaction makes that contact invalid, and it
+goes through the usual recovery path.
+
+Design considerations:
+
+* **Where the history lives:** as a list inside `Person` (chosen) or as a separate store keyed by contact.
+  Keeping it in `Person` means `edit`, deletion, undo snapshots and saving all handle it with no extra code. The
+  cost is that every method that copies a `Person` must pass the history on, which the single full constructor
+  makes hard to forget.
+* **Order:** sorted by date when stored (chosen), or kept in the order logged. Sorting means an interaction
+  logged late appears where it belongs, and the entry numbers that `view` shows are stable.
 
 ### \[Proposed\] Undo/redo feature
 
