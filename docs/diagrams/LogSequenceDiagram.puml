@@ -1,0 +1,104 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":ContactFileParser" as ContactFileParser LOGIC_COLOR
+participant ":LogCommandParser" as LogCommandParser LOGIC_COLOR
+participant "l:LogCommand" as LogCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant ":Model" as Model MODEL_COLOR
+participant "p:Person" as Person MODEL_COLOR
+participant "updated:Person" as UpdatedPerson MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("log 1 nt/Coffee chat")
+activate LogicManager
+
+LogicManager -> ContactFileParser : parseCommand("log 1 nt/Coffee chat")
+activate ContactFileParser
+
+create LogCommandParser
+ContactFileParser -> LogCommandParser
+activate LogCommandParser
+LogCommandParser --> ContactFileParser
+deactivate LogCommandParser
+
+ContactFileParser -> LogCommandParser : parse("1 nt/Coffee chat")
+activate LogCommandParser
+
+note right of LogCommandParser
+  The date defaults to today.
+  A future date or a blank
+  note is rejected here.
+end note
+
+create LogCommand
+LogCommandParser -> LogCommand
+activate LogCommand
+LogCommand --> LogCommandParser
+deactivate LogCommand
+
+LogCommandParser --> ContactFileParser : l
+deactivate LogCommandParser
+LogCommandParser -[hidden]-> ContactFileParser
+destroy LogCommandParser
+
+ContactFileParser --> LogicManager : l
+deactivate ContactFileParser
+
+LogicManager -> LogCommand : execute(m)
+activate LogCommand
+
+LogCommand -> Model : getFilteredPersonList()
+activate Model
+Model --> LogCommand : displayed contacts
+deactivate Model
+
+LogCommand -> Person : hasInteraction(interaction)
+activate Person
+Person --> LogCommand : false
+deactivate Person
+
+LogCommand -> Person : withInteraction(interaction)
+activate Person
+
+create UpdatedPerson
+Person -> UpdatedPerson
+activate UpdatedPerson
+UpdatedPerson --> Person
+deactivate UpdatedPerson
+
+Person --> LogCommand : updated
+deactivate Person
+
+LogCommand -> Model : setPerson(p, updated)
+activate Model
+Model --> LogCommand
+deactivate Model
+
+create CommandResult
+LogCommand -> CommandResult
+activate CommandResult
+CommandResult --> LogCommand
+deactivate CommandResult
+
+LogCommand --> LogicManager : r
+deactivate LogCommand
+
+LogicManager -> Storage : saveContactFile(contactFile)
+activate Storage
+Storage --> LogicManager
+deactivate Storage
+
+[<--LogicManager : r
+deactivate LogicManager
+@enduml
