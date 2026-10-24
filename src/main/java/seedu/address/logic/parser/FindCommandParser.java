@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import seedu.address.logic.commands.FindCommand;
+import seedu.address.logic.commands.FindNotesCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.ContactFieldPredicate;
 import seedu.address.model.person.ContactFieldPredicate.Field;
@@ -13,6 +14,7 @@ import seedu.address.model.person.Email;
 import seedu.address.model.person.EventContainsKeywordsPredicate;
 import seedu.address.model.person.FuzzyNamePredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.NoteContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 
@@ -20,6 +22,9 @@ import seedu.address.model.person.Phone;
  * Parses input arguments and creates a new FindCommand object.
  */
 public class FindCommandParser implements Parser<FindCommand> {
+
+    public static final String MESSAGE_NO_NOTE_KEYWORDS = "Please give at least one keyword to search the notes for, "
+            + "e.g. find /notes internship";
 
     /**
      * Parses the given {@code String} of arguments in the context of the FindCommand
@@ -44,6 +49,14 @@ public class FindCommandParser implements Parser<FindCommand> {
             String emailValue = trimmedArgs.substring("/email".length()).trim();
             Email email = ParserUtil.parseEmail(emailValue);
             return new FindCommand(new ContactFieldPredicate(Field.EMAIL, email.value));
+        }
+
+        if (trimmedArgs.equals("/notes") || trimmedArgs.startsWith("/notes ")) {
+            String keywords = trimmedArgs.substring("/notes".length()).trim();
+            if (keywords.isEmpty()) {
+                throw new ParseException(MESSAGE_NO_NOTE_KEYWORDS);
+            }
+            return new FindNotesCommand(new NoteContainsKeywordsPredicate(List.of(keywords.split("\\s+"))));
         }
 
         if (trimmedArgs.equals("/event") || trimmedArgs.startsWith("/event ")) {
