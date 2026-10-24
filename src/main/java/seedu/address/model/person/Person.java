@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -15,7 +16,7 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the contact file.
- * Guarantees: the name, tag set, events and ordered action list are present and immutable.
+ * Guarantees: the name, tag set, events, ordered action list and interaction history are present and immutable.
  * Contact details other than the name are optional; all field values are validated.
  */
 public class Person {
@@ -31,6 +32,7 @@ public class Person {
     private final Set<Event> events = new HashSet<>();
     private final List<FollowUp> followUps = new ArrayList<>();
     private final boolean starred;
+    private final List<Interaction> interactions;
 
     /**
      * Constructs a person without events, follow-ups or starred status.
@@ -107,15 +109,28 @@ public class Person {
     }
 
     /**
-     * Constructs a person with introducer, events, follow-ups and starred status.
+     * Constructs a person with introducer, events, follow-ups and starred status, and no interactions.
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email,
             Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
             List<FollowUp> followUps, boolean starred) {
+        this(name, company, role, phone, email, linkedin,
+                introducer, tags, events, followUps, starred, List.of());
+    }
+
+    /**
+     * Constructs a person with every field. All other constructors and copy methods go through this one,
+     * so no field is lost when a contact is copied. {@code interactions} is kept in date order;
+     * interactions on the same date keep their given order.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
+            List<FollowUp> followUps, boolean starred, List<Interaction> interactions) {
         requireNonNull(name);
         requireNonNull(tags);
         requireNonNull(events);
         requireNonNull(followUps);
+        requireNonNull(interactions);
 
         this.name = name;
         this.company = company;
@@ -129,6 +144,9 @@ public class Person {
         this.tags.addAll(tags);
         this.events.addAll(events);
         this.followUps.addAll(followUps);
+        List<Interaction> sortedInteractions = new ArrayList<>(interactions);
+        sortedInteractions.sort(Comparator.comparing(Interaction::getDate));
+        this.interactions = List.copyOf(sortedInteractions);
 
         Set<Integer> actionIds = new HashSet<>();
         for (FollowUp action : this.followUps) {
@@ -201,7 +219,7 @@ public class Person {
      */
     public Person withStarred(boolean starred) {
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, followUps, starred);
+                introducer, tags, events, followUps, starred, interactions);
     }
 
     /**
@@ -222,7 +240,7 @@ public class Person {
         updatedEvents.add(event);
 
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, updatedEvents, followUps, starred);
+                introducer, tags, updatedEvents, followUps, starred, interactions);
     }
 
     /**
@@ -238,7 +256,39 @@ public class Person {
 
         updatedActions.add(action);
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, updatedActions, starred);
+                introducer, tags, events, updatedActions, starred, interactions);
+    }
+
+    /**
+     * Returns the interaction history in date order, oldest first, as an unmodifiable list.
+     */
+    public List<Interaction> getInteractions() {
+        return interactions;
+    }
+
+    /**
+     * Returns a copy of this person with {@code interactions} as the interaction history.
+     */
+    public Person withInteractions(List<Interaction> interactions) {
+        return new Person(name, company, role, phone, email, linkedin,
+                introducer, tags, events, followUps, starred, interactions);
+    }
+
+    /**
+     * Returns a copy of this person with {@code interaction} added to the interaction history.
+     */
+    public Person withInteraction(Interaction interaction) {
+        requireNonNull(interaction);
+        List<Interaction> updatedInteractions = new ArrayList<>(interactions);
+        updatedInteractions.add(interaction);
+        return withInteractions(updatedInteractions);
+    }
+
+    /**
+     * Returns true if this person already has an interaction with the same date and note as {@code interaction}.
+     */
+    public boolean hasInteraction(Interaction interaction) {
+        return interactions.stream().anyMatch(existing -> existing.isSameInteraction(interaction));
     }
 
     /**
@@ -301,13 +351,14 @@ public class Person {
                 && tags.equals(otherPerson.tags)
                 && events.equals(otherPerson.events)
                 && followUps.equals(otherPerson.followUps)
-                && starred == otherPerson.starred;
+                && starred == otherPerson.starred
+                && interactions.equals(otherPerson.interactions);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, company, role, phone, email, linkedin,
-                introducer, tags, events, followUps, starred);
+                introducer, tags, events, followUps, starred, interactions);
     }
 
     @Override
@@ -324,6 +375,7 @@ public class Person {
                 .add("events", events)
                 .add("followUps", followUps)
                 .add("starred", starred)
+                .add("interactions", interactions)
                 .toString();
     }
 }

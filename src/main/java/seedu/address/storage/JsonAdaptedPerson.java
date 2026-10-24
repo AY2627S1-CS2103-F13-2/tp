@@ -14,6 +14,7 @@ import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Event;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -28,6 +29,7 @@ class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT =
             "Person's %s field is missing!";
+    public static final String MESSAGE_DUPLICATE_INTERACTION = "Person has the same interaction twice (%1$s).";
 
     private final String name;
     private final String company;
@@ -40,6 +42,7 @@ class JsonAdaptedPerson {
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
     private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
     private final boolean starred;
+    private final List<JsonAdaptedInteraction> interactions = new ArrayList<>();
 
     /**
      * Constructs a JsonAdaptedPerson without events, follow-ups or starred status.
@@ -81,7 +84,17 @@ class JsonAdaptedPerson {
     }
 
     /**
-     * Jackson constructor containing all contact data.
+     * Constructs a JsonAdaptedPerson with every field except interactions.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            String introducer, List<JsonAdaptedTag> tags, List<JsonAdaptedEvent> events,
+            List<JsonAdaptedFollowUp> followUps, boolean starred) {
+        this(name, company, role, phone, email, linkedin, introducer, tags, events, followUps, starred, null);
+    }
+
+    /**
+     * Jackson constructor containing all contact data. A contact file written before interactions were
+     * recorded has no {@code interactions} field, which is read as an empty history.
      */
     @JsonCreator
     public JsonAdaptedPerson(
@@ -95,7 +108,8 @@ class JsonAdaptedPerson {
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("events") List<JsonAdaptedEvent> events,
             @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
-            @JsonProperty("starred") boolean starred) {
+            @JsonProperty("starred") boolean starred,
+            @JsonProperty("interactions") List<JsonAdaptedInteraction> interactions) {
         this.name = name;
         this.company = company;
         this.role = role;
@@ -115,6 +129,10 @@ class JsonAdaptedPerson {
 
         if (followUps != null) {
             this.followUps.addAll(followUps);
+        }
+
+        if (interactions != null) {
+            this.interactions.addAll(interactions);
         }
     }
 
@@ -153,6 +171,10 @@ class JsonAdaptedPerson {
         source.getFollowUps().stream()
                 .map(JsonAdaptedFollowUp::new)
                 .forEach(followUps::add);
+
+        interactions.addAll(source.getInteractions().stream()
+                .map(JsonAdaptedInteraction::new)
+                .collect(Collectors.toList()));
     }
 
     /**
@@ -257,6 +279,18 @@ class JsonAdaptedPerson {
 
             modelFollowUps.add(modelAction);
         }
+
+        List<Interaction> modelInteractions = new ArrayList<>();
+        for (JsonAdaptedInteraction interaction : interactions) {
+            if (interaction == null) {
+                throw new IllegalValueException("Interaction entries must not be null.");
+            }
+            Interaction modelInteraction = interaction.toModelType();
+            if (modelInteractions.stream().anyMatch(modelInteraction::isSameInteraction)) {
+                throw new IllegalValueException(String.format(MESSAGE_DUPLICATE_INTERACTION, modelInteraction));
+            }
+            modelInteractions.add(modelInteraction);
+        }
         return new Person(
                 modelName,
                 modelCompany,
@@ -268,6 +302,7 @@ class JsonAdaptedPerson {
                 modelTags,
                 modelEventSet,
                 modelFollowUps,
-                starred);
+                starred,
+                modelInteractions);
     }
 }

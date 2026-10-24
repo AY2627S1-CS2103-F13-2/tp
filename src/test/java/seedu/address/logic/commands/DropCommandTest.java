@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +23,8 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -57,6 +60,22 @@ public class DropCommandTest {
         assertEquals(expectedResult.getFeedbackToUser(), confirmed.getFeedbackToUser());
         assertEquals(expectedPerson, model.getContactFile().getPersonList().getFirst());
         assertEquals(original.getEmail(), expectedPerson.getEmail());
+    }
+
+    @Test
+    public void execute_confirmed_keepsFollowUpsStarAndInteractions() throws Exception {
+        Person rich = original.appendFollowUp(new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING))
+                .withStarred(true)
+                .withInteraction(new Interaction(LocalDate.of(2026, 10, 1), "Career fair chat"));
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(rich).build(), new UserPrefs());
+
+        new DropCommand(Index.fromOneBased(1), List.of(new FieldValue(Field.TAG, new Tag("old"))), false)
+                .execute(model).getPendingRequest().orElseThrow().respond("y", model);
+
+        Person dropped = model.getContactFile().getPersonList().getFirst();
+        assertEquals(rich.getFollowUps(), dropped.getFollowUps());
+        assertTrue(dropped.isStarred());
+        assertEquals(rich.getInteractions(), dropped.getInteractions());
     }
 
     @Test

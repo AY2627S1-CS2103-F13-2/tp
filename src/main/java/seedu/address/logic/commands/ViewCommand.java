@@ -2,7 +2,6 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.List;
 import java.util.Objects;
 
 import seedu.address.commons.core.index.Index;
@@ -56,18 +55,10 @@ public class ViewCommand extends Command {
         requireNonNull(model);
 
         Person personToView;
-        if (targetName == null) {
-            List<Person> lastShownList = model.getFilteredPersonList();
-            if (targetIndex.getZeroBased() >= lastShownList.size()) {
-                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-            }
-            personToView = lastShownList.get(targetIndex.getZeroBased());
-        } else {
-            switch (PersonNameResolver.resolve(model, targetName, COMMAND_WORD)) {
-                case PersonNameResolver.Outcome.Unique unique -> personToView = unique.person();
-                case PersonNameResolver.Outcome.Several several -> {
-                    return new CommandResult(several.message());
-                }
+        switch (PersonNameResolver.resolveTarget(model, targetIndex, targetName, COMMAND_WORD)) {
+            case PersonNameResolver.Outcome.Unique unique -> personToView = unique.person();
+            case PersonNameResolver.Outcome.Several several -> {
+                return new CommandResult(several.message());
             }
         }
 

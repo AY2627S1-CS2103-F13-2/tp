@@ -8,6 +8,8 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
@@ -17,6 +19,8 @@ import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.ContactFileBuilder;
@@ -37,6 +41,22 @@ public class IntroduceCommandTest {
 
         assertCommandSuccess(command, model, String.format(IntroduceCommand.MESSAGE_RECORDED, Messages.format(updated)),
                 expectedModel);
+    }
+
+    @Test
+    public void execute_validIntroducer_keepsFollowUpsStarAndInteractions() throws Exception {
+        Person rich = new PersonBuilder().build()
+                .appendFollowUp(new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING))
+                .withStarred(true)
+                .withInteraction(new Interaction(LocalDate.of(2026, 10, 1), "Career fair chat"));
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(rich).build(), new UserPrefs());
+
+        new IntroduceCommand(Index.fromOneBased(1), new Name("Someone Outside Astra"), false).execute(model);
+
+        Person updated = model.getContactFile().getPersonList().getFirst();
+        assertEquals(rich.getFollowUps(), updated.getFollowUps());
+        assertTrue(updated.isStarred());
+        assertEquals(rich.getInteractions(), updated.getInteractions());
     }
 
     @Test
