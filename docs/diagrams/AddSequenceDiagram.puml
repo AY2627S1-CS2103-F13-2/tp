@@ -1,0 +1,30 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+participant UI
+participant LogicManager
+participant ContactFileParser
+participant AddCommandParser
+participant AddCommand
+participant Model
+participant Storage
+UI -> LogicManager : execute("add n/...")
+LogicManager -> Model : capture ModelSnapshot
+LogicManager -> ContactFileParser : parseCommand(input)
+ContactFileParser -> AddCommandParser : parse(arguments)
+AddCommandParser --> ContactFileParser : AddCommand
+ContactFileParser --> LogicManager : AddCommand
+LogicManager -> AddCommand : execute(model)
+AddCommand -> Model : hasEmail(person)
+Model --> AddCommand : email not found
+AddCommand -> Model : hasPhone(person)
+Model --> AddCommand : phone not found
+AddCommand -> Model : addPerson(person)
+AddCommand --> LogicManager : success result
+opt snapshot detects a data change
+LogicManager -> Storage : saveContactFile(contactFile)
+Storage --> LogicManager : saved
+end
+LogicManager --> UI : "New person added"
+note over LogicManager, Storage : Duplicate email/phone or save failure restores the snapshot.
+@enduml

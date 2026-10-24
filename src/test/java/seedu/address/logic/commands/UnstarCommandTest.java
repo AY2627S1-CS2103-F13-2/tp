@@ -89,7 +89,7 @@ public class UnstarCommandTest {
 
     @Test
     public void constructor_nullIndex_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new UnstarCommand(null));
+        assertThrows(NullPointerException.class, () -> new UnstarCommand((Index) null));
     }
 
     @Test

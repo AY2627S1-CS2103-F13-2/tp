@@ -7,16 +7,22 @@ import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * Parses input arguments and creates a new UnstarCommand object.
+ * Parses an index or find query into a command to unstar contacts.
  */
 public class UnstarCommandParser implements Parser<UnstarCommand> {
 
     /**
-     * Parses the displayed index of the contact to unstar.
+     * Parses a find query or the displayed index of the contact to unstar.
      *
      * @throws ParseException if the user input does not conform to the expected format
      */
     public UnstarCommand parse(String args) throws ParseException {
+        String trimmedArgs = args.trim();
+        // Preserve index validation, including malformed numeric input.
+        if (!trimmedArgs.isEmpty() && !ParserUtil.isIndexInput(trimmedArgs)
+                && !trimmedArgs.matches("[+-]?\\d+\\.\\d+")) {
+            return new UnstarCommand(new FindCommandParser().parse(args));
+        }
         try {
             Index index = ParserUtil.parseIndex(args);
             return new UnstarCommand(index);

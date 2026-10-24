@@ -1,0 +1,38 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+participant UI
+participant LogicManager
+participant ContactFileParser
+participant UndoCommand
+participant UndoManager
+participant Model
+participant Storage
+UI -> LogicManager : execute("undo")
+LogicManager -> Model : capture ModelSnapshot
+LogicManager -> ContactFileParser : parseCommand(input)
+ContactFileParser -> UndoCommand : create unconfirmed command
+ContactFileParser --> LogicManager : UndoCommand
+LogicManager -> UndoCommand : execute(model)
+UndoCommand -> UndoManager : executeUndo(model, false)
+UndoManager --> UndoCommand : preview of latest edit/deletion
+UndoCommand --> LogicManager : preview result
+LogicManager --> UI : confirmation prompt (no mutation or save)
+UI -> LogicManager : execute("undo --confirm")
+LogicManager -> Model : capture ModelSnapshot
+LogicManager -> ContactFileParser : parseCommand(input)
+ContactFileParser -> UndoCommand : create confirmed command
+ContactFileParser --> LogicManager : UndoCommand
+LogicManager -> UndoCommand : execute(model)
+UndoCommand -> UndoManager : executeUndo(model, true)
+UndoManager -> Model : restore prior contact; show full list
+Model --> UndoManager : restored
+UndoManager --> UndoCommand : success result
+UndoCommand --> LogicManager : success result
+opt snapshot detects a data change
+LogicManager -> Storage : saveContactFile(contactFile)
+Storage --> LogicManager : saved
+end
+LogicManager --> UI : undo success details
+note over LogicManager, Model : No undoable entry or a uniqueness conflict makes no change.\nSave failure restores the snapshot.
+@enduml

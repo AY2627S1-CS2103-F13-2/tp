@@ -14,6 +14,8 @@ import seedu.address.logic.commands.FindNotesCommand;
 import seedu.address.model.person.ContactFieldPredicate;
 import seedu.address.model.person.ContactFieldPredicate.Field;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.EventContainsKeywordsPredicate;
+import seedu.address.model.person.FuzzyNamePredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.NoteContainsKeywordsPredicate;
 import seedu.address.model.person.Phone;
@@ -153,5 +155,71 @@ public class FindCommandParserTest {
     public void parse_notesWithoutKeywords_throwsParseException() {
         assertParseFailure(parser, "/notes", FindCommandParser.MESSAGE_NO_NOTE_KEYWORDS);
         assertParseFailure(parser, "/notes   ", FindCommandParser.MESSAGE_NO_NOTE_KEYWORDS);
+    }
+
+    @Test
+    public void parse_eventSearch_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(
+                        new EventContainsKeywordsPredicate("NUS Career Fair"));
+
+        assertParseSuccess(
+                parser,
+                "/event NUS Career Fair",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_eventSearchWithExtraSpaces_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(
+                        new EventContainsKeywordsPredicate("NUS Career Fair"));
+
+        assertParseSuccess(
+                parser,
+                " /event   NUS   Career   Fair ",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_eventSearchWithoutValue_throwsParseException() {
+        assertParseFailure(
+                parser,
+                "/event",
+                String.format(
+                        MESSAGE_INVALID_COMMAND_FORMAT,
+                        FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_validFuzzyName_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(new FuzzyNamePredicate("Alicee"));
+
+        assertParseSuccess(
+                parser,
+                "/fuzzy Alicee",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_fuzzyNameWithExtraSpaces_returnsFindCommand() {
+        FindCommand expectedFindCommand =
+                new FindCommand(new FuzzyNamePredicate("Alicee"));
+
+        assertParseSuccess(
+                parser,
+                " /fuzzy   Alicee ",
+                expectedFindCommand);
+    }
+
+    @Test
+    public void parse_missingFuzzyName_throwsParseException() {
+        assertParseFailure(
+                parser,
+                "/fuzzy",
+                String.format(
+                        MESSAGE_INVALID_COMMAND_FORMAT,
+                        FindCommand.MESSAGE_USAGE));
     }
 }

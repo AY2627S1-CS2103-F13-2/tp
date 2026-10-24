@@ -244,9 +244,11 @@ public class EditCommand extends Command {
                 editPersonDescriptor.getLinkedin(), personToEdit.getLinkedin());
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        // Edits never change follow-ups, starring or the interaction history, so carry them over unchanged.
+        // Edits never change the introducer, events, follow-ups, starring or the interaction history,
+        // so carry them over unchanged.
         return new Person(updatedName, updatedCompany, updatedRole, updatedPhone, updatedEmail, updatedLinkedin,
-                updatedTags, personToEdit.getFollowUps(), personToEdit.isStarred(), personToEdit.getInteractions());
+                personToEdit.getIntroducer().orElse(null), updatedTags, personToEdit.getEvents(),
+                personToEdit.getFollowUps(), personToEdit.isStarred(), personToEdit.getInteractions());
     }
 
     /**
