@@ -8,6 +8,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -16,6 +17,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.UndoManager;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.AliasCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -96,6 +98,33 @@ public class ContactFileParserTest {
         Person person = new PersonBuilder().build();
         AddCommand command = (AddCommand) parser.parseCommand(PersonUtil.getAddCommand(person));
         assertEquals(new AddCommand(person), command);
+    }
+
+    @Test
+    public void parseCommand_alias() throws Exception {
+        assertEquals(AliasCommand.add("fn", "find /notes"),
+                parser.parseCommand(AliasCommand.COMMAND_WORD + " fn find /notes"));
+    }
+
+    @Test
+    public void parseCommand_shortcut_expandedBeforeParsing() throws Exception {
+        Map<String, String> aliases = Map.of("fl", "find");
+        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(List.of("lim"))),
+                parser.parseCommand("FL lim", aliases));
+        // built-in commands and unknown words are parsed as usual
+        assertTrue(parser.parseCommand("list", aliases) instanceof ListCommand);
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("fx lim", aliases));
+    }
+
+    @Test
+    public void expandShortcut() {
+        Map<String, String> aliases = Map.of("fn", "find /notes", "list", "clear");
+        assertEquals("find /notes  internship", ContactFileParser.expandShortcut(" fn  internship  ", aliases));
+        assertEquals("find /notes", ContactFileParser.expandShortcut("fn", aliases));
+        // a built-in command word is never replaced, even if a shortcut with that name was saved
+        assertEquals("list", ContactFileParser.expandShortcut("list", aliases));
+        assertEquals("   ", ContactFileParser.expandShortcut("   ", aliases));
+        assertEquals("fnx", ContactFileParser.expandShortcut("fnx", aliases));
     }
 
     @Test
@@ -250,5 +279,16 @@ public class ContactFileParserTest {
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("record 1 i/Jane Doe"));
+    }
+
+    @Test
+    public void isBuiltInCommandWord_everyParsedCommand_true() {
+        // Every command the parser runs is a built-in word, so a shortcut can never hide it.
+        for (String word : List.of("add", "edit", "delete", "drop", "view", "introduce", "star", "unstar", "starred",
+                "clear", "filter", "find", "log", "unlog", "followup", "followups", "order", "list", "exit", "help",
+                "undo", "history", "alias")) {
+            assertTrue(ContactFileParser.isBuiltInCommandWord(word), word);
+        }
+        assertEquals("filter t/work", ContactFileParser.expandShortcut("filter t/work", Map.of("filter", "list")));
     }
 }

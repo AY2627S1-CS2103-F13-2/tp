@@ -37,7 +37,8 @@ public final class ModelSnapshot {
     }
 
     /**
-     * Restores contacts, preferences, and the filter while preserving observable-list bindings.
+     * Restores contacts, preferences (including command shortcuts), and the filter while preserving
+     * observable-list bindings.
      */
     public void restore(Model model) {
         if (hasDataChanged(model)) {
@@ -46,6 +47,7 @@ public final class ModelSnapshot {
         if (hasPreferencesChanged(model)) {
             model.setGuiSettings(userPrefs.getGuiSettings());
             model.setFieldOrder(userPrefs.getFieldOrder());
+            model.setCommandAliases(userPrefs.getCommandAliases());
         }
         model.updateFilteredPersonList(filter == null ? Model.PREDICATE_SHOW_ALL_PERSONS : filter);
     }
