@@ -353,6 +353,24 @@ Examples:
 * `log John Lim nt/Discussed backend internships` logs today's conversation with John Lim.
 * `log 2 d/2026-10-01 nt/Met at the career fair` logs an earlier meeting with the 2nd person in the list.
 
+### Removing a logged interaction: `unlog`
+
+Removes an interaction you logged by mistake, e.g. one with the wrong date or for the wrong person.
+
+Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
+
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `log`.
+* `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
+* Astra first shows the interaction and asks you to confirm. Enter `y` to remove it, or `n` or `cancel` to keep it.
+* After removing it, Astra shows what was removed and the person's remaining history, renumbered.
+* The displayed list stays as it was, so the same index still points to the same person.
+* If the person has fewer interactions than `ENTRY`, nothing is removed.
+* To correct an interaction, remove it with `unlog` and then log it again with `log`.
+
+Examples:
+* `unlog John Lim i/2` removes the 2nd interaction in John Lim's history.
+* `unlog 1 i/1` removes the earliest interaction with the 1st person in the list.
+
 ### Deleting a person: `delete`
 
 Previews the selected contacts and asks for confirmation before deleting them.
@@ -649,6 +667,7 @@ Action | Format, Examples
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
+**Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change
