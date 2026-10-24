@@ -1,0 +1,38 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+participant UI
+participant LogicManager
+participant ContactFileParser
+participant IntroduceCommand
+participant PendingRequest
+participant Model
+participant Storage
+UI -> LogicManager : execute("introduce 1 i/Jane Smith")
+LogicManager -> Model : capture ModelSnapshot
+LogicManager -> ContactFileParser : parseCommand(input)
+ContactFileParser --> LogicManager : IntroduceCommand
+LogicManager -> IntroduceCommand : execute(model)
+IntroduceCommand -> Model : resolve displayed contact
+Model --> IntroduceCommand : target contact
+alt target has no introducer
+IntroduceCommand -> Model : setPerson(updated contact)
+IntroduceCommand -> Model : show full contact list
+IntroduceCommand --> LogicManager : recorded result
+else target already has an introducer
+IntroduceCommand --> LogicManager : ConfirmationRequest with replacement preview
+LogicManager --> UI : preview (no mutation or save)
+UI -> LogicManager : execute("y")
+LogicManager -> PendingRequest : respond("y", model)
+PendingRequest -> Model : verify target still exists
+PendingRequest -> Model : setPerson(updated contact)
+PendingRequest -> Model : show full contact list
+PendingRequest --> LogicManager : recorded result
+end
+opt snapshot detects a data change
+LogicManager -> Storage : saveContactFile(contactFile)
+Storage --> LogicManager : saved
+end
+LogicManager --> UI : recorded introducer details
+note over LogicManager, Model : n/cancel leaves contacts unchanged; save failure restores the snapshot.
+@enduml

@@ -8,22 +8,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.UndoManager;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.FollowUpCommand;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.HistoryCommand;
+import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.LogCommand;
 import seedu.address.logic.commands.OrderCommand;
 import seedu.address.logic.commands.PendingFollowUpsCommand;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.StarredCommand;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.UnlogCommand;
 import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
@@ -40,6 +45,15 @@ public class ContactFileParser {
     private static final Pattern BASIC_COMMAND_FORMAT =
             Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
     private static final Logger logger = LogsCenter.getLogger(ContactFileParser.class);
+    private final UndoManager undoManager;
+
+    public ContactFileParser() {
+        this(new UndoManager());
+    }
+
+    public ContactFileParser(UndoManager undoManager) {
+        this.undoManager = undoManager;
+    }
 
     /**
      * Parses user input into command for execution.
@@ -66,7 +80,9 @@ public class ContactFileParser {
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
+            case DropCommand.COMMAND_WORD -> new DropCommandParser().parse(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
+            case IntroduceCommand.COMMAND_WORD -> new IntroduceCommandParser().parse(arguments);
             case StarCommand.COMMAND_WORD -> new StarCommandParser().parse(arguments);
             case UnstarCommand.COMMAND_WORD -> new UnstarCommandParser().parse(arguments);
             case StarredCommand.COMMAND_WORD -> new StarredCommand();
@@ -87,10 +103,27 @@ public class ContactFileParser {
             case ListCommand.COMMAND_WORD -> new ListCommand();
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
             case HelpCommand.COMMAND_WORD -> new HelpCommand();
+            case UndoCommand.COMMAND_WORD -> parseUndoCommand(arguments);
+            case HistoryCommand.COMMAND_WORD -> parseHistoryCommand(arguments);
             default -> {
                 logger.finer("This user input caused a ParseException: " + userInput);
                 throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
             }
         };
+    }
+
+    private UndoCommand parseUndoCommand(String arguments) throws ParseException {
+        String trimmedArguments = arguments.trim();
+        if (!trimmedArguments.isEmpty() && !UndoCommand.CONFIRM_OPTION.equals(trimmedArguments)) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE));
+        }
+        return new UndoCommand(undoManager, UndoCommand.CONFIRM_OPTION.equals(trimmedArguments));
+    }
+
+    private HistoryCommand parseHistoryCommand(String arguments) throws ParseException {
+        if (!arguments.trim().isEmpty()) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HistoryCommand.MESSAGE_USAGE));
+        }
+        return new HistoryCommand(undoManager);
     }
 }
