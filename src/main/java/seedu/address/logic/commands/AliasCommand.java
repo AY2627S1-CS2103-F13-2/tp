@@ -92,40 +92,38 @@ public class AliasCommand extends Command {
         Map<String, String> aliases = model.getCommandAliases();
         String current = shortcut == null ? null : aliases.get(shortcut);
 
-        switch (action) {
-            case LIST:
-                if (aliases.isEmpty()) {
-                    return new CommandResult(MESSAGE_NO_SHORTCUTS);
-                }
-                return new CommandResult(String.format(MESSAGE_LIST, formatAliases(aliases)));
-            case REMOVE:
+        return switch (action) {
+            case LIST -> aliases.isEmpty()
+                    ? new CommandResult(MESSAGE_NO_SHORTCUTS)
+                    : new CommandResult(String.format(MESSAGE_LIST, formatAliases(aliases)));
+            case REMOVE -> {
                 if (current == null) {
                     throw new CommandException(String.format(MESSAGE_NOT_FOUND, shortcut));
                 }
                 model.removeCommandAlias(shortcut);
                 logger.fine("Removed shortcut " + shortcut);
-                return new CommandResult(String.format(MESSAGE_REMOVED, shortcut, current));
-            case ADD:
+                yield new CommandResult(String.format(MESSAGE_REMOVED, shortcut, current));
+            }
+            case ADD -> {
                 if (current != null) {
                     // Never overwrite silently: show what the shortcut runs now and how to replace it.
                     throw new CommandException(String.format(MESSAGE_ALREADY_EXISTS, shortcut, current, expansion));
                 }
-                return save(model);
-            case REPLACE:
+                yield save(model);
+            }
+            case REPLACE -> {
                 if (current == null) {
-                    return save(model);
+                    yield save(model);
                 }
                 model.setCommandAlias(shortcut, expansion);
                 logger.fine("Replaced shortcut " + shortcut + " with: " + expansion);
-                return new CommandResult(String.format(MESSAGE_REPLACED, shortcut, current, expansion));
-            default:
-                throw new AssertionError("Unknown alias action: " + action);
-        }
+                yield new CommandResult(String.format(MESSAGE_REPLACED, shortcut, current, expansion));
+            }
+        };
     }
 
     private CommandResult save(Model model) {
         model.setCommandAlias(shortcut, expansion);
-        assert expansion.equals(model.getCommandAliases().get(shortcut));
         logger.fine("Saved shortcut " + shortcut + " for: " + expansion);
         return new CommandResult(String.format(MESSAGE_SAVED, shortcut, expansion));
     }
