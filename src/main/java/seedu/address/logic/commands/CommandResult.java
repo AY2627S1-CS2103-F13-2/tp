@@ -90,6 +90,15 @@ public class CommandResult {
     }
 
     /**
+     * Returns a copy of this result whose feedback starts with {@code prefix}, keeping every other field.
+     */
+    public CommandResult withFeedbackPrefix(String prefix) {
+        requireNonNull(prefix);
+        return new CommandResult(prefix + feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                personForDetails, followUpForDetails);
+    }
+
+    /**
      * Retains a selected action and contact so display-order changes preserve both sets of details.
      */
     public static CommandResult createFollowUpDetails(String feedbackToUser, Person person, FollowUp action) {

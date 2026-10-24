@@ -3,6 +3,7 @@ package seedu.address.logic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.COMPANY_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
@@ -29,6 +30,8 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.ExitCommand;
+import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.UnstarCommand;
@@ -92,7 +95,46 @@ public class LogicManagerTest {
 
         UserPrefs savedPrefs = new JsonUserPrefsStorage(prefsPath).readUserPrefs().get();
         assertEquals(Map.of("ls", "list"), savedPrefs.getCommandAliases());
-        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("LS").getFeedbackToUser());
+        assertEquals("Ran: list\n" + ListCommand.MESSAGE_SUCCESS, logic.execute("LS").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_shortcutWithArguments_showsExpandedCommand() throws Exception {
+        logic.execute("alias fe find /email");
+        CommandResult result = logic.execute(" fe  amy@example.com ");
+        assertEquals("Ran: find /email  amy@example.com\n" + FindCommand.MESSAGE_CONTACT_NOT_FOUND,
+                result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_shortcutToExit_keepsExitFlag() throws Exception {
+        logic.execute("alias q exit");
+        CommandResult result = logic.execute("q");
+        assertTrue(result.isExit());
+        assertEquals("Ran: exit\n" + ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_shortcutNeedingConfirmation_keepsPendingRequest() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("alias dl delete");
+
+        CommandResult result = logic.execute("dl 1");
+
+        assertTrue(result.getPendingRequest().isPresent());
+        assertTrue(result.getFeedbackToUser().startsWith("Ran: delete 1\n"));
+        logic.execute("y");
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_shortcutThatFails_errorShowsExpandedCommand() throws Exception {
+        logic.execute("alias dl delete");
+        assertThrows(CommandException.class, "Ran: delete 9\n" + DeleteCommand.MESSAGE_EMPTY_CONTACT_FILE, () ->
+                logic.execute("dl 9"));
+        assertThrows(ParseException.class, "Ran: delete\n"
+                + String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteCommand.MESSAGE_USAGE), () ->
+                logic.execute("dl"));
     }
 
     @Test
