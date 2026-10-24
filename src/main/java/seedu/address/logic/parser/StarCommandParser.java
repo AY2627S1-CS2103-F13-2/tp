@@ -7,16 +7,22 @@ import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * Parses input arguments and creates a new StarCommand object.
+ * Parses an index or find query into a command to star contacts.
  */
 public class StarCommandParser implements Parser<StarCommand> {
 
     /**
-     * Parses the displayed index of the contact to star.
+     * Parses a find query or the displayed index of the contact to star.
      *
      * @throws ParseException if the user input does not conform to the expected format
      */
     public StarCommand parse(String args) throws ParseException {
+        String trimmedArgs = args.trim();
+        // Preserve index validation, including malformed numeric input.
+        if (!trimmedArgs.isEmpty() && !ParserUtil.isIndexInput(trimmedArgs)
+                && !trimmedArgs.matches("[+-]?\\d+\\.\\d+")) {
+            return new StarCommand(new FindCommandParser().parse(args));
+        }
         try {
             Index index = ParserUtil.parseIndex(args);
             return new StarCommand(index);

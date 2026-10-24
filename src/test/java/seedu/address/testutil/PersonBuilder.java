@@ -33,6 +33,7 @@ public class PersonBuilder {
     private Phone phone;
     private Email email;
     private Linkedin linkedin;
+    private Name introducer;
     private Set<Tag> tags;
     private List<FollowUp> followUps = List.of();
     private boolean starred;
@@ -60,6 +61,7 @@ public class PersonBuilder {
         phone = personToCopy.getPhone().orElse(null);
         email = personToCopy.getEmail().orElse(null);
         linkedin = personToCopy.getLinkedin().orElse(null);
+        introducer = personToCopy.getIntroducer().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
         followUps = personToCopy.getFollowUps();
         starred = personToCopy.isStarred();
@@ -127,6 +129,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Sets the name of the person who introduced this contact.
+     */
+    public PersonBuilder withIntroducer(String introducer) {
+        this.introducer = introducer == null ? null : new Name(introducer);
+        return this;
+    }
+
+    /**
      * Sets the ordered follow-up history of the contact being built.
      */
     public PersonBuilder withFollowUps(FollowUp... actions) {
@@ -146,7 +156,7 @@ public class PersonBuilder {
      * Builds an immutable contact with the selected details and actions.
      */
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, tags, followUps, starred);
+        return new Person(name, company, role, phone, email, linkedin, introducer, tags, followUps, starred);
     }
 
 }

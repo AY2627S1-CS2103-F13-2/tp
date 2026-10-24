@@ -10,6 +10,8 @@ import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.ContactFieldPredicate;
 import seedu.address.model.person.ContactFieldPredicate.Field;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.EventContainsKeywordsPredicate;
+import seedu.address.model.person.FuzzyNamePredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -21,7 +23,7 @@ public class FindCommandParser implements Parser<FindCommand> {
 
     /**
      * Parses the given {@code String} of arguments in the context of the FindCommand
-     * and returns a FindCommand object for execution.
+     * and returns a new FindCommand object.
      *
      * @throws ParseException if the user input does not conform to the expected format
      */
@@ -42,6 +44,26 @@ public class FindCommandParser implements Parser<FindCommand> {
             String emailValue = trimmedArgs.substring("/email".length()).trim();
             Email email = ParserUtil.parseEmail(emailValue);
             return new FindCommand(new ContactFieldPredicate(Field.EMAIL, email.value));
+        }
+
+        if (trimmedArgs.equals("/event") || trimmedArgs.startsWith("/event ")) {
+            String eventValue = trimmedArgs.substring("/event".length()).trim();
+
+            if (eventValue.isEmpty()) {
+                throw invalidFormat();
+            }
+
+            return new FindCommand(new EventContainsKeywordsPredicate(eventValue));
+        }
+
+        if (trimmedArgs.equals("/fuzzy") || trimmedArgs.startsWith("/fuzzy ")) {
+            String nameValue = trimmedArgs.substring("/fuzzy".length()).trim();
+
+            if (nameValue.isEmpty()) {
+                throw invalidFormat();
+            }
+
+            return new FindCommand(new FuzzyNamePredicate(nameValue));
         }
 
         if (trimmedArgs.startsWith("/company") || trimmedArgs.startsWith("/role")) {

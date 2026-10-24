@@ -39,6 +39,18 @@ public class AddCommandIntegrationTest {
     }
 
     @Test
+    public void execute_newPersonWithIntroducer_success() {
+        Person validPerson = new PersonBuilder().withIntroducer("O'Brien-Smith").build();
+
+        Model expectedModel = new ModelManager(model.getContactFile(), new UserPrefs());
+        expectedModel.addPerson(validPerson);
+
+        assertCommandSuccess(new AddCommand(validPerson), model,
+                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+                expectedModel);
+    }
+
+    @Test
     public void execute_duplicateEmailWithDifferentCase_throwsCommandException() {
         Person existing = new PersonBuilder().withName("Alice").withEmail("casecheck.unique@example.com").build();
         model.addPerson(existing);
