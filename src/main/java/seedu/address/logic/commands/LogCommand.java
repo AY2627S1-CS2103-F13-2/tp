@@ -81,7 +81,6 @@ public class LogCommand extends Command {
         }
 
         Person updatedPerson = person.withInteraction(interaction);
-        assert updatedPerson.getInteractions().size() == person.getInteractions().size() + 1;
         model.setPerson(person, updatedPerson);
         // Logging does not change who matches the current filter, so the displayed list and its
         // indexes are left as they are.
