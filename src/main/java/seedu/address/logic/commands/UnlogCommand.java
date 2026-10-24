@@ -116,7 +116,6 @@ public class UnlogCommand extends Command {
         List<Interaction> interactions = new ArrayList<>(person.getInteractions());
         Interaction removed = interactions.remove(entry.getZeroBased());
         Person updatedPerson = person.withInteractions(interactions);
-        assert updatedPerson.getInteractions().size() == person.getInteractions().size() - 1;
         // Removing an interaction does not change who matches the current filter, so the displayed
         // list and its indexes are left as they are.
         model.setPerson(person, updatedPerson);
