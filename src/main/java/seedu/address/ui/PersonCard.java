@@ -93,8 +93,9 @@ public class PersonCard extends UiPart<Region> {
                 FieldOrder.Field.COMPANY, company, FieldOrder.Field.ROLE, role,
                 FieldOrder.Field.PHONE, phone, FieldOrder.Field.EMAIL, email,
                 FieldOrder.Field.LINKEDIN, linkedin, FieldOrder.Field.FOLLOWUPS, followUps);
+        // The card stays compact: interaction history is shown only in the detail view.
         List<Node> orderedRows = new ArrayList<>();
-        order.getFields().forEach(field -> {
+        order.getFields().stream().filter(rows::containsKey).forEach(field -> {
             orderedRows.add(rows.get(field));
             if (field == FieldOrder.Field.LINKEDIN && person.getIntroducer().isPresent()) {
                 orderedRows.add(introducer);

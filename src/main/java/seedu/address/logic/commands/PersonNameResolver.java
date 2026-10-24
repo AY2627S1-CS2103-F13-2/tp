@@ -5,6 +5,8 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
 
+import seedu.address.commons.core.index.Index;
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
@@ -84,6 +86,32 @@ public final class PersonNameResolver {
         }
 
         return new Outcome.Unique(matches.get(0));
+    }
+
+    /**
+     * Returns the contact a command targets: the one at {@code index} in the displayed list when
+     * {@code targetName} is null, or else the contact named by {@code targetName}, as {@link #resolve}
+     * finds it. Every command that takes an index or a name goes through here, so the two ways of
+     * choosing a contact behave the same in all of them.
+     *
+     * @param index Index in the displayed list; used only when {@code targetName} is null.
+     * @param targetName Name as the user typed it, or null if the user gave an index.
+     * @throws CommandException if the index is past the end of the displayed list, or no contact
+     *     matches {@code targetName}.
+     */
+    public static Outcome resolveTarget(Model model, Index index, String targetName, String commandWord)
+            throws CommandException {
+        requireNonNull(model);
+        if (targetName != null) {
+            return resolve(model, targetName, commandWord);
+        }
+
+        requireNonNull(index);
+        List<Person> lastShownList = model.getFilteredPersonList();
+        if (index.getZeroBased() >= lastShownList.size()) {
+            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        }
+        return new Outcome.Unique(lastShownList.get(index.getZeroBased()));
     }
 
     /**

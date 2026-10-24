@@ -117,8 +117,10 @@ public class IntroduceCommand extends Command {
                 personToUpdate.getLinkedin().orElse(null),
                 introducer,
                 personToUpdate.getTags(),
+                personToUpdate.getEvents(),
                 personToUpdate.getFollowUps(),
-                personToUpdate.isStarred());
+                personToUpdate.isStarred(),
+                personToUpdate.getInteractions());
         model.setPerson(personToUpdate, updatedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_RECORDED, Messages.format(updatedPerson)));

@@ -335,6 +335,24 @@ Examples:
 * `view Meier` lists matching Meiers; `view 2` then shows the second match's full details.
 * `find Alice` followed by `view Carl Kurz` still finds Carl, because name lookup searches all contacts.
 
+### Logging an interaction: `log`
+
+Records a conversation or meeting with a person, so you can look back at what you discussed before you next meet.
+
+Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
+
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`.
+* `DATE` is when the interaction happened, in the format `YYYY-MM-DD`. If you leave it out, today's date is used.
+* The date cannot be in the future, since the interaction has already happened.
+* `NOTE` is what was discussed, and cannot be blank.
+* Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
+* Logging the same note on the same date twice is rejected, so an accidental repeat does not add a second copy. Letter case is ignored when comparing notes.
+* `view` shows a person's interaction history after their other details. Use `order` to move it.
+
+Examples:
+* `log John Lim nt/Discussed backend internships` logs today's conversation with John Lim.
+* `log 2 d/2026-10-01 nt/Met at the career fair` logs an earlier meeting with the 2nd person in the list.
+
 ### Deleting a person: `delete`
 
 Previews the selected contacts and asks for confirmation before deleting them.
@@ -537,16 +555,17 @@ Formats:
 
 ```text
 order
-order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
+order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 ```
 
 * `order` shows the current global field order.
-* To change it, supply each of these eight field names **exactly once**:
-  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`.
-  Field names ignore letter case. An unknown, repeated, or missing field is
+* To change it, supply each of these nine field names **exactly once**:
+  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`, `interactions`.
+  If you leave out only `interactions`, it is placed last. Field names ignore letter case. An unknown, repeated, or missing field is
   rejected with the accepted fields; your existing preference and view remain.
-* The default is `name tags company role phone email linkedin followups`,
-  matching the original cards with follow-ups last. Contacts without optional
+* The default is `name tags company role phone email linkedin followups interactions`,
+  matching the original cards with follow-ups and then interaction history last. Interaction history
+  appears only in a contact's details (`view`, `log`), not on the contact cards. Contacts without optional
   values omit those rows, even when an absent field appears early in the order.
 * A successful change immediately refreshes existing cards. If you are viewing
   a contact's details, they are redisplayed in the new order alongside the
@@ -563,8 +582,10 @@ order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 Examples:
 
 * `order` shows the active order.
-* `order name phone email company role tags linkedin followups` puts phone and
+* `order name phone email company role tags linkedin followups interactions` puts phone and
   email near the top while retaining all fields.
+* `order interactions name tags company role phone email linkedin followups` shows interaction
+  history first in a contact's details.
 * `order followups name tags company role phone email linkedin` puts follow-up
   history first on contacts that have it.
 
@@ -626,10 +647,11 @@ Action | Format, Examples
 **Find** | `find NAME`, `find /contact PHONE_NUMBER`, or `find /email EMAIL`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
-**Order** | `order` to query; `order name phone email company role tags linkedin followups` to change
+**Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change
 **Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
 **Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`

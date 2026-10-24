@@ -8,6 +8,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.NAME_ONLY;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -182,6 +184,49 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
                 VALID_EMAIL, VALID_LINKEDIN, null, invalidTags);
         assertThrows(IllegalValueException.class, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_personWithInteractions_keepsInteractions() throws Exception {
+        Person person = BENSON.withInteraction(new Interaction(LocalDate.of(2026, 10, 15), "Coffee chat"))
+                .withInteraction(new Interaction(LocalDate.of(2026, 10, 1), "Career fair chat"));
+        assertEquals(person, new JsonAdaptedPerson(person).toModelType());
+    }
+
+    @Test
+    public void toModelType_invalidInteraction_throwsIllegalValueException() {
+        JsonAdaptedPerson person = withInteractions(new JsonAdaptedInteraction("not a date", "Coffee chat"));
+        assertThrows(IllegalValueException.class, Interaction.MESSAGE_DATE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_futureInteraction_throwsIllegalValueException() {
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        JsonAdaptedPerson person = withInteractions(new JsonAdaptedInteraction(tomorrow.toString(), "Coffee chat"));
+        assertThrows(IllegalValueException.class,
+                String.format(JsonAdaptedInteraction.MESSAGE_FUTURE_DATE, tomorrow), person::toModelType);
+    }
+
+    @Test
+    public void toModelType_duplicateInteractions_throwsIllegalValueException() {
+        JsonAdaptedPerson person = withInteractions(new JsonAdaptedInteraction("2026-10-15", "Coffee chat"),
+                new JsonAdaptedInteraction("2026-10-15", "coffee CHAT"));
+        assertThrows(IllegalValueException.class, String.format(JsonAdaptedPerson.MESSAGE_DUPLICATE_INTERACTION,
+                new Interaction(LocalDate.of(2026, 10, 15), "coffee CHAT")), person::toModelType);
+    }
+
+    @Test
+    public void toModelType_nullInteraction_throwsIllegalValueException() {
+        List<JsonAdaptedInteraction> interactions = new ArrayList<>();
+        interactions.add(null);
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
+                VALID_EMAIL, VALID_LINKEDIN, null, VALID_TAGS, null, null, false, interactions);
+        assertThrows(IllegalValueException.class, person::toModelType);
+    }
+
+    private static JsonAdaptedPerson withInteractions(JsonAdaptedInteraction... interactions) {
+        return new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
+                VALID_EMAIL, VALID_LINKEDIN, null, VALID_TAGS, null, null, false, List.of(interactions));
     }
 
     @Test

@@ -269,8 +269,10 @@ public class DropCommand extends Command {
         Name introducer = person.getIntroducer()
                 .filter(value -> !contains(selections, Field.INTRODUCER, value))
                 .orElse(null);
+        // Only the selected values are dropped; events, follow-ups, starring and interactions are kept.
         return new Person(person.getName(), company, role, phone, email, linkedin,
-                introducer, tags);
+                introducer, tags, person.getEvents(), person.getFollowUps(), person.isStarred(),
+                person.getInteractions());
     }
 
     private static boolean contains(List<FieldValue> selections, Field field, Object value) {

@@ -1,5 +1,6 @@
 package seedu.address.logic;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -7,6 +8,7 @@ import java.util.stream.Stream;
 import seedu.address.logic.parser.Prefix;
 import seedu.address.model.FieldOrder;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Person;
 
 /**
@@ -64,7 +66,23 @@ public class Messages {
             case EMAIL -> person.getEmail().map(value -> "Email: " + value).orElse("");
             case LINKEDIN -> person.getLinkedin().map(value -> "LinkedIn: " + value).orElse("");
             case FOLLOWUPS -> person.getFollowUps().isEmpty() ? "" : "Follow-ups:\n" + formatFollowUps(person);
+            case INTERACTIONS -> person.getInteractions().isEmpty() ? ""
+                    : "Interaction history:\n" + formatInteractions(person.getInteractions());
         };
+    }
+
+    /**
+     * Returns the interactions as numbered lines in the given order, e.g. "1. 2026-10-15: Discussed internships".
+     */
+    public static String formatInteractions(List<Interaction> interactions) {
+        StringBuilder history = new StringBuilder();
+        for (int i = 0; i < interactions.size(); i++) {
+            if (i > 0) {
+                history.append("\n");
+            }
+            history.append(i + 1).append(". ").append(interactions.get(i));
+        }
+        return history.toString();
     }
 
     /**

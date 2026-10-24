@@ -27,9 +27,17 @@ class FieldOrderTest {
         FieldOrder order = new FieldOrder(input);
         input.clear();
         assertEquals(FieldOrder.DEFAULT, order);
-        assertEquals("name tags company role phone email linkedin followups", order.toString());
+        assertEquals("name tags company role phone email linkedin followups interactions", order.toString());
         assertThrows(UnsupportedOperationException.class, () -> order.getFields().clear());
         assertThrows(UnsupportedOperationException.class, () -> order.getFieldNames().clear());
+    }
+
+    @Test
+    void constructor_orderSavedBeforeInteractions_placesInteractionsLast() {
+        FieldOrder order = new FieldOrder(
+                List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name"));
+        assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                "interactions"), order.getFieldNames());
     }
 
     @Test
