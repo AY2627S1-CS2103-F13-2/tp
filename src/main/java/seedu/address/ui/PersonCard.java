@@ -15,6 +15,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.Messages;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.person.Event;
 import seedu.address.model.person.Person;
 
 /**
@@ -56,7 +57,7 @@ public class PersonCard extends UiPart<Region> {
     private Label followUps;
 
     /**
-     * Creates a {@code PersonCard} with the given {@code Person} and index to display.
+     * Creates a {@code PersonCard} with the given person and index.
      */
     public PersonCard(Person person, int displayedIndex) {
         this(person, displayedIndex, FieldOrder.DEFAULT);
@@ -72,40 +73,36 @@ public class PersonCard extends UiPart<Region> {
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
 
-        setOptionalLabel(company, person.getCompany()
-                .map(value -> value.value)
-                .orElse(null));
-
-        setOptionalLabel(role, person.getRole()
-                .map(value -> value.value)
-                .orElse(null));
-
-        setOptionalLabel(phone, person.getPhone()
-                .map(value -> value.value)
-                .orElse(null));
-
-        setOptionalLabel(email, person.getEmail()
-                .map(value -> value.value)
-                .orElse(null));
-
-        setOptionalLabel(linkedin, person.getLinkedin()
-                .map(value -> value.value)
-                .orElse(null));
-
-        setOptionalLabel(introducer, person.getIntroducer()
-                .map(value -> "Introduced by: " + value)
-                .orElse(null));
-
-        String eventText = person.getEvents().stream()
-                .sorted(Comparator.comparing(event -> event.getName().toLowerCase()))
-                .map(Object::toString)
-                .collect(Collectors.joining(", "));
-
-        setOptionalLabel(events, eventText.isEmpty() ? null : eventText);
-
-        setOptionalLabel(followUps, person.getFollowUps().isEmpty()
-                ? null
-                : "Follow-ups:\n" + Messages.formatFollowUps(person));
+        setOptionalLabel(
+                company,
+                person.getCompany().map(value -> value.value).orElse(null));
+        setOptionalLabel(
+                role,
+                person.getRole().map(value -> value.value).orElse(null));
+        setOptionalLabel(
+                phone,
+                person.getPhone().map(value -> value.value).orElse(null));
+        setOptionalLabel(
+                email,
+                person.getEmail().map(value -> value.value).orElse(null));
+        setOptionalLabel(
+                linkedin,
+                person.getLinkedin().map(value -> value.value).orElse(null));
+        setOptionalLabel(
+                introducer,
+                person.getIntroducer()
+                        .map(value -> "Introduced by: " + value)
+                        .orElse(null));
+        setOptionalLabel(
+                events,
+                person.getEvents().isEmpty()
+                        ? null
+                        : "Events:\n" + formatEvents(person));
+        setOptionalLabel(
+                followUps,
+                person.getFollowUps().isEmpty()
+                        ? null
+                        : "Follow-ups:\n" + Messages.formatFollowUps(person));
 
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
@@ -131,17 +128,13 @@ public class PersonCard extends UiPart<Region> {
                 .forEach(field -> {
                     orderedRows.add(rows.get(field));
 
-                    if (field == FieldOrder.Field.LINKEDIN) {
-                        if (person.getIntroducer().isPresent()) {
-                            orderedRows.add(introducer);
-                        }
-                        if (!person.getEvents().isEmpty()) {
-                            orderedRows.add(events);
-                        }
+                    if (field == FieldOrder.Field.LINKEDIN
+                            && person.getIntroducer().isPresent()) {
+                        orderedRows.add(introducer);
                     }
                 });
 
-        if (!person.getEvents().isEmpty() && !orderedRows.contains(events)) {
+        if (!person.getEvents().isEmpty()) {
             orderedRows.add(events);
         }
 
@@ -149,7 +142,19 @@ public class PersonCard extends UiPart<Region> {
     }
 
     /**
-     * Sets {@code label} to show {@code value}, or hides it when the value is null.
+     * Formats the events for display.
+     */
+    private static String formatEvents(Person person) {
+        return person.getEvents().stream()
+                .sorted(Comparator.comparing(
+                        Event::getName,
+                        String.CASE_INSENSITIVE_ORDER))
+                .map(Event::toString)
+                .collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Sets a label value, or hides the label when the value is absent.
      */
     private static void setOptionalLabel(Label label, String value) {
         if (value == null) {
