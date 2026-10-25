@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -65,6 +66,29 @@ public class ModelManager implements Model {
     public void setGuiSettings(GuiSettings guiSettings) {
         requireNonNull(guiSettings);
         userPrefs.setGuiSettings(guiSettings);
+    }
+
+    @Override
+    public Map<String, String> getCommandAliases() {
+        return userPrefs.getCommandAliases();
+    }
+
+    @Override
+    public void setCommandAlias(String shortcut, String command) {
+        requireAllNonNull(shortcut, command);
+        userPrefs.setCommandAlias(shortcut, command);
+    }
+
+    @Override
+    public void removeCommandAlias(String shortcut) {
+        requireNonNull(shortcut);
+        userPrefs.removeCommandAlias(shortcut);
+    }
+
+    @Override
+    public void setCommandAliases(Map<String, String> commandAliases) {
+        requireNonNull(commandAliases);
+        userPrefs.setCommandAliases(commandAliases);
     }
 
     @Override

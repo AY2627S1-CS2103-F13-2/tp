@@ -3,6 +3,11 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,6 +15,7 @@ import java.util.regex.Pattern;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.UndoManager;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.AliasCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
@@ -45,6 +51,13 @@ public class ContactFileParser {
     private static final Pattern BASIC_COMMAND_FORMAT =
             Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
     private static final Logger logger = LogsCenter.getLogger(ContactFileParser.class);
+    /**
+     * Every built-in command word and how to create its command. This is the only list of command words:
+     * {@link #parseCommand(String)} and the shortcut checks both read it, so a new command added here can
+     * be run, cannot be hidden by a shortcut, and can be the target of one.
+     */
+    private static final Map<String, CommandFactory> COMMANDS = createCommands();
+
     private final UndoManager undoManager;
 
     public ContactFileParser() {
@@ -53,6 +66,92 @@ public class ContactFileParser {
 
     public ContactFileParser(UndoManager undoManager) {
         this.undoManager = undoManager;
+    }
+
+    /**
+     * Creates the command for one command word from the arguments typed after it.
+     */
+    @FunctionalInterface
+    private interface CommandFactory {
+        Command create(ContactFileParser parser, String arguments) throws ParseException;
+    }
+
+    private static Map<String, CommandFactory> createCommands() {
+        Map<String, CommandFactory> commands = new LinkedHashMap<>();
+        commands.put(AddCommand.COMMAND_WORD, (parser, arguments) -> new AddCommandParser().parse(arguments));
+        commands.put(EditCommand.COMMAND_WORD, (parser, arguments) -> new EditCommandParser().parse(arguments));
+        commands.put(DeleteCommand.COMMAND_WORD, (parser, arguments) -> new DeleteCommandParser().parse(arguments));
+        commands.put(DropCommand.COMMAND_WORD, (parser, arguments) -> new DropCommandParser().parse(arguments));
+        commands.put(ViewCommand.COMMAND_WORD, (parser, arguments) -> new ViewCommandParser().parse(arguments));
+        commands.put(IntroduceCommand.COMMAND_WORD, (parser, arguments) ->
+                new IntroduceCommandParser().parse(arguments));
+        commands.put(StarCommand.COMMAND_WORD, (parser, arguments) -> new StarCommandParser().parse(arguments));
+        commands.put(UnstarCommand.COMMAND_WORD, (parser, arguments) -> new UnstarCommandParser().parse(arguments));
+        commands.put(StarredCommand.COMMAND_WORD, (parser, arguments) -> new StarredCommand());
+        commands.put(ClearCommand.COMMAND_WORD, (parser, arguments) -> new ClearCommandParser().parse(arguments));
+        commands.put(FilterCommand.COMMAND_WORD, (parser, arguments) -> new FilterCommandParser().parse(arguments));
+        commands.put(FindCommand.COMMAND_WORD, (parser, arguments) -> new FindCommandParser().parse(arguments));
+        commands.put(LogCommand.COMMAND_WORD, (parser, arguments) -> new LogCommandParser().parse(arguments));
+        commands.put(UnlogCommand.COMMAND_WORD, (parser, arguments) -> new UnlogCommandParser().parse(arguments));
+        commands.put(FollowUpCommand.COMMAND_WORD, (parser, arguments) -> new FollowUpCommandParser().parse(arguments));
+        commands.put(PendingFollowUpsCommand.COMMAND_WORD, (parser, arguments) -> {
+            if (!arguments.isBlank()) {
+                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                        PendingFollowUpsCommand.MESSAGE_USAGE));
+            }
+            return new PendingFollowUpsCommand();
+        });
+        commands.put(OrderCommand.COMMAND_WORD, (parser, arguments) -> new OrderCommandParser().parse(arguments));
+        commands.put(ListCommand.COMMAND_WORD, (parser, arguments) -> new ListCommand());
+        commands.put(ExitCommand.COMMAND_WORD, (parser, arguments) -> new ExitCommand());
+        commands.put(HelpCommand.COMMAND_WORD, (parser, arguments) -> new HelpCommand());
+        commands.put(UndoCommand.COMMAND_WORD, (parser, arguments) -> parser.parseUndoCommand(arguments));
+        commands.put(HistoryCommand.COMMAND_WORD, (parser, arguments) -> parser.parseHistoryCommand(arguments));
+        commands.put(AliasCommand.COMMAND_WORD, (parser, arguments) -> new AliasCommandParser().parse(arguments));
+        return Collections.unmodifiableMap(commands);
+    }
+
+    /**
+     * Returns true if {@code word} is one of Astra's own command words.
+     */
+    public static boolean isBuiltInCommandWord(String word) {
+        return COMMANDS.containsKey(word);
+    }
+
+    /**
+     * Returns the command words a shortcut may stand for.
+     */
+    public static List<String> targetCommandWords() {
+        return COMMANDS.keySet().stream().filter(word -> !word.equals(AliasCommand.COMMAND_WORD)).toList();
+    }
+
+    /**
+     * Replaces a leading shortcut in {@code userInput} with the command it stands for, keeping the rest of the
+     * input as typed. Input that starts with a built-in command word or with no known shortcut is returned as is.
+     */
+    public static String expandShortcut(String userInput, Map<String, String> aliases) {
+        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
+        if (!matcher.matches() || isBuiltInCommandWord(matcher.group("commandWord"))) {
+            return userInput;
+        }
+
+        String expansion = aliases.get(matcher.group("commandWord").toLowerCase(Locale.ROOT));
+        if (expansion == null) {
+            return userInput;
+        }
+        String expanded = expansion + matcher.group("arguments");
+        logger.fine("Expanded shortcut " + matcher.group("commandWord") + " to: " + expanded);
+        return expanded;
+    }
+
+    /**
+     * Expands a leading shortcut in {@code userInput} using {@code aliases}, then parses the result.
+     *
+     * @see #expandShortcut(String, Map)
+     * @see #parseCommand(String)
+     */
+    public Command parseCommand(String userInput, Map<String, String> aliases) throws ParseException {
+        return parseCommand(expandShortcut(userInput, aliases));
     }
 
     /**
@@ -76,40 +175,12 @@ public class ContactFileParser {
         // Lower level log messages are used sparingly to minimize noise in the code.
         logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
 
-        return switch (commandWord) {
-            case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
-            case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
-            case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
-            case DropCommand.COMMAND_WORD -> new DropCommandParser().parse(arguments);
-            case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
-            case IntroduceCommand.COMMAND_WORD -> new IntroduceCommandParser().parse(arguments);
-            case StarCommand.COMMAND_WORD -> new StarCommandParser().parse(arguments);
-            case UnstarCommand.COMMAND_WORD -> new UnstarCommandParser().parse(arguments);
-            case StarredCommand.COMMAND_WORD -> new StarredCommand();
-            case ClearCommand.COMMAND_WORD -> new ClearCommandParser().parse(arguments);
-            case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
-            case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
-            case LogCommand.COMMAND_WORD -> new LogCommandParser().parse(arguments);
-            case FollowUpCommand.COMMAND_WORD -> new FollowUpCommandParser().parse(arguments);
-            case PendingFollowUpsCommand.COMMAND_WORD -> {
-                if (!arguments.isBlank()) {
-                    throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
-                            PendingFollowUpsCommand.MESSAGE_USAGE));
-                }
-                yield new PendingFollowUpsCommand();
-            }
-            case OrderCommand.COMMAND_WORD -> new OrderCommandParser().parse(arguments);
-            case UnlogCommand.COMMAND_WORD -> new UnlogCommandParser().parse(arguments);
-            case ListCommand.COMMAND_WORD -> new ListCommand();
-            case ExitCommand.COMMAND_WORD -> new ExitCommand();
-            case HelpCommand.COMMAND_WORD -> new HelpCommand();
-            case UndoCommand.COMMAND_WORD -> parseUndoCommand(arguments);
-            case HistoryCommand.COMMAND_WORD -> parseHistoryCommand(arguments);
-            default -> {
-                logger.finer("This user input caused a ParseException: " + userInput);
-                throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
-            }
-        };
+        CommandFactory factory = COMMANDS.get(commandWord);
+        if (factory == null) {
+            logger.finer("This user input caused a ParseException: " + userInput);
+            throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
+        }
+        return factory.create(this, arguments);
     }
 
     private UndoCommand parseUndoCommand(String arguments) throws ParseException {

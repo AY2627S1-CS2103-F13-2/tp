@@ -615,6 +615,28 @@ Examples:
 * `order followups name tags company role phone email linkedin` puts follow-up
   history first on contacts that have it.
 
+### Creating command shortcuts: `alias`
+
+Saves a short word that stands for a command you type often. Entering the shortcut then runs that command, followed by anything you type after the shortcut.
+
+Format: `alias SHORTCUT COMMAND…​`
+
+* `SHORTCUT` must be one word of letters and digits that starts with a letter, e.g. `fe`. Letter case does not matter: `FE` and `fe` are the same shortcut.
+* `COMMAND` must start with one of Astra's commands other than `alias` (see the [command summary](#command-summary)), and can include part of its parameters.
+* A shortcut cannot have the same name as one of Astra's commands, and cannot stand for another shortcut or for `alias`.
+* When you use a shortcut, the command runs exactly as if you had typed it in full, with the same checks and confirmations.
+* The result starts with `Ran:` followed by the full command the shortcut stood for, so you can see exactly what ran. Error messages show it too.
+* If the shortcut already exists, Astra shows what it currently runs and changes nothing. To replace it, use `alias /replace SHORTCUT COMMAND…​`.
+* `alias` on its own lists your shortcuts. `alias /remove SHORTCUT` removes one.
+* Shortcuts are saved in `preferences.json` as soon as you create them, so they are still there the next time you start Astra. If saving fails, the shortcut is not created.
+* If you edit `preferences.json` by hand, shortcut names are read ignoring letter case, and any shortcut that breaks the rules above is dropped when Astra starts.
+
+Examples:
+* `alias fe find /email` saves the shortcut. Entering `fe john.lim@example.com` then runs `find /email john.lim@example.com`, and the result starts with `Ran: find /email john.lim@example.com`.
+* `alias fe find /contact` when `fe` already exists reports `Shortcut fe already runs: find /email` and tells you how to replace it.
+* `alias /replace fe find /contact` replaces it.
+* `alias list find` is rejected, because `list` is already a command.
+
 ### Exiting the program: `exit`
 
 Exits the program.
@@ -663,6 +685,7 @@ _Details coming soon ..._
 Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com i/Jane Smith t/colleague`
+**Alias** | `alias SHORTCUT COMMAND…​`, `alias /replace SHORTCUT COMMAND…​`, `alias /remove SHORTCUT`, or `alias` (lists shortcuts)<br> e.g., `alias fe find /email`
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`

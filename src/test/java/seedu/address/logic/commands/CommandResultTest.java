@@ -86,4 +86,14 @@ public class CommandResultTest {
                 + ", exit=" + commandResult.isExit() + ", saveContactFile=true}";
         assertEquals(expected, commandResult.toString());
     }
+
+    @Test
+    public void withFeedbackPrefix_keepsEveryOtherField() {
+        CommandResult result = new CommandResult("Previewed.", false, true, false);
+
+        CommandResult prefixed = result.withFeedbackPrefix("Ran: undo\n");
+
+        assertEquals("Ran: undo\nPreviewed.", prefixed.getFeedbackToUser());
+        assertEquals(new CommandResult("Ran: undo\nPreviewed.", false, true, false), prefixed);
+    }
 }

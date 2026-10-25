@@ -13,6 +13,7 @@ import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.PendingRequest;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.parser.AliasCommandParser;
 import seedu.address.logic.parser.ContactFileParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FieldOrder;
@@ -29,6 +30,9 @@ public class LogicManager implements Logic {
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
+
+    /** Shown before the result of a command entered through a shortcut, so the user can see what ran. */
+    public static final String MESSAGE_SHORTCUT_EXPANDED = "Ran: %s\n";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
@@ -50,6 +54,8 @@ public class LogicManager implements Logic {
         this.storage = storage;
         undoManager = new UndoManager();
         contactFileParser = new ContactFileParser(undoManager);
+        // Shortcuts loaded from a hand-edited preferences file have not been checked yet.
+        model.setCommandAliases(AliasCommandParser.validAliases(model.getCommandAliases()));
     }
 
     @Override
@@ -72,15 +78,22 @@ public class LogicManager implements Logic {
                 }
                 if (pendingRequest.shouldRunAsCommand(response)) {
                     clearPendingRequest();
-                    command = contactFileParser.parseCommand(commandText);
+                    command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
                     personsBeforeCommand = List.copyOf(model.getContactFile().getPersonList());
                     commandResult = command.execute(model);
                 } else {
                     commandResult = pendingRequest.respond(response, model);
                 }
             } else {
-                command = contactFileParser.parseCommand(commandText);
-                commandResult = command.execute(model);
+                String shortcutNote = shortcutNote(commandText);
+                try {
+                    command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
+                    commandResult = command.execute(model).withFeedbackPrefix(shortcutNote);
+                } catch (ParseException pe) {
+                    throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
+                } catch (CommandException ce) {
+                    throw shortcutNote.isEmpty() ? ce : new CommandException(shortcutNote + ce.getMessage(), ce);
+                }
             }
 
             if (commandResult.getPendingRequest().isPresent()) {
@@ -92,6 +105,8 @@ public class LogicManager implements Logic {
                 if (commandResult.shouldSaveContactFile() && snapshot.hasDataChanged(model)) {
                     storage.saveContactFile(model.getContactFile());
                 }
+                // Shortcuts and the field order live in the preferences file; save them now rather than
+                // only when the app closes. A failed save restores the snapshot, so nothing is half-applied.
                 if (snapshot.hasPreferencesChanged(model)) {
                     storage.saveUserPrefs(model.getUserPrefs());
                 }
@@ -113,6 +128,16 @@ public class LogicManager implements Logic {
             restoreFailedRequest(snapshot);
             throw e;
         }
+    }
+
+    /**
+     * Returns the note shown before the result of a command entered through a shortcut, or an empty string if
+     * {@code commandText} does not start with one. A shortcut's result, and any error it causes, starts with
+     * the command it expanded to, since the user never typed that command.
+     */
+    private String shortcutNote(String commandText) {
+        String expandedText = ContactFileParser.expandShortcut(commandText, model.getCommandAliases());
+        return expandedText.equals(commandText) ? "" : String.format(MESSAGE_SHORTCUT_EXPANDED, expandedText.trim());
     }
 
     private void restoreFailedRequest(ModelSnapshot snapshot) {

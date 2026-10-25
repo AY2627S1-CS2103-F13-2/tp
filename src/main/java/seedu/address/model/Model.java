@@ -1,6 +1,7 @@
 package seedu.address.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -31,6 +32,26 @@ public interface Model {
      * Sets the user prefs' GUI settings.
      */
     void setGuiSettings(GuiSettings guiSettings);
+
+    /**
+     * Returns the command shortcuts, mapping each shortcut name to the command it stands for.
+     */
+    Map<String, String> getCommandAliases();
+
+    /**
+     * Saves {@code command} as the expansion of {@code shortcut}, replacing any earlier expansion.
+     */
+    void setCommandAlias(String shortcut, String command);
+
+    /**
+     * Removes the shortcut {@code shortcut}. Does nothing if there is no such shortcut.
+     */
+    void removeCommandAlias(String shortcut);
+
+    /**
+     * Replaces all command shortcuts with {@code commandAliases}.
+     */
+    void setCommandAliases(Map<String, String> commandAliases);
 
     /**
      * Returns the global contact display order.

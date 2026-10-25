@@ -60,6 +60,14 @@ public class JsonUserPrefsStorageTest {
         assertThrows(DataLoadingException.class, () -> new JsonUserPrefsStorage(source).readUserPrefs());
     }
 
+    @Test
+    public void readUserPrefs_nullCommandAliases_noShortcuts() throws IOException, DataLoadingException {
+        Path source = testFolder.resolve("preferences.json");
+        Files.writeString(source, "{\"commandAliases\": null}");
+        UserPrefs actual = new JsonUserPrefsStorage(source).readUserPrefs().get();
+        assertEquals(new UserPrefs(), actual);
+    }
+
     private Path addToTestDataPathIfNotNull(String userPrefsFileInTestDataFolder) {
         return userPrefsFileInTestDataFolder != null
                 ? TEST_DATA_FOLDER.resolve(userPrefsFileInTestDataFolder)
@@ -131,6 +139,7 @@ public class JsonUserPrefsStorageTest {
 
         //Try saving when the file exists
         original.setGuiSettings(new GuiSettings(5, 5, 5, 5));
+        original.setCommandAlias("fn", "find /notes");
         jsonUserPrefsStorage.saveUserPrefs(original);
         readBack = jsonUserPrefsStorage.readUserPrefs().get();
         assertEquals(original, readBack);
