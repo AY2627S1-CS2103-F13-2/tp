@@ -520,7 +520,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *`  | frequent user                              | delete contacts I no longer need | reduce clutter                                                         |
 | `* * *`  | user                                       | clear all contacts | start over when I no longer need the list                              |
 | `* *`    | careless user                              | be asked to confirm before contacts are deleted or cleared | avoid wiping out contacts by a mistyped command                  |
-| `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data   
+| `* * *`  | user                                       | exit the app with all saved changes kept | close it without worrying about losing data
 | `* * *`  | user                                       | find a contact by name, phone number or email                       | retrieve their details quickly                                    |
 | `* * *`  | user                                       | find a contact using only part of their name                        | look someone up when I only remember their first or last name     |
 | `* * *`  | user                                       | list all contacts                                                   | browse my contact list                                            |
@@ -557,7 +557,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1. User enters an add command with the contact's name, company, role, contact number and email, and optionally a LinkedIn URL.
 2. Astra validates and normalises the details.
-3. Astra adds the contact, saves the contact list and shows the saved details. 
+3. Astra adds the contact, saves the contact list and shows the saved details.
 
    Use case ends.
 
@@ -571,7 +571,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. The name matches the full name or first name of an existing contact.
     * 2a1. Astra shows the matching contacts and asks whether to add a separate contact.
     * 2a2. User confirms.
-      
+
       Use case resumes at step 3.
 
 * 2b. The contact number or email belongs to exactly one existing contact.
@@ -585,7 +585,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2c. The contact number and email belong to two different existing contacts.
     * 2c1. Astra rejects the command and identifies the conflicting contacts.
-      
+
       Use case ends.
 
 * 2d. All normalised fields already match one existing contact.
@@ -595,7 +595,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. Saving fails.
     * 3a1. Astra shows a save error. The contact list and file are unchanged.
-      
+
       Use case ends.
 
 * *a. At any prompt, the user chooses keep, cancel or n.
@@ -830,7 +830,7 @@ edit as well as delete and clear. Add merge/replace remains separate work.
         * 2c3a1. Astra shows the failure and available archive locations and stops without opening the command interface.
 
       Use case ends.
-      
+
 * 2d. Another Astra instance is already using the contact file.
     * 2d1. Astra shows that the storage is in use and the second instance stops.
 

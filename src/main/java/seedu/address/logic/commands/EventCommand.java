@@ -21,9 +21,9 @@ public class EventCommand extends Command {
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Adds an event to a contact.\n"
-            + "Parameters: add INDEX ev/EVENT d/DATE\n"
+            + "Parameters: add INDEX ev/EVENT\n"
             + "Example: " + COMMAND_WORD
-            + " add 1 ev/NUS Career Fair d/2026-10-20";
+            + " add 1 ev/NUS Career Fair";
 
     public static final String MESSAGE_SUCCESS =
             "Added event %1$s to contact: %2$s";
@@ -67,6 +67,7 @@ public class EventCommand extends Command {
 
         Person updatedPerson = targetPerson.withEvent(event);
         model.setPerson(targetPerson, updatedPerson);
+        model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
 
         return new CommandResult(
                 String.format(

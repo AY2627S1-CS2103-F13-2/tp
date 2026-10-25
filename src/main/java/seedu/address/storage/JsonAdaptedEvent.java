@@ -18,10 +18,10 @@ class JsonAdaptedEvent {
     private final String date;
 
     /**
-     * Constructs a {@code JsonAdaptedEvent} with the given event details.
+     * Constructs an adapted event.
      *
-     * @param name name of the event
-     * @param date date of the event
+     * @param name event name
+     * @param date optional event date
      */
     @JsonCreator
     public JsonAdaptedEvent(
@@ -32,7 +32,7 @@ class JsonAdaptedEvent {
     }
 
     /**
-     * Converts a given {@code Event} into this class for Jackson use.
+     * Converts an Event into this class for Jackson use.
      *
      * @param source event to convert
      */
@@ -42,9 +42,8 @@ class JsonAdaptedEvent {
     }
 
     /**
-     * Converts this Jackson-friendly adapted event object into an Event.
+     * Converts this adapted event into a model Event.
      *
-     * @return the model event
      * @throws IllegalValueException if the event data is invalid
      */
     public Event toModelType() throws IllegalValueException {
@@ -53,13 +52,12 @@ class JsonAdaptedEvent {
                     String.format(MISSING_FIELD_MESSAGE_FORMAT, "name"));
         }
 
-        if (date == null) {
-            throw new IllegalValueException(
-                    String.format(MISSING_FIELD_MESSAGE_FORMAT, "date"));
-        }
-
         if (!Event.isValidName(name)) {
             throw new IllegalValueException(Event.MESSAGE_NAME_CONSTRAINTS);
+        }
+
+        if (date == null || date.isBlank()) {
+            return new Event(name);
         }
 
         if (!Event.isValidDate(date)) {

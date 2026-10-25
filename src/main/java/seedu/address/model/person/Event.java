@@ -5,12 +5,13 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Locale;
 import java.util.Objects;
 
 import seedu.address.commons.util.StringUtil;
 
 /**
- * Represents an event where a contact was met.
+ * Represents an event associated with a contact.
  */
 public class Event {
 
@@ -24,7 +25,22 @@ public class Event {
     private final String date;
 
     /**
-     * Creates an event with the given name and date.
+     * Creates an event without a date.
+     *
+     * @param name name of the event
+     */
+    public Event(String name) {
+        requireNonNull(name);
+
+        String normalizedName = StringUtil.normalise(name);
+        checkArgument(isValidName(normalizedName), MESSAGE_NAME_CONSTRAINTS);
+
+        this.name = normalizedName;
+        this.date = null;
+    }
+
+    /**
+     * Creates an event with an optional date.
      *
      * @param name name of the event
      * @param date date of the event in YYYY-MM-DD format
@@ -86,16 +102,18 @@ public class Event {
         }
 
         return name.equalsIgnoreCase(otherEvent.name)
-                && date.equals(otherEvent.date);
+                && Objects.equals(date, otherEvent.date);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name.toLowerCase(), date);
+        return Objects.hash(name.toLowerCase(Locale.ROOT), date);
     }
 
     @Override
     public String toString() {
-        return name + " (" + date + ")";
+        return date == null
+                ? name
+                : name + " (" + date + ")";
     }
 }

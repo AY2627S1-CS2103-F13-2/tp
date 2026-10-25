@@ -2,7 +2,6 @@ package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_EVENT_DATE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EVENT_NAME;
 
 import seedu.address.commons.core.index.Index;
@@ -25,7 +24,7 @@ public class EventCommandParser implements Parser<EventCommand> {
         requireNonNull(args);
 
         ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_EVENT_NAME, PREFIX_EVENT_DATE);
+                ArgumentTokenizer.tokenize(args, PREFIX_EVENT_NAME);
 
         String preamble = argMultimap.getPreamble().trim();
         String[] preambleParts = preamble.split("\\s+");
@@ -41,18 +40,16 @@ public class EventCommandParser implements Parser<EventCommand> {
             throw invalidFormat(exception);
         }
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_EVENT_NAME, PREFIX_EVENT_DATE);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_EVENT_NAME);
 
-        if (argMultimap.getValue(PREFIX_EVENT_NAME).isEmpty()
-                || argMultimap.getValue(PREFIX_EVENT_DATE).isEmpty()) {
+        if (argMultimap.getValue(PREFIX_EVENT_NAME).isEmpty()) {
             throw invalidFormat();
         }
 
         String eventName = argMultimap.getValue(PREFIX_EVENT_NAME).get();
-        String eventDate = argMultimap.getValue(PREFIX_EVENT_DATE).get();
 
         try {
-            Event event = new Event(eventName, eventDate);
+            Event event = new Event(eventName);
             return new EventCommand(targetIndex, event);
         } catch (IllegalArgumentException exception) {
             throw invalidFormat(exception);
