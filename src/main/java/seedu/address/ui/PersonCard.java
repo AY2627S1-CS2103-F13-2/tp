@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -22,14 +23,6 @@ import seedu.address.model.person.Person;
 public class PersonCard extends UiPart<Region> {
 
     private static final String FXML = "PersonListCard.fxml";
-
-    /**
-     * Note: Certain keywords such as "location" and "resources" are reserved keywords in JavaFX.
-     * As a consequence, UI elements' variable names cannot be set to such keywords
-     * or an exception will be thrown by JavaFX during runtime.
-     *
-     * @see <a href="https://github.com/se-edu/addressbook-level4/issues/336">The issue on AddressBook level 4</a>
-     */
 
     public final Person person;
 
@@ -56,6 +49,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label introducer;
     @FXML
+    private Label events;
+    @FXML
     private FlowPane tags;
     @FXML
     private Label followUps;
@@ -73,40 +68,88 @@ public class PersonCard extends UiPart<Region> {
     public PersonCard(Person person, int displayedIndex, FieldOrder order) {
         super(FXML);
         this.person = person;
+
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        setOptionalLabel(company, person.getCompany().map(value -> value.value).orElse(null));
-        setOptionalLabel(role, person.getRole().map(value -> value.value).orElse(null));
-        setOptionalLabel(phone, person.getPhone().map(value -> value.value).orElse(null));
-        setOptionalLabel(email, person.getEmail().map(value -> value.value).orElse(null));
-        setOptionalLabel(linkedin, person.getLinkedin().map(value -> value.value).orElse(null));
-        setOptionalLabel(introducer, person.getIntroducer().map(value -> "Introduced by: " + value).orElse(null));
-        setOptionalLabel(followUps, person.getFollowUps().isEmpty() ? null
+
+        setOptionalLabel(company, person.getCompany()
+                .map(value -> value.value)
+                .orElse(null));
+
+        setOptionalLabel(role, person.getRole()
+                .map(value -> value.value)
+                .orElse(null));
+
+        setOptionalLabel(phone, person.getPhone()
+                .map(value -> value.value)
+                .orElse(null));
+
+        setOptionalLabel(email, person.getEmail()
+                .map(value -> value.value)
+                .orElse(null));
+
+        setOptionalLabel(linkedin, person.getLinkedin()
+                .map(value -> value.value)
+                .orElse(null));
+
+        setOptionalLabel(introducer, person.getIntroducer()
+                .map(value -> "Introduced by: " + value)
+                .orElse(null));
+
+        String eventText = person.getEvents().stream()
+                .sorted(Comparator.comparing(event -> event.getName().toLowerCase()))
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+
+        setOptionalLabel(events, eventText.isEmpty() ? null : eventText);
+
+        setOptionalLabel(followUps, person.getFollowUps().isEmpty()
+                ? null
                 : "Follow-ups:\n" + Messages.formatFollowUps(person));
+
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+
         tags.setVisible(!person.getTags().isEmpty());
         tags.setManaged(!person.getTags().isEmpty());
+
         Map<FieldOrder.Field, Node> rows = Map.of(
-                FieldOrder.Field.NAME, nameRow, FieldOrder.Field.TAGS, tags,
-                FieldOrder.Field.COMPANY, company, FieldOrder.Field.ROLE, role,
-                FieldOrder.Field.PHONE, phone, FieldOrder.Field.EMAIL, email,
-                FieldOrder.Field.LINKEDIN, linkedin, FieldOrder.Field.FOLLOWUPS, followUps);
-        // The card stays compact: interaction history is shown only in the detail view.
+                FieldOrder.Field.NAME, nameRow,
+                FieldOrder.Field.TAGS, tags,
+                FieldOrder.Field.COMPANY, company,
+                FieldOrder.Field.ROLE, role,
+                FieldOrder.Field.PHONE, phone,
+                FieldOrder.Field.EMAIL, email,
+                FieldOrder.Field.LINKEDIN, linkedin,
+                FieldOrder.Field.FOLLOWUPS, followUps);
+
         List<Node> orderedRows = new ArrayList<>();
-        order.getFields().stream().filter(rows::containsKey).forEach(field -> {
-            orderedRows.add(rows.get(field));
-            if (field == FieldOrder.Field.LINKEDIN && person.getIntroducer().isPresent()) {
-                orderedRows.add(introducer);
-            }
-        });
+
+        order.getFields().stream()
+                .filter(rows::containsKey)
+                .forEach(field -> {
+                    orderedRows.add(rows.get(field));
+
+                    if (field == FieldOrder.Field.LINKEDIN) {
+                        if (person.getIntroducer().isPresent()) {
+                            orderedRows.add(introducer);
+                        }
+                        if (!person.getEvents().isEmpty()) {
+                            orderedRows.add(events);
+                        }
+                    }
+                });
+
+        if (!person.getEvents().isEmpty() && !orderedRows.contains(events)) {
+            orderedRows.add(events);
+        }
+
         fields.getChildren().setAll(orderedRows);
     }
 
     /**
-     * Sets {@code label} to show {@code value}, or removes the label from the card when
-     * {@code value} is null, so that an absent field leaves no blank row behind.
+     * Sets {@code label} to show {@code value}, or hides it when the value is null.
      */
     private static void setOptionalLabel(Label label, String value) {
         if (value == null) {
@@ -114,6 +157,9 @@ public class PersonCard extends UiPart<Region> {
             label.setManaged(false);
             return;
         }
+
         label.setText(value);
+        label.setVisible(true);
+        label.setManaged(true);
     }
 }

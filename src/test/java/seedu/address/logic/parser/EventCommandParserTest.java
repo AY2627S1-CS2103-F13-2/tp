@@ -20,11 +20,11 @@ public class EventCommandParserTest {
     public void parse_validArguments_returnsEventCommand() {
         EventCommand expected = new EventCommand(
                 Index.fromOneBased(1),
-                new Event("NUS Career Fair", "2026-10-20"));
+                new Event("NUS Career Fair"));
 
         assertParseSuccess(
                 parser,
-                "add 1 ev/NUS Career Fair d/2026-10-20",
+                "add 1 ev/NUS Career Fair",
                 expected);
     }
 
@@ -32,17 +32,17 @@ public class EventCommandParserTest {
     public void parse_missingEventName_throwsParseException() {
         assertParseFailure(
                 parser,
-                "add 1 d/2026-10-20",
+                "add 1",
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
                         EventCommand.MESSAGE_USAGE));
     }
 
     @Test
-    public void parse_missingEventDate_throwsParseException() {
+    public void parse_blankEventName_throwsParseException() {
         assertParseFailure(
                 parser,
-                "add 1 ev/NUS Career Fair",
+                "add 1 ev/",
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
                         EventCommand.MESSAGE_USAGE));
@@ -52,17 +52,7 @@ public class EventCommandParserTest {
     public void parse_invalidIndex_throwsParseException() {
         assertParseFailure(
                 parser,
-                "add abc ev/NUS Career Fair d/2026-10-20",
-                String.format(
-                        MESSAGE_INVALID_COMMAND_FORMAT,
-                        EventCommand.MESSAGE_USAGE));
-    }
-
-    @Test
-    public void parse_invalidDate_throwsParseException() {
-        assertParseFailure(
-                parser,
-                "add 1 ev/NUS Career Fair d/2026-02-30",
+                "add abc ev/NUS Career Fair",
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
                         EventCommand.MESSAGE_USAGE));
@@ -72,7 +62,7 @@ public class EventCommandParserTest {
     public void parse_missingAddKeyword_throwsParseException() {
         assertParseFailure(
                 parser,
-                "1 ev/NUS Career Fair d/2026-10-20",
+                "1 ev/NUS Career Fair",
                 String.format(
                         MESSAGE_INVALID_COMMAND_FORMAT,
                         EventCommand.MESSAGE_USAGE));
@@ -80,7 +70,7 @@ public class EventCommandParserTest {
 
     @Test
     public void parse_duplicateEventName_throwsParseException() {
-        assertThrows(ParseException.class, () -> parser.parse("add 1 ev/NUS Career Fair "
-                + "ev/Tech Conference d/2026-10-20"));
+        assertThrows(ParseException.class, () -> parser.parse(
+                "add 1 ev/NUS Career Fair ev/Tech Conference"));
     }
 }

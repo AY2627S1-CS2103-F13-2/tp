@@ -9,32 +9,81 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<HBox id="cardPane" fx:id="cardPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<HBox id="cardPane" fx:id="cardPane"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1">
+
   <GridPane HBox.hgrow="ALWAYS">
     <columnConstraints>
-      <ColumnConstraints hgrow="SOMETIMES" minWidth="10" prefWidth="150" />
+      <ColumnConstraints hgrow="SOMETIMES"
+                         minWidth="10"
+                         prefWidth="150" />
     </columnConstraints>
-    <VBox fx:id="fields" alignment="CENTER_LEFT" GridPane.columnIndex="0">
+
+    <VBox fx:id="fields"
+          alignment="CENTER_LEFT"
+          GridPane.columnIndex="0">
+
       <padding>
-        <Insets top="5" right="5" bottom="5" left="15" />
+        <Insets top="5"
+                right="5"
+                bottom="5"
+                left="15" />
       </padding>
-      <HBox fx:id="nameRow" spacing="0.5" alignment="CENTER_LEFT">
-        <Label fx:id="id" styleClass="cell_big_label">
+
+      <HBox fx:id="nameRow"
+            spacing="0.5"
+            alignment="CENTER_LEFT">
+
+        <Label fx:id="id"
+               styleClass="cell_big_label">
+
           <minWidth>
-            <!-- Ensures that the label text is never truncated -->
             <Region fx:constant="USE_PREF_SIZE" />
           </minWidth>
         </Label>
-        <Label fx:id="name" text="\$first" styleClass="cell_big_label" />
+
+        <Label fx:id="name"
+               text="\$first"
+               styleClass="cell_big_label" />
       </HBox>
+
       <FlowPane fx:id="tags" />
-      <Label fx:id="company" styleClass="cell_small_label" text="\$company" />
-      <Label fx:id="role" styleClass="cell_small_label" text="\$role" />
-      <Label fx:id="phone" styleClass="cell_small_label" text="\$phone" />
-      <Label fx:id="email" styleClass="cell_small_label" text="\$email" />
-      <Label fx:id="linkedin" styleClass="cell_small_label" text="\$linkedin" />
-      <Label fx:id="introducer" styleClass="cell_small_label" text="\$introducer" />
-      <Label fx:id="followUps" styleClass="cell_small_label" wrapText="true" maxWidth="Infinity" />
+
+      <Label fx:id="company"
+             styleClass="cell_small_label"
+             text="\$company" />
+
+      <Label fx:id="role"
+             styleClass="cell_small_label"
+             text="\$role" />
+
+      <Label fx:id="phone"
+             styleClass="cell_small_label"
+             text="\$phone" />
+
+      <Label fx:id="email"
+             styleClass="cell_small_label"
+             text="\$email" />
+
+      <Label fx:id="linkedin"
+             styleClass="cell_small_label"
+             text="\$linkedin" />
+
+      <Label fx:id="introducer"
+             styleClass="cell_small_label"
+             text="\$introducer" />
+
+      <Label fx:id="events"
+             styleClass="cell_small_label"
+             wrapText="true"
+             maxWidth="Infinity" />
+
+      <Label fx:id="followUps"
+             styleClass="cell_small_label"
+             wrapText="true"
+             maxWidth="Infinity" />
+
     </VBox>
   </GridPane>
 </HBox>
