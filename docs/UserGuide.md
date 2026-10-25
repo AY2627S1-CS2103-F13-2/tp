@@ -600,6 +600,32 @@ Enter a follow-up number, another command, or n/cancel to stop.
 Enter `2` to display Benson's `Send portfolio` action and full contact details.
 Enter `cancel` instead to leave the list without selecting an action.
 
+### Editing a follow-up: `editfollowup`
+
+Edits an existing follow-up while preserving its ID and pending or completed status.
+
+Format:
+
+`editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`
+
+* `CONTACT_INDEX` is the contact number in the currently displayed list.
+* `FOLLOW_UP_ID` is the ID of the follow-up to edit.
+* At least one of `a/DESCRIPTION` or `d/DATE` must be provided.
+* The follow-up's ID and status are preserved.
+* A pending follow-up cannot be changed to a description that duplicates another
+  pending follow-up for the same contact.
+* Use `d/` without a value to remove the due date.
+* The same date formats supported by `followup` are accepted.
+
+Examples:
+
+```text
+editfollowup 1 i/2 a/Call client
+editfollowup 1 i/2 d/2026-11-05
+editfollowup 1 i/2 a/Call client d/2026-11-05
+editfollowup 1 i/2 d/
+```
+
 ### Clearing all entries: `clear`
 
 Previews the total number of stored contacts and asks for confirmation before
@@ -749,6 +775,8 @@ Action | Format, Examples
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
+e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`

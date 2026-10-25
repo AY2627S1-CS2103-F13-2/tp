@@ -16,7 +16,8 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the contact file.
- * Guarantees: the name, tag set, events, ordered action list and interaction history are present and immutable.
+ * Guarantees: the name, tag set, events, ordered action list and interaction history
+ * are present and immutable.
  * Contact details other than the name are optional; all field values are validated.
  */
 public class Person {
@@ -55,8 +56,8 @@ public class Person {
     /**
      * Constructs a person with follow-ups but without events or starred status.
      */
-    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
-            Set<Tag> tags, List<FollowUp> followUps) {
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Set<Tag> tags, List<FollowUp> followUps) {
         this(name, company, role, phone, email, linkedin,
                 null, tags, Set.of(), followUps, false);
     }
@@ -73,8 +74,9 @@ public class Person {
     /**
      * Constructs a person with follow-ups but without events or starred status.
      */
-    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
-            Set<Tag> tags, List<FollowUp> followUps, boolean starred) {
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Set<Tag> tags, List<FollowUp> followUps,
+            boolean starred) {
         this(name, company, role, phone, email, linkedin,
                 null, tags, Set.of(), followUps, starred);
     }
@@ -82,8 +84,8 @@ public class Person {
     /**
      * Constructs a person with starred status but without events or follow-ups.
      */
-    public Person(Name name, Company company, Role role, Phone phone, Email email, Linkedin linkedin,
-            Set<Tag> tags, boolean starred) {
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Set<Tag> tags, boolean starred) {
         this(name, company, role, phone, email, linkedin,
                 null, tags, Set.of(), List.of(), starred);
     }
@@ -92,8 +94,8 @@ public class Person {
      * Constructs a person with introducer and follow-ups but without events.
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email,
-            Linkedin linkedin, Name introducer, Set<Tag> tags, List<FollowUp> followUps,
-            boolean starred) {
+            Linkedin linkedin, Name introducer, Set<Tag> tags,
+            List<FollowUp> followUps, boolean starred) {
         this(name, company, role, phone, email, linkedin,
                 introducer, tags, Set.of(), followUps, starred);
     }
@@ -109,7 +111,8 @@ public class Person {
     }
 
     /**
-     * Constructs a person with introducer, events, follow-ups and starred status, and no interactions.
+     * Constructs a person with introducer, events, follow-ups and starred status,
+     * and no interactions.
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email,
             Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
@@ -119,13 +122,15 @@ public class Person {
     }
 
     /**
-     * Constructs a person with every field. All other constructors and copy methods go through this one,
-     * so no field is lost when a contact is copied. {@code interactions} is kept in date order;
-     * interactions on the same date keep their given order.
+     * Constructs a person with every field.
+     * All other constructors and copy methods go through this one,
+     * so no field is lost when a contact is copied.
+     * Interactions are kept in date order.
      */
     public Person(Name name, Company company, Role role, Phone phone, Email email,
             Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
-            List<FollowUp> followUps, boolean starred, List<Interaction> interactions) {
+            List<FollowUp> followUps, boolean starred,
+            List<Interaction> interactions) {
         requireNonNull(name);
         requireNonNull(tags);
         requireNonNull(events);
@@ -144,6 +149,7 @@ public class Person {
         this.tags.addAll(tags);
         this.events.addAll(events);
         this.followUps.addAll(followUps);
+
         List<Interaction> sortedInteractions = new ArrayList<>(interactions);
         sortedInteractions.sort(Comparator.comparing(Interaction::getDate));
         this.interactions = List.copyOf(sortedInteractions);
@@ -151,6 +157,7 @@ public class Person {
         Set<Integer> actionIds = new HashSet<>();
         for (FollowUp action : this.followUps) {
             requireNonNull(action);
+
             if (!actionIds.add(action.getId())) {
                 throw new IllegalArgumentException(
                         "Follow-up IDs must be unique within a contact.");
@@ -215,7 +222,14 @@ public class Person {
     }
 
     /**
-     * Returns a copy with the requested starred status.
+     * Returns the interaction history in date order, oldest first.
+     */
+    public List<Interaction> getInteractions() {
+        return interactions;
+    }
+
+    /**
+     * Returns a copy of this person with the requested starred status.
      */
     public Person withStarred(boolean starred) {
         return new Person(name, company, role, phone, email, linkedin,
@@ -250,24 +264,44 @@ public class Person {
         requireNonNull(action);
 
         List<FollowUp> updatedActions = new ArrayList<>(followUps);
+
         if (updatedActions.contains(action)) {
             throw new IllegalArgumentException("Follow-up already exists.");
         }
 
         updatedActions.add(action);
+
         return new Person(name, company, role, phone, email, linkedin,
                 introducer, tags, events, updatedActions, starred, interactions);
     }
 
     /**
-     * Returns the interaction history in date order, oldest first, as an unmodifiable list.
+     * Returns a copy with the follow-up having the given ID replaced.
+     *
+     * @param followUpId ID of the follow-up to replace
+     * @param replacement replacement follow-up
+     * @return a new person with the updated follow-up
      */
-    public List<Interaction> getInteractions() {
-        return interactions;
+    public Person replaceFollowUp(int followUpId, FollowUp replacement) {
+        requireNonNull(replacement);
+
+        List<FollowUp> updatedFollowUps = new ArrayList<>(followUps);
+
+        for (int index = 0; index < updatedFollowUps.size(); index++) {
+            if (updatedFollowUps.get(index).getId() == followUpId) {
+                updatedFollowUps.set(index, replacement);
+
+                return new Person(name, company, role, phone, email, linkedin,
+                        introducer, tags, events, updatedFollowUps, starred, interactions);
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "Follow-up with the specified ID does not exist.");
     }
 
     /**
-     * Returns a copy of this person with {@code interactions} as the interaction history.
+     * Returns a copy with the given interaction history.
      */
     public Person withInteractions(List<Interaction> interactions) {
         return new Person(name, company, role, phone, email, linkedin,
@@ -275,20 +309,23 @@ public class Person {
     }
 
     /**
-     * Returns a copy of this person with {@code interaction} added to the interaction history.
+     * Returns a copy with an interaction added.
      */
     public Person withInteraction(Interaction interaction) {
         requireNonNull(interaction);
+
         List<Interaction> updatedInteractions = new ArrayList<>(interactions);
         updatedInteractions.add(interaction);
+
         return withInteractions(updatedInteractions);
     }
 
     /**
-     * Returns true if this person already has an interaction with the same date and note as {@code interaction}.
+     * Returns true if this person has an interaction with the same date and note.
      */
     public boolean hasInteraction(Interaction interaction) {
-        return interactions.stream().anyMatch(existing -> existing.isSameInteraction(interaction));
+        return interactions.stream()
+                .anyMatch(existing -> existing.isSameInteraction(interaction));
     }
 
     /**
@@ -305,13 +342,15 @@ public class Person {
 
         Optional<Email> otherEmail = otherPerson.getEmail();
         Optional<Email> email = getEmail();
+
         return otherEmail.isEmpty() && email.isEmpty()
                 || otherEmail.isPresent() && email.isPresent()
-                        && email.orElseThrow().matches(otherEmail.orElseThrow().value);
+                        && email.orElseThrow()
+                                .matches(otherEmail.orElseThrow().value);
     }
 
     /**
-     * Returns true if both persons have a phone and their normalized numbers match.
+     * Returns true if both persons have a phone and matching numbers.
      */
     public boolean hasSamePhone(Person otherPerson) {
         return otherPerson != null

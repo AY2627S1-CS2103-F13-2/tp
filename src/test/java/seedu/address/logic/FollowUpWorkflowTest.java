@@ -655,4 +655,103 @@ class FollowUpWorkflowTest {
             super.saveContactFile(contacts);
         }
     }
+
+    @Test
+    void execute_editFollowUpDescription_preservesIdStatusAndDate()
+            throws Exception {
+        logic.execute(
+                "followup 1 a/Call client d/2026-11-05");
+
+        logic.execute(
+                "editfollowup 1 i/1 a/Email client");
+
+        FollowUp updated = model.getFilteredPersonList()
+                .getFirst()
+                .getFollowUps()
+                .getFirst();
+
+        assertEquals(1, updated.getId());
+        assertEquals("Email client", updated.getDescription());
+        assertEquals(FollowUp.Status.PENDING, updated.getStatus());
+        assertEquals(
+                LocalDate.of(2026, 11, 5),
+                updated.getDueDate().orElseThrow());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_editFollowUpDate_preservesIdStatusAndDescription()
+            throws Exception {
+        logic.execute("followup 1 a/Call client");
+
+        logic.execute(
+                "editfollowup 1 i/1 d/2026-12-01");
+
+        FollowUp updated = model.getFilteredPersonList()
+                .getFirst()
+                .getFollowUps()
+                .getFirst();
+
+        assertEquals(1, updated.getId());
+        assertEquals("Call client", updated.getDescription());
+        assertEquals(FollowUp.Status.PENDING, updated.getStatus());
+        assertEquals(
+                LocalDate.of(2026, 12, 1),
+                updated.getDueDate().orElseThrow());
+    }
+
+    @Test
+    void execute_editCompletedFollowUp_preservesCompletedStatus()
+            throws Exception {
+        Person original = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(
+                        7,
+                        "Old description",
+                        FollowUp.Status.COMPLETED))
+                .build();
+
+        model.setPerson(ALICE, original);
+        storage.saveContactFile(model.getContactFile());
+
+        logic.execute(
+                "editfollowup 1 i/7 a/New description");
+
+        FollowUp updated = model.getFilteredPersonList()
+                .getFirst()
+                .getFollowUps()
+                .getFirst();
+
+        assertEquals(7, updated.getId());
+        assertEquals("New description", updated.getDescription());
+        assertEquals(FollowUp.Status.COMPLETED, updated.getStatus());
+    }
+
+    @Test
+    void execute_editFollowUpDuplicate_rejectsChange()
+            throws Exception {
+        logic.execute("followup 1 a/Call client");
+        logic.execute("followup 1 a/Send portfolio");
+
+        List<FollowUp> before = List.copyOf(
+                model.getFilteredPersonList()
+                        .getFirst()
+                        .getFollowUps());
+
+        assertThrows(CommandException.class, () -> logic.execute(
+                "editfollowup 1 i/2 a/Call client"));
+        assertEquals(
+                before,
+                model.getFilteredPersonList()
+                        .getFirst()
+                        .getFollowUps());
+        assertEquals(2, storage.saveCount);
+    }
+
+    @Test
+    void execute_editFollowUpMissingId_rejectsCommand()
+            throws Exception {
+        assertThrows(CommandException.class, () -> logic.execute(
+                "editfollowup 1 i/99 a/Updated description"));
+        assertEquals(0, storage.saveCount);
+    }
 }
