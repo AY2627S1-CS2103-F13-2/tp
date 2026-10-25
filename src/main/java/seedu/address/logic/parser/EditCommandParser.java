@@ -133,12 +133,7 @@ public class EditCommandParser implements Parser<EditCommand> {
                 throw invalidFormat();
             }
 
-            try {
-                Event event = new Event(eventName);
-                descriptor.setEvent(event);
-            } catch (IllegalArgumentException exception) {
-                throw invalidFormat(exception);
-            }
+            descriptor.setEvent(new Event(eventName));
         }
 
         if (!descriptor.isAnyFieldEdited()) {
