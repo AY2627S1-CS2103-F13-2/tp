@@ -80,7 +80,7 @@
              maxWidth="Infinity" />
 
       <Label fx:id="followUps"
-             styleClass="cell_small_label"
+             styleClass="follow_up_label"
              wrapText="true"
              maxWidth="Infinity" />
 
