@@ -113,10 +113,11 @@ Format: `help`
 
 Adds a person to the contact file.
 
-Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​`
+Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [ev/EVENT] [t/TAG]…​`
 
 * Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
+* Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -127,6 +128,7 @@ Examples:
 * `add n/John Doe i/O'Brien-Smith` Adds John Doe and records O'Brien-Smith as the introducer.
 * `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`
 * `add n/Hans Gruber` — just a name, when that is all you got before the conversation moved on.
+* `add n/Alice Tan ev/NUS Career Fair` Adds Alice Tan and records the NUS Career Fair event.
 
 ### Listing all persons: `list`
 
@@ -182,7 +184,7 @@ Format: `starred`
 
 Edits an existing person in the contact file.
 
-Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​`
+Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​`
 
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, …​
 * Instead of an index, you can give all or part of the person's name, e.g. `edit John Lim p/91234567`. Letter case is ignored.
@@ -193,6 +195,8 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
 * Existing values will be updated to the input values.
 * The new phone number or email must not already belong to another person. Emails are compared without regard to letter case, so `JohnDoe@example.com` and `johndoe@example.com` are the same email.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
+* Use `ev/EVENT` to add an event to the contact. Existing events are retained.
+* If a contact name matches several contacts, Astra displays the matching contacts. Enter the displayed index to select the intended contact.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * To remove a person's company, role, phone, email or LinkedIn, enter its prefix with nothing after it, e.g. `c/`. The name cannot be removed.
 * After the edit, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
@@ -237,46 +241,95 @@ Examples:
 
 ### Locating persons: `find`
 
-Finds persons by name, phone number, email, or the notes of their logged interactions, and shows the matches in the list.
+Finds contacts by name, approximate name, phone number, email address, company, role, event, or interaction notes.
 
-Format: `find NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, or `find /notes KEYWORDS`
+Formats:
+
+```text
+find NAME
+find /fuzzy NAME
+find /contact PHONE_NUMBER
+find /email EMAIL
+find /company COMPANY
+find /role ROLE
+find /company COMPANY /role ROLE
+find /event EVENT
+find /notes KEYWORDS
+```
 
 Searching by name:
 
 * The search is case-insensitive, so `alex` matches `Alex`.
-* Part of a name is enough, and it does not have to be a whole word: `Yeo` matches `Alex Yeoh`.
-* What you type must appear in the name **in one piece, in order**. `Alex Yeoh` matches `Alex Yeoh`, but `Yeoh Alex` does not, and neither does `Alex Li`.
+* Part of a name is enough and does not have to be a whole word: `Yeo` matches `Alex Yeoh`.
+* The search text must appear continuously and in the same order.
 * Extra spaces do not matter, so `find  alex   yeoh` is read as `find alex yeoh`.
-* Only names are searched. To search a phone number or an email, use the forms below.
+
+Examples:
+
+* `find Alex Yeoh` returns `Alex Yeoh`.
+* `find Yeo` returns `Alex Yeoh`.
+
+Searching approximately by name:
+
+* `find /fuzzy NAME` performs a case-insensitive fuzzy name search.
+* Minor spelling differences are accepted.
+
+Example:
+
+* `find /fuzzy Alicee` can match `Alice`.
 
 Searching by phone number or email:
 
-* `find /contact PHONE_NUMBER` matches the complete phone number, ignoring spaces, hyphens, and parentheses; partial numbers do not match. A leading plus remains significant.
-* `find /email EMAIL` matches an email exactly, ignoring letter case, so `ALEX@example.com` finds `alex@example.com`.
-* The value has to be a valid phone number or email, or Astra reports the problem instead of searching.
+* `find /contact PHONE_NUMBER` matches the complete phone number, ignoring spaces, hyphens, and parentheses. Partial numbers do not match.
+* `find /email EMAIL` matches an email exactly, ignoring letter case.
+* The phone number or email must be valid, or Astra reports the problem instead of searching.
 
-If nothing matches, Astra reports `Contact not found.` and the list is left as it was.
+Examples:
+
+* `find /contact 87438807` returns the person with that exact number.
+* `find /email berniceyu@example.com` returns `Bernice Yu`.
+
+Searching by company or role:
+
+* `find /company COMPANY` finds contacts whose company matches the search value.
+* `find /role ROLE` finds contacts whose role matches the search value.
+* Both selectors can be used together. A contact must match both criteria when both are provided.
+
+Examples:
+
+* `find /company Google`
+* `find /role Engineer`
+* `find /company Google /role Engineer`
+
+Searching by event:
+
+* `find /event EVENT` finds contacts associated with an event containing the search text.
+* Event searches are case-insensitive and accept partial event names.
+
+Example:
+
+* `find /event Career Fair` finds contacts associated with `NUS Career Fair`.
 
 Searching interaction notes:
 
-* `find /notes KEYWORDS` finds persons with a logged interaction (see `log`) whose note contains **any** of the keywords.
-* Letter case is ignored, and part of a word is enough: `intern` matches `internships`.
-* Under each person, the matching notes are listed with their dates. Long notes are shortened to the part around the match.
-* If no note matches, Astra reports `No matching notes were found.` and the list is left as it was.
+* `find /notes KEYWORDS` finds contacts with a logged interaction whose note contains any of the keywords.
+* Letter case is ignored and partial words are accepted.
+* If no note matches, Astra reports `No matching notes were found.` and leaves the previous list unchanged.
 
-Examples:
-* `find Alex Yeoh` returns `Alex Yeoh`.
-* `find Yeo` returns `Alex Yeoh`, since part of a name is enough.
-* `find /contact 87438807` returns the person with that exact number.
-* `find /email berniceyu@example.com` returns `Bernice Yu`.
-* `find /notes internship coffee` returns everyone whose notes mention an internship or coffee.
+Example:
 
-<div markdown="span" class="alert alert-info">:information_source: **Moved to after the MVP:**
-searching several keywords at once (`find alex david` returning both `Alex Yeoh` and `David Li`),
-and matching keywords in any order. For now a search is one name, one number or one email, matched
-in one piece. Searching by company or role is also planned for a later version.
-Use `filter` below to find contacts by tags.
-</div>
+* `find /notes internship coffee` finds contacts whose notes mention an internship or coffee.
+
+If no contacts match an ordinary search, Astra reports `Contact not found.` and displays an empty result list.
+
+If a name query matches several contacts, Astra displays the matching contacts. Use the displayed index when editing one of them. For example:
+
+```text
+edit Alice ev/Tech Conference
+edit 1 ev/Tech Conference
+```
+
+Use `list` to return to all contacts.
 
 ### Filtering contacts by tags: `filter`
 
@@ -547,6 +600,32 @@ Enter a follow-up number, another command, or n/cancel to stop.
 Enter `2` to display Benson's `Send portfolio` action and full contact details.
 Enter `cancel` instead to leave the list without selecting an action.
 
+### Editing a follow-up: `editfollowup`
+
+Edits an existing follow-up while preserving its ID and pending or completed status.
+
+Format:
+
+`editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`
+
+* `CONTACT_INDEX` is the contact number in the currently displayed list.
+* `FOLLOW_UP_ID` is the ID of the follow-up to edit.
+* At least one of `a/DESCRIPTION` or `d/DATE` must be provided.
+* The follow-up's ID and status are preserved.
+* A pending follow-up cannot be changed to a description that duplicates another
+  pending follow-up for the same contact.
+* Use `d/` without a value to remove the due date.
+* The same date formats supported by `followup` are accepted.
+
+Examples:
+
+```text
+editfollowup 1 i/2 a/Call client
+editfollowup 1 i/2 d/2026-11-05
+editfollowup 1 i/2 a/Call client d/2026-11-05
+editfollowup 1 i/2 d/
+```
+
 ### Clearing all entries: `clear`
 
 Previews the total number of stored contacts and asks for confirmation before
@@ -684,18 +763,20 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com i/Jane Smith t/colleague`
+**Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [ev/EVENT] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com ev/Career Fair i/Jane Smith t/colleague`
 **Alias** | `alias SHORTCUT COMMAND…​`, `alias /replace SHORTCUT COMMAND…​`, `alias /remove SHORTCUT`, or `alias` (lists shortcuts)<br> e.g., `alias fe find /email`
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
-**Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 3 c/` (removes the company)
+**Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
 **Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
 **Undo** | `undo` to preview the most recent edit or deletion; `undo --confirm` to restore it
 **History** | `history`
-**Find** | `find NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /notes internship`
+**Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
+e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
