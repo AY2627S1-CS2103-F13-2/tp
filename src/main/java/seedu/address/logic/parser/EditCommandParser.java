@@ -74,75 +74,80 @@ public class EditCommandParser implements Parser<EditCommand> {
                 PREFIX_LINKEDIN,
                 PREFIX_EVENT_NAME);
 
-        EditPersonDescriptor editPersonDescriptor =
-                new EditPersonDescriptor();
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
 
         if (argMultimap.getValue(PREFIX_NAME).isPresent()) {
-            editPersonDescriptor.setName(
+            descriptor.setName(
                     ParserUtil.parseName(
                             argMultimap.getValue(PREFIX_NAME).get()));
         }
 
         if (isEmptyValue(argMultimap, PREFIX_COMPANY)) {
-            editPersonDescriptor.removeField(RemovableField.COMPANY);
+            descriptor.removeField(RemovableField.COMPANY);
         } else if (argMultimap.getValue(PREFIX_COMPANY).isPresent()) {
-            editPersonDescriptor.setCompany(
+            descriptor.setCompany(
                     ParserUtil.parseCompany(
                             argMultimap.getValue(PREFIX_COMPANY).get()));
         }
 
         if (isEmptyValue(argMultimap, PREFIX_ROLE)) {
-            editPersonDescriptor.removeField(RemovableField.ROLE);
+            descriptor.removeField(RemovableField.ROLE);
         } else if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
-            editPersonDescriptor.setRole(
+            descriptor.setRole(
                     ParserUtil.parseRole(
                             argMultimap.getValue(PREFIX_ROLE).get()));
         }
 
         if (isEmptyValue(argMultimap, PREFIX_PHONE)) {
-            editPersonDescriptor.removeField(RemovableField.PHONE);
+            descriptor.removeField(RemovableField.PHONE);
         } else if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
-            editPersonDescriptor.setPhone(
+            descriptor.setPhone(
                     ParserUtil.parsePhone(
                             argMultimap.getValue(PREFIX_PHONE).get()));
         }
 
         if (isEmptyValue(argMultimap, PREFIX_EMAIL)) {
-            editPersonDescriptor.removeField(RemovableField.EMAIL);
+            descriptor.removeField(RemovableField.EMAIL);
         } else if (argMultimap.getValue(PREFIX_EMAIL).isPresent()) {
-            editPersonDescriptor.setEmail(
+            descriptor.setEmail(
                     ParserUtil.parseEmail(
                             argMultimap.getValue(PREFIX_EMAIL).get()));
         }
 
         if (isEmptyValue(argMultimap, PREFIX_LINKEDIN)) {
-            editPersonDescriptor.removeField(RemovableField.LINKEDIN);
+            descriptor.removeField(RemovableField.LINKEDIN);
         } else if (argMultimap.getValue(PREFIX_LINKEDIN).isPresent()) {
-            editPersonDescriptor.setLinkedin(
+            descriptor.setLinkedin(
                     ParserUtil.parseLinkedin(
                             argMultimap.getValue(PREFIX_LINKEDIN).get()));
         }
 
         parseTagsForEdit(argMultimap.getAllValues(PREFIX_TAG))
-                .ifPresent(editPersonDescriptor::setTags);
+                .ifPresent(descriptor::setTags);
 
         if (argMultimap.getValue(PREFIX_EVENT_NAME).isPresent()) {
+            String eventName =
+                    argMultimap.getValue(PREFIX_EVENT_NAME).get();
+
+            if (eventName.isBlank()) {
+                throw invalidFormat();
+            }
+
             try {
-                Event event = new Event(
-                        argMultimap.getValue(PREFIX_EVENT_NAME).get());
-                editPersonDescriptor.setEvent(event);
+                Event event = new Event(eventName);
+                descriptor.setEvent(event);
             } catch (IllegalArgumentException exception) {
                 throw invalidFormat(exception);
             }
         }
 
-        if (!editPersonDescriptor.isAnyFieldEdited()) {
+        if (!descriptor.isAnyFieldEdited()) {
             throw new ParseException(EditCommand.MESSAGE_NOT_EDITED);
         }
 
         return index != null
-                ? new EditCommand(index, editPersonDescriptor)
-                : new EditCommand(targetName, editPersonDescriptor);
+                ? new EditCommand(index, descriptor)
+                : new EditCommand(targetName, descriptor);
     }
 
     /**
