@@ -39,6 +39,7 @@ public class MainWindow extends UiPart<Stage> {
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
+    private ConfirmationPanel confirmationPanel;
     private HelpWindow helpWindow;
     private Person personForDetails;
     private FollowUp followUpForDetails;
@@ -57,6 +58,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private StackPane statusbarPlaceholder;
+
+    @FXML
+    private StackPane confirmationPanelPlaceholder;
 
     /**
      * Creates a {@code MainWindow} with the given {@code Stage}, {@code Logic},
@@ -138,6 +142,17 @@ public class MainWindow extends UiPart<Stage> {
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
 
+        confirmationPanel = new ConfirmationPanel(response -> {
+            try {
+                executeCommand(response);
+            } catch (CommandException | ParseException | RuntimeException e) {
+                // executeCommand has already displayed the failure and cleared the panel.
+            }
+            commandBox.getRoot().lookup("#commandTextField").requestFocus();
+        });
+        confirmationPanelPlaceholder.getChildren().add(confirmationPanel.getRoot());
+        confirmationPanelPlaceholder.managedProperty().bind(confirmationPanel.getRoot().managedProperty());
+        confirmationPanelPlaceholder.visibleProperty().bind(confirmationPanel.getRoot().visibleProperty());
         resultDisplay.setFeedbackToUser(startupFeedback);
     }
 
@@ -195,6 +210,7 @@ public class MainWindow extends UiPart<Stage> {
             FieldOrder previousOrder = logic.getFieldOrderProperty().get();
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
+            confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
             String feedback = commandResult.getFeedbackToUser();
             if (!previousOrder.equals(logic.getFieldOrderProperty().get()) && personForDetails != null) {
                 feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
@@ -213,9 +229,10 @@ public class MainWindow extends UiPart<Stage> {
             }
 
             return commandResult;
-        } catch (CommandException | ParseException e) {
+        } catch (CommandException | ParseException | RuntimeException e) {
             logger.info("An error occurred while executing command: " + commandText);
-            String feedback = e.getMessage();
+            confirmationPanel.showRequest(null);
+            String feedback = e.getMessage() == null ? "Unexpected command failure." : e.getMessage();
             if (personForDetails != null) {
                 feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
             }

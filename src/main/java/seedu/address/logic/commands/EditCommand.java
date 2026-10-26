@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.CollectionUtil;
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Company;
@@ -37,7 +38,7 @@ import seedu.address.model.person.Role;
 import seedu.address.model.tag.Tag;
 
 /**
- * Edits the details of an existing person in the contact file.
+ * Previews and confirms edits to an existing person in the contact file.
  */
 public class EditCommand extends Command {
 
@@ -46,7 +47,7 @@ public class EditCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Edits the details of the person identified by the index number "
             + "used in the displayed person list, or by name. "
-            + "Existing values will be overwritten by the input values.\n"
+            + "Preview changes, then reply y to apply or n/cancel to stop.\n"
             + "Parameters: INDEX or NAME "
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_COMPANY + "COMPANY] "
@@ -82,8 +83,8 @@ public class EditCommand extends Command {
     /**
      * Creates an edit command using an index.
      *
-     * @param index index of the person to edit
-     * @param editPersonDescriptor details to edit the person with
+     * @param index Index of the person to edit.
+     * @param editPersonDescriptor Details to edit the person with.
      */
     public EditCommand(Index index, EditPersonDescriptor editPersonDescriptor) {
         requireNonNull(index);
@@ -98,8 +99,8 @@ public class EditCommand extends Command {
     /**
      * Creates an edit command using a name.
      *
-     * @param targetName name of the person to edit
-     * @param editPersonDescriptor details to edit the person with
+     * @param targetName Name of the person to edit.
+     * @param editPersonDescriptor Details to edit the person with.
      */
     public EditCommand(
             String targetName,
@@ -152,11 +153,26 @@ public class EditCommand extends Command {
 
         checkPhoneAndEmailNotTaken(model, personToEdit, editedPerson);
 
-        model.setPerson(personToEdit, editedPerson);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-
-        return new CommandResult(
-                formatUpdatedFields(personToEdit, editedPerson));
+        PendingRequest request = new ConfirmationRequest("Preview contact edit:\n"
+                + formatUpdatedFields(personToEdit, editedPerson) + "\nResulting contact:\n"
+                + Messages.format(editedPerson, model.getFieldOrder()), new Command() {
+                    @Override
+                    public CommandResult execute(Model confirmedModel) throws CommandException {
+                        if (!confirmedModel.getContactFile().getPersonList().contains(personToEdit)) {
+                            throw new CommandException("Contact changed. Start the edit request again.");
+                        }
+                        if (!personToEdit.isSamePerson(editedPerson) && confirmedModel.hasPerson(editedPerson)) {
+                            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+                        }
+                        checkPhoneAndEmailNotTaken(confirmedModel, personToEdit, editedPerson);
+                        confirmedModel.setPerson(personToEdit, editedPerson);
+                        confirmedModel.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+                        assert editedPerson.getLastFollowUpId() == personToEdit.getLastFollowUpId()
+                                : "Contact edits must retain allocated follow-up IDs";
+                        return new CommandResult(formatUpdatedFields(personToEdit, editedPerson));
+                    }
+                });
+        return new CommandResult(request.getPrompt(), request);
     }
 
     /**

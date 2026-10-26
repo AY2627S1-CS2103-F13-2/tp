@@ -298,6 +298,7 @@ public class LogicManagerTest {
         assertFalse(logic.execute("history").getFeedbackToUser().contains("drop:"));
         logic.execute("drop 1 t/outdated --confirm");
         logic.execute("edit 1 p/87654321");
+        logic.execute("y");
         logic.execute("introduce 1 i/Jane Doe");
         logic.execute("delete 1");
         logic.execute("y");
@@ -323,6 +324,7 @@ public class LogicManagerTest {
         AtomicInteger saveCount = useCountingStorage();
 
         logic.execute("edit 1 p/87654321");
+        logic.execute("y");
         Person edited = model.getContactFile().getPersonList().getFirst();
         assertEquals("87654321", edited.getPhone().orElseThrow().value);
         int savesAfterEdit = saveCount.get();
@@ -381,6 +383,7 @@ public class LogicManagerTest {
         useCountingStorage();
 
         logic.execute("edit 1 p/87654321");
+        logic.execute("y");
         logic.execute("add n/Bob Smith");
         CommandResult result = logic.execute("undo");
 
@@ -397,6 +400,7 @@ public class LogicManagerTest {
         AtomicInteger saveCount = useCountingStorage();
 
         logic.execute("edit 1 p/87654321");
+        logic.execute("y");
         logic.execute("undo");
         Person conflictingContact = new PersonBuilder().withName("Bob Smith").withPhone("12345678")
                 .withEmail(null).build();

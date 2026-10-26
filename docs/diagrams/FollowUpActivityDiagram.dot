@@ -5,7 +5,7 @@ digraph FollowUp {
   input [label="followup INDEX a/DESCRIPTION [d/DATE]"];
   validate [label="Validate input and resolve displayed contact"];
   duplicate [shape=diamond, label="Identical pending action?"];
-  ask [label="Show existing action; ask Add another?\nNo mutation or save"];
+  ask [label="Show existing action in confirmation panel; ask Add another?\nNo mutation or save"];
   reply [shape=diamond, label="Reply"];
   append [label="Append PENDING action with last allocated ID + 1\nRetain resolved contact and stored order"];
   save [label="Atomic save and validation"];
