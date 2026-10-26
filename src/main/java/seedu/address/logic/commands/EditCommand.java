@@ -369,7 +369,7 @@ public class EditCommand extends Command {
                 updatedEvents,
                 personToEdit.getFollowUps(),
                 personToEdit.isStarred(),
-                personToEdit.getInteractions());
+                personToEdit.getInteractions(), personToEdit.getLastFollowUpId());
     }
 
     private static <T> T updatedValue(

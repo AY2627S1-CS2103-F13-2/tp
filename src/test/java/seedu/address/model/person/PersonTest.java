@@ -284,6 +284,7 @@ public class PersonTest {
                 + ", tags=" + ALICE.getTags()
                 + ", events=" + ALICE.getEvents()
                 + ", followUps=" + ALICE.getFollowUps()
+                + ", lastFollowUpId=" + ALICE.getLastFollowUpId()
                 + ", starred=" + ALICE.isStarred()
                 + ", interactions=" + ALICE.getInteractions() + "}";
         assertEquals(expected, ALICE.toString());
