@@ -89,19 +89,9 @@ public class JsonContactFileStorage {
         requireNonNull(filePath);
 
         Path target = filePath.toAbsolutePath().normalize();
-        Files.createDirectories(target.getParent());
-        Path temporary = Files.createTempFile(target.getParent(), ".astra-save-", ".tmp");
-        try {
-            writeCandidate(contactFile, temporary);
-            verifyCandidate(contactFile, temporary);
-            replaceActiveFile(temporary, target);
-        } finally {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException cleanupFailure) {
-                logger.warning("Could not remove temporary contact file: " + cleanupFailure.getMessage());
-            }
-        }
+        AtomicFileWriter.write(target, ".astra-save-",
+                temporary -> writeCandidate(contactFile, temporary),
+                temporary -> verifyCandidate(contactFile, temporary), this::replaceActiveFile);
     }
 
     void writeCandidate(ReadOnlyContactFile contactFile, Path temporary) throws IOException {

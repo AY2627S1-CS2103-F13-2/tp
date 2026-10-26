@@ -7,9 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
-import java.util.logging.Logger;
 
-import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyUserPrefs;
@@ -19,7 +17,6 @@ import seedu.address.model.UserPrefs;
  * Reads preferences and saves validated snapshots through atomic file replacement.
  */
 public class JsonUserPrefsStorage {
-    private static final Logger logger = LogsCenter.getLogger(JsonUserPrefsStorage.class);
 
     private final Path filePath;
 
@@ -64,19 +61,9 @@ public class JsonUserPrefsStorage {
     public void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException {
         UserPrefs expected = new UserPrefs(requireNonNull(userPrefs));
         Path target = requireNonNull(filePath).toAbsolutePath().normalize();
-        Files.createDirectories(target.getParent());
-        Path temporary = Files.createTempFile(target.getParent(), ".astra-prefs-", ".tmp");
-        try {
-            writeCandidate(expected, temporary);
-            verifyCandidate(expected, temporary);
-            replaceActiveFile(temporary, target);
-        } finally {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException cleanupFailure) {
-                logger.warning("Could not remove temporary preference file: " + cleanupFailure.getMessage());
-            }
-        }
+        AtomicFileWriter.write(target, ".astra-prefs-",
+                temporary -> writeCandidate(expected, temporary),
+                temporary -> verifyCandidate(expected, temporary), this::replaceActiveFile);
     }
 
     void writeCandidate(UserPrefs expected, Path temporary) throws IOException {
