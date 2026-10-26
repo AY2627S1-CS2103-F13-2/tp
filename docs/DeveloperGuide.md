@@ -126,7 +126,9 @@ The `Model` component,
 
 * stores the contact file data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
-* `Person#isSamePerson` retains the legacy identity rule: equal names and equal email presence (both present or both absent). Email values do not participate in that rule. Add/edit separately reject shared normalized phone numbers and case-insensitive email addresses. This differs from the intended phone/email key policy; changing identity requires a separate compatibility decision.
+* `Person#isSamePerson` compares equal names and emails that are either both absent or equal ignoring case.
+  Current add/edit validation separately rejects shared normalized phone numbers and case-insensitive emails.
+  Follow-ups, retired action IDs, events, interactions, and starred status do not change contact identity.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (GUI settings and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
@@ -267,9 +269,10 @@ both fields; older files default to unstarred contacts with empty action history
 `Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
 ID unique within that contact, a stripped non-blank description, and a
 `PENDING` or `COMPLETED` status. IDs are allocated as one greater than the
-maximum existing ID, including completed history, rather than the list size or
-last element. Existing IDs and order never change; ID exhaustion is rejected
-without mutation. This version does not remove actions or implement completion.
+greatest allocated ID (`Person.lastFollowUpId`), including deleted and completed history,
+rather than the list size or last surviving element. Existing IDs and order never change;
+ID exhaustion is rejected without mutation. Every copy preserves the counter, which participates
+in strong equality/hash. `appendFollowUp` rejects reused IDs; replacement preserves the action ID.
 
 `FollowUpCommandParser` requires a positive displayed index and exactly one
 `a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
@@ -279,7 +282,7 @@ actions trigger confirmation. The command retains the resolved contact and
 description in the shared request. A later displayed index cannot redirect a
 confirmed action; a changed or missing target invalidates the request.
 
-Strong `Person` equality/hash include ordered follow-ups so Logic detects and
+Strong `Person` equality/hash include allocated IDs and ordered follow-ups so Logic detects and
 saves an action change. Contact identity and phone/email duplicate checks do
 not include actions. `EditCommand` carries existing history into the replacement
 contact, and `PersonBuilder` preserves history when copying a contact in tests.
@@ -292,7 +295,11 @@ positive integer IDs, non-blank descriptions, and supported status values;
 duplicate IDs and null actions invalidate the entire contact. Startup recovery
 uses the same conversion and reports/skips the affected record, preserving its
 original bytes in the existing recovery archive. Valid histories retain their
-order, status, and IDs through normal saves and recovery. Failed immediate or
+order, status, and IDs through normal saves and recovery. `lastFollowUpId` is stored as an integer
+at least as large as every remaining ID. Missing/null legacy values infer the maximum remaining ID
+(or zero for no actions); invalid types, negative values, overflow, and counters below existing IDs
+invalidate the contact. Historical deleted IDs cannot be reconstructed from a legacy file that never
+stored them. Failed immediate or
 confirmed saves restore the original action history, model, and predicate.
 
 The following activity diagram shows the command and transaction boundaries.
@@ -901,7 +908,7 @@ history storage support future UC17. Creation accepts an optional
 `d/DATE` before or after `a/DESCRIPTION`, in ISO, day/month/year, or English abbreviated-month format. Dates
 display in ISO format with an overdue indicator for pending actions due before
 today. Duplicate confirmation retains the requested date and creates a separate
-action. Completion commands, editing or deleting individual follow-ups, and
+action. Follow-up editing and deletion have separate commands; completion commands and
 links to events remain outside UC16.
 
 **Use case: UC12 - Review pending follow-ups**
@@ -1243,3 +1250,23 @@ Keep their stored order different from alphabetical order.
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
 1. _{ more test cases …​ }_
+
+### Follow-up deletion (v1.5)
+
+`DeleteFollowUpCommandParser` accepts `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`.
+The command resolves the displayed contact and stable action ID before producing a
+`ConfirmationRequest`. Its retained contact must still match at confirmation. `Person.removeFollowUp`
+removes exactly one action without renumbering survivors or changing `lastFollowUpId`.
+Logic saves once on success and restores the original model, filter, and counter on failure.
+Deletion is permanent; the existing contact undo feature does not undo action deletion.
+
+#### Manual deletion checks for Wednesday 28 October 2026
+
+1. Create actions #1 and #2. Preview deletion of #2, cancel, retry, and confirm.
+   Check that the correct action disappears and #1 retains its details, date, status, and position.
+2. Delete every action, restart, and create another: expect #3, never reuse #1 or #2.
+3. Filter to a contact that is not first in storage, then delete its action using displayed index 1.
+   Check the filter, other contacts, metadata, and remaining action order.
+4. During a preview enter `maybe`, `list`, and an invalid number; no mutation or save may occur.
+5. Simulate a failed confirmed save with the workflow storage double; disk bytes, history,
+   retired IDs, and the original filtered view must be restored. A standalone `y` must then fail.

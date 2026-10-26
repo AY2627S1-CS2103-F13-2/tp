@@ -538,8 +538,10 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   another action with the requested date and leaves the existing action unchanged.
   Other replies repeat the prompt; cancel before entering another command.
 * A completed action with the same description does not require confirmation.
-  Completed history is retained. Marking actions complete and editing or deleting
-  individual follow-ups are not available in this version.
+  Completed history is retained. Use `editfollowup` to correct an action and
+  `deletefollowup` to remove a mistaken action.
+* Action IDs are unique within each contact and are never renumbered or reused after deletion,
+  including after restart. Older files infer the greatest allocated ID from their existing history.
 * Actions survive restart and ordinary contact edits. A failed save preserves
   the file, previous action history, and current view.
 
@@ -625,6 +627,26 @@ editfollowup 1 i/2 d/2026-11-05
 editfollowup 1 i/2 a/Call client d/2026-11-05
 editfollowup 1 i/2 d/
 ```
+
+### Deleting a follow-up: `deletefollowup`
+
+Previews one pending or completed action before permanently removing it.
+
+Format: `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`
+
+* `CONTACT_INDEX` refers to the currently displayed contact list. `FOLLOW_UP_ID` is
+  the stable number after `#` in that contact's history, not a dashboard row number.
+  Both values must be positive integers.
+* Astra shows the contact, action ID, description, status, and due date.
+  Enter `y` to delete; `n`/`cancel` keeps the action.
+  Invalid replies repeat the prompt and unrelated commands wait until you answer or cancel.
+* Only that action is removed. Remaining action order and IDs, contact fields, tags,
+  events, introducer, star, and interactions are preserved. The current contact filter remains active.
+* IDs are never reused, even after deleting the highest ID or the entire history and restarting.
+* Invalid contact indices or action IDs change nothing. A failed save restores the
+  original file, contact history, retired IDs, and pre-request view. Start a new request to retry.
+
+Example: `deletefollowup 1 i/9`, then `y`, removes action `#9` from the first displayed contact.
 
 ### Clearing all entries: `clear`
 
@@ -775,6 +797,7 @@ Action | Format, Examples
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/2`
 **Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
 e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
