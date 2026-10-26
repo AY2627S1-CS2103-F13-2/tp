@@ -35,7 +35,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
-   * `followups`: Reviews pending actions across all contacts in due-date order.
+   * `followups [overdue|today|upcoming]`: Reviews pending actions across all contacts in due-date order.
 
    * `order name phone email company role tags linkedin followups`: Changes the field order for every contact.
 
@@ -560,17 +560,23 @@ command does not need to be repeated while answering the prompt.
 Lists incomplete follow-ups across all contacts, including contacts hidden by
 the current `find` or `filter` results. Your contact filter stays unchanged.
 
-Format: `followups`
+Format: `followups [overdue|today|upcoming]`
 
-* Takes no arguments. Extra arguments are rejected with usage instructions.
+* Omit the selector to list all pending actions, including undated actions.
+* `overdue` includes pending actions due before today; `today` includes those due today.
+* `upcoming` includes pending actions due after today, with no upper date limit.
+* Date-based views exclude completed and undated actions. Selectors ignore letter case.
+* Supply at most one selector. Unknown selectors and extra arguments show usage instructions.
+* Today uses your computer's local date when the command runs. Each view has its own heading
+  and empty-result message.
 * Dated actions appear in ascending due-date order, followed by undated actions.
 * Equal dates retain contact order, then each contact's stored action order.
   Undated actions retain that same order.
 * Each numbered entry shows the contact name, stable action ID, status,
   description, and due date in `yyyy-MM-dd` format or `No due date`.
 * Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
-* Completed actions are excluded. If none remain, Astra displays
-  `No pending follow-ups remain.`
+* Completed actions are excluded. The default view displays `No pending follow-ups remain.`
+  when no pending actions remain; date-based views use their own empty-result messages.
 * When entries are shown, enter a displayed number to open that follow-up's
   details and its associated contact. Use the numbered row, not the action's
   `#ID` or a contact index. The contact filter stays unchanged, even if the
@@ -778,7 +784,7 @@ Action | Format, Examples
 **Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
 e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
-**Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
+**Pending follow-ups** | `followups [overdue|today|upcoming]`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`

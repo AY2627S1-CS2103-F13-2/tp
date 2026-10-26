@@ -201,11 +201,15 @@ public class ContactFileParserTest {
     }
 
     @Test
-    public void parseCommand_followups_acceptsOnlyNoArguments() throws Exception {
+    public void parseCommand_followups_acceptsOptionalDateSelector() throws Exception {
         assertTrue(parser.parseCommand("followups") instanceof PendingFollowUpsCommand);
         assertTrue(parser.parseCommand("  followups \t ") instanceof PendingFollowUpsCommand);
+        for (String selector : List.of("overdue", "today", "upcoming")) {
+            assertTrue(parser.parseCommand("followups " + selector) instanceof PendingFollowUpsCommand);
+        }
         String error = String.format(MESSAGE_INVALID_COMMAND_FORMAT, PendingFollowUpsCommand.MESSAGE_USAGE);
-        for (String input : List.of("followups 1", "followups a/Call", "followups d/2026-10-25")) {
+        for (String input : List.of("followups 1", "followups a/Call", "followups d/2026-10-25",
+                "followups today upcoming", "followups upcoming extra")) {
             assertThrows(ParseException.class, error, () -> parser.parseCommand(input));
         }
     }

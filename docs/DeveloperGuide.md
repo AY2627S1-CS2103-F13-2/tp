@@ -908,9 +908,9 @@ links to events remain outside UC16.
 
 **MSS**
 
-1. User enters `followups`.
+1. User enters `followups`, optionally adding `overdue`, `today` or `upcoming`.
 2. Astra retrieves pending actions across all stored contacts, including contacts
-   hidden by a contact filter.
+   hidden by a contact filter, and applies the selected date filter.
 3. Astra displays numbered entries with the contact name, stable action ID,
    description, status and due date. Dates sort ascending; equal dates retain
    contact order and stored action order. Pending actions due before today are
@@ -921,9 +921,9 @@ links to events remain outside UC16.
 
 **Extensions**
 
-* 2a. No pending actions remain: show `No pending follow-ups remain.`
+* 2a. No matching actions remain: show an empty message for the selected view.
 * 3a. Undated actions: list them after dated actions with `No due date`.
-* 1a. Extra arguments: reject the command and display usage instructions.
+* 1a. An unknown selector or extra arguments: reject the command and display usage instructions.
 * 4a. Invalid numeric reply: repeat the retained list and selection instructions.
 * 4d. Non-number input: clear selection and parse/execute the input as a normal
   command. Invalid commands show their normal errors and leave selection closed.
@@ -935,10 +935,13 @@ links to events remain outside UC16.
 
 `ModelManager.getPendingFollowUps()` returns an unmodifiable snapshot of
 `FollowUpEntry` records, pairing each action with its contact. The command uses
-the shared follow-up formatter, preserves the current contact filter and does
-not save data. A nonempty list returns a `FollowUpSelectionRequest`, which
+`FollowUpDateFilter` to select overdue, today or upcoming actions using one local date
+from its clock per execution. Upcoming has no upper date limit; date views exclude undated
+and completed actions. The default view includes all pending actions. Filtered snapshots retain
+the existing order. The command uses the shared formatter, preserves the contact filter and
+never saves data. A nonempty list returns a `FollowUpSelectionRequest`, which
 copies entries in displayed order. Logic retains it through the existing
-pending-request flow. Valid replies return `CommandResult.createPersonDetails`
+pending-request flow. Valid replies return `CommandResult.createFollowUpDetails`
 with the selected action and contact; invalid numeric replies keep the same request.
 Non-number replies are dispatched through the normal command parser by Logic,
 after clearing the selection request. Other pending requests retain their existing
