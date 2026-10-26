@@ -47,6 +47,12 @@ public class EditLogCommandParserTest {
     }
 
     @Test
+    public void parse_defaultClock_acceptsPastDate() {
+        assertParseSuccess(new EditLogCommandParser(), "1 i/1 d/2020-01-01",
+                new EditLogCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, LocalDate.of(2020, 1, 1), null));
+    }
+
+    @Test
     public void parse_missingParts_failure() {
         assertParseFailure(parser, "", MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "i/1 nt/Coffee chat", MESSAGE_INVALID_FORMAT);

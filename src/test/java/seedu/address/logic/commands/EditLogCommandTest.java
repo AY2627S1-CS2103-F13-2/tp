@@ -76,6 +76,13 @@ public class EditLogCommandTest {
     }
 
     @Test
+    public void execute_nameMatchesSeveral_listsMatchesWithoutChange() throws Exception {
+        CommandResult result = new EditLogCommand("meier", INDEX_FIRST_PERSON, null, "x").execute(model);
+        assertTrue(result.getFeedbackToUser().startsWith("2 contacts found:"));
+        assertEquals(List.of(OCT_1, OCT_15), model.getContactFile().getPersonList().getFirst().getInteractions());
+    }
+
+    @Test
     public void execute_letterCaseFix_success() throws Exception {
         CommandResult result = new EditLogCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, null, "coffee CHAT")
                 .execute(model);
@@ -125,7 +132,11 @@ public class EditLogCommandTest {
         assertFalse(byIndex.equals(new EditLogCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, null, "note")));
         assertFalse(byIndex.equals(new EditLogCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON,
                 LocalDate.of(2026, 10, 1), "note")));
+        assertFalse(byIndex.equals(new EditLogCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, null, "other")));
         assertFalse(byIndex.equals(null));
+        EditLogCommand byName = new EditLogCommand("alice", INDEX_FIRST_PERSON, null, "note");
+        assertTrue(byName.equals(new EditLogCommand("alice", INDEX_FIRST_PERSON, null, "note")));
+        assertFalse(byName.equals(new EditLogCommand("benson", INDEX_FIRST_PERSON, null, "note")));
         assertEquals(byIndex.toString(),
                 new EditLogCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, null, "note").toString());
     }
