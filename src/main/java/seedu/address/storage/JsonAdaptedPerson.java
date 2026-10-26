@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -186,12 +187,12 @@ class JsonAdaptedPerson {
         Set<Tag> modelTags = toTags();
         Set<Event> modelEvents = toEvents();
         Name modelName = toName();
-        Company modelCompany = toCompany();
-        Role modelRole = toRole();
-        Phone modelPhone = toPhone();
-        Email modelEmail = toEmail();
-        Linkedin modelLinkedin = toLinkedin();
-        Name modelIntroducer = toIntroducer();
+        Company modelCompany = toOptionalField(company, ContactTextField.COMPANY, Company::new);
+        Role modelRole = toOptionalField(role, ContactTextField.ROLE, Role::new);
+        Phone modelPhone = toOptionalField(phone, ContactTextField.PHONE, Phone::new);
+        Email modelEmail = toOptionalField(email, ContactTextField.EMAIL, Email::new);
+        Linkedin modelLinkedin = toOptionalField(linkedin, ContactTextField.LINKEDIN, Linkedin::new);
+        Name modelIntroducer = toOptionalField(introducer, ContactTextField.NAME, Name::new);
         List<FollowUp> modelFollowUps = toFollowUps();
         List<Interaction> modelInteractions = toInteractions();
         return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin,
@@ -228,81 +229,16 @@ class JsonAdaptedPerson {
 
         ContactTextField.NAME.validate(name);
 
-        final Name modelName = new Name(name);
-
-        return modelName;
+        return new Name(name);
     }
 
-    private Company toCompany() throws IllegalValueException {
-        final Company modelCompany;
-        if (company == null) {
-            modelCompany = null;
-        } else {
-            ContactTextField.COMPANY.validate(company);
-            modelCompany = new Company(company);
+    private <T> T toOptionalField(String value, ContactTextField field, Function<String, T> constructor)
+            throws IllegalValueException {
+        if (value == null) {
+            return null;
         }
-
-        return modelCompany;
-    }
-
-    private Role toRole() throws IllegalValueException {
-        final Role modelRole;
-        if (role == null) {
-            modelRole = null;
-        } else {
-            ContactTextField.ROLE.validate(role);
-            modelRole = new Role(role);
-        }
-
-        return modelRole;
-    }
-
-    private Phone toPhone() throws IllegalValueException {
-        final Phone modelPhone;
-        if (phone == null) {
-            modelPhone = null;
-        } else {
-            ContactTextField.PHONE.validate(phone);
-            modelPhone = new Phone(phone);
-        }
-
-        return modelPhone;
-    }
-
-    private Email toEmail() throws IllegalValueException {
-        final Email modelEmail;
-        if (email == null) {
-            modelEmail = null;
-        } else {
-            ContactTextField.EMAIL.validate(email);
-            modelEmail = new Email(email);
-        }
-
-        return modelEmail;
-    }
-
-    private Linkedin toLinkedin() throws IllegalValueException {
-        final Linkedin modelLinkedin;
-        if (linkedin == null) {
-            modelLinkedin = null;
-        } else {
-            ContactTextField.LINKEDIN.validate(linkedin);
-            modelLinkedin = new Linkedin(linkedin);
-        }
-
-        return modelLinkedin;
-    }
-
-    private Name toIntroducer() throws IllegalValueException {
-        final Name modelIntroducer;
-        if (introducer == null) {
-            modelIntroducer = null;
-        } else {
-            ContactTextField.NAME.validate(introducer);
-            modelIntroducer = new Name(introducer);
-        }
-
-        return modelIntroducer;
+        field.validate(value);
+        return constructor.apply(value);
     }
 
     private List<FollowUp> toFollowUps() throws IllegalValueException {
