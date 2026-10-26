@@ -426,11 +426,29 @@ Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
 * After removing it, Astra shows what was removed and the person's remaining history, renumbered.
 * The displayed list stays as it was, so the same index still points to the same person.
 * If the person has fewer interactions than `ENTRY`, nothing is removed.
-* To correct an interaction, remove it with `unlog` and then log it again with `log`.
+* To correct an interaction's date or note instead of removing it, use `editlog`.
 
 Examples:
 * `unlog John Lim i/2` removes the 2nd interaction in John Lim's history.
 * `unlog 1 i/1` removes the earliest interaction with the 1st person in the list.
+
+### Editing a logged interaction: `editlog`
+
+Corrects the date or note of an interaction you have logged, e.g. a typo in the note or the wrong date.
+
+Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`
+
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `log`.
+* `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
+* Give at least one of `d/DATE` and `nt/NOTE`. A part you leave out keeps its current value.
+* `DATE` and `NOTE` follow the same rules as in `log`: the date uses `YYYY-MM-DD` and cannot be in the future, and the note cannot be blank.
+* Interactions stay in date order, so changing the date can move the interaction to a different number. Astra shows its new number and the full history after the edit.
+* An edit that leaves the interaction exactly as it was, or that makes it the same as another of the person's interactions (same date and note, ignoring letter case), is rejected and nothing changes.
+* The displayed list stays as it was, so the same index still points to the same person.
+
+Examples:
+* `editlog John Lim i/2 nt/Discussed frontend internships` corrects the note of the 2nd interaction in John Lim's history.
+* `editlog 1 i/1 d/2026-09-30` moves the earliest interaction with the 1st person in the list to 30 September 2026.
 
 ### Deleting a person: `delete`
 
@@ -780,6 +798,7 @@ e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
+**Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change
