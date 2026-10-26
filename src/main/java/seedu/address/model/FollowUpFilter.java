@@ -8,13 +8,15 @@ import java.util.List;
 import seedu.address.model.person.FollowUp;
 
 /**
- * Selects pending follow-ups relative to one date, preserving the supplied list order.
+ * Selects follow-ups by status and date, preserving the supplied list order.
  */
-public enum FollowUpDateFilter {
-    ALL,
+public enum FollowUpFilter {
+    PENDING,
     OVERDUE,
     TODAY,
-    UPCOMING;
+    UPCOMING,
+    COMPLETED,
+    UNDATED;
 
     /**
      * Returns an unmodifiable snapshot. Upcoming has no upper date limit.
@@ -26,15 +28,15 @@ public enum FollowUpDateFilter {
     }
 
     private boolean matches(FollowUp action, LocalDate today) {
-        if (action.getStatus() != FollowUp.Status.PENDING) {
-            return false;
-        }
+        boolean pending = action.getStatus() == FollowUp.Status.PENDING;
         LocalDate date = action.getDueDate().orElse(null);
         return switch (this) {
-            case ALL -> true;
-            case OVERDUE -> date != null && date.isBefore(today);
-            case TODAY -> date != null && date.equals(today);
-            case UPCOMING -> date != null && date.isAfter(today);
+            case PENDING -> pending;
+            case OVERDUE -> pending && date != null && date.isBefore(today);
+            case TODAY -> pending && date != null && date.equals(today);
+            case UPCOMING -> pending && date != null && date.isAfter(today);
+            case COMPLETED -> action.getStatus() == FollowUp.Status.COMPLETED;
+            case UNDATED -> pending && date == null;
         };
     }
 }

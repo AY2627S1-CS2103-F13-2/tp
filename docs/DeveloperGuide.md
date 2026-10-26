@@ -904,13 +904,13 @@ today. Duplicate confirmation retains the requested date and creates a separate
 action. Completion commands, editing or deleting individual follow-ups, and
 links to events remain outside UC16.
 
-**Use case: UC12 - Review pending follow-ups**
+**Use case: UC12 - Review follow-ups**
 
 **MSS**
 
-1. User enters `followups`, optionally adding `overdue`, `today` or `upcoming`.
-2. Astra retrieves pending actions across all stored contacts, including contacts
-   hidden by a contact filter, and applies the selected date filter.
+1. User enters `followups`, optionally adding `overdue`, `today`, `upcoming`, `completed` or `undated`.
+2. Astra retrieves actions across all stored contacts, including contacts hidden by a contact filter,
+   and applies the selected status or date filter. The default view includes pending actions only.
 3. Astra displays numbered entries with the contact name, stable action ID,
    description, status and due date. Dates sort ascending; equal dates retain
    contact order and stored action order. Pending actions due before today are
@@ -933,11 +933,12 @@ links to events remain outside UC16.
 
 **Implementation and scope**
 
-`ModelManager.getPendingFollowUps()` returns an unmodifiable snapshot of
-`FollowUpEntry` records, pairing each action with its contact. The command uses
-`FollowUpDateFilter` to select overdue, today or upcoming actions using one local date
-from its clock per execution. Upcoming has no upper date limit; date views exclude undated
-and completed actions. The default view includes all pending actions. Filtered snapshots retain
+`ModelManager.getFollowUps()` returns an unmodifiable, sorted snapshot of all actions paired
+with their contacts as `FollowUpEntry` records. The pending-only query reuses this snapshot.
+The command applies `FollowUpFilter` using one local date from its clock per execution.
+Completed includes all completed actions; undated includes only pending actions without dates.
+Upcoming has no upper date limit; date views exclude undated and completed actions.
+The default view includes all pending actions. Filtered snapshots retain
 the existing order. The command uses the shared formatter, preserves the contact filter and
 never saves data. A nonempty list returns a `FollowUpSelectionRequest`, which
 copies entries in displayed order. Logic retains it through the existing

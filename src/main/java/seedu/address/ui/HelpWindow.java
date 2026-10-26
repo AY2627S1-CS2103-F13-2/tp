@@ -19,8 +19,8 @@ public class HelpWindow extends UiPart<Stage> {
     public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL
             + "\nFollow-ups: followup INDEX a/DESCRIPTION [d/DATE]."
             + " Pending duplicates ask y/n; cancel stops the request."
-            + "\nReview pending follow-ups: followups [overdue|today|upcoming]."
-            + " Upcoming includes all dates after today."
+            + "\nReview follow-ups: followups [overdue|today|upcoming|completed|undated]."
+            + " Default: pending actions. Upcoming includes all dates after today; undated is pending-only."
             + " Then enter a displayed number to view its details/contact,"
             + " or n/cancel to stop.";
 
