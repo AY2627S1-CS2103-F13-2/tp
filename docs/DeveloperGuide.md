@@ -36,8 +36,8 @@ The following provides a quick overview of the main components and their interac
 
 **Main components of the architecture**
 
-**`Main`** (consisting of classes [`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
-* At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
+**`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+* At app launch, it initializes the other components in the correct sequence, and connects them up with each other. It loads the saved contacts through `Storage` before creating `Model`, so that any recovery done at startup can be reported by `UI`.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
 
 The bulk of the app's work is done by the following four components:
@@ -49,12 +49,22 @@ The bulk of the app's work is done by the following four components:
 
 [**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
 
+In the diagram, a solid arrow means the component holds a reference to the other one, and a dashed arrow means it only
+depends on it. `UI` keeps a reference to `Logic` and shows data from `Model`, but never changes `Model` itself: every
+user command goes through `Logic`, which updates `Model` and asks `Storage` to save the changes. `UI` depends on
+`Storage` only for the startup result it displays (whether the contacts were loaded or recovered), and
+`Storage` depends on `Model` for the data it reads and writes.
+
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows `delete 1` followed by `y`, including the
-preview before mutation and the atomic save after confirmation.
+The *Sequence Diagram* below shows how the components interact when the user enters `delete 1` and then
+confirms with `y`.
 
-<img src="images/ArchitectureSequenceDiagram.svg" width="100%" />
+<img src="images/ArchitectureSequenceDiagram.png" width="574" />
+
+The first command only looks up the contact on display and returns a preview with a y/n prompt, so nothing is
+changed or saved yet. The reply `y` makes `Logic` delete the contact from `Model` and save the contact file
+through `Storage`. If saving fails, `Logic` restores the data that was in `Model` before the command.
 
 Each of the four main components (also shown in the diagram above),
 

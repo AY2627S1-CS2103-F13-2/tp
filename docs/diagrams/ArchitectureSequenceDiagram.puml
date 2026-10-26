@@ -1,23 +1,57 @@
 @startuml
 !include style.puml
 skinparam ArrowFontStyle plain
-actor User
-participant UI
-participant Logic
-participant Model
-participant Storage
-User -> UI : delete 1
-UI -> Logic : execute("delete 1")
-Logic -> Model : snapshot and resolve displayed target
-Logic --> UI : preview and y/n prompt (no save)
-UI --> User : show preview
-User -> UI : y
-UI -> Logic : execute("y")
-Logic -> Model : delete resolved contact; show full list
-Logic -> Storage : saveContactFile(changed data)
-Storage -> Storage : write sibling temp; validate; atomic replace
-Storage --> Logic : saved
-Logic --> UI : deleted details and remaining count
-UI --> User : show result
-note over Logic, Model : On save failure, restore data and original filter.
+
+Actor User as user USER_COLOR
+Participant ":UI" as ui UI_COLOR
+Participant ":Logic" as logic LOGIC_COLOR
+Participant ":Model" as model MODEL_COLOR
+Participant ":Storage" as storage STORAGE_COLOR
+
+user -[USER_COLOR]> ui : "delete 1"
+activate ui UI_COLOR
+
+ui -[UI_COLOR]> logic : execute("delete 1")
+activate logic LOGIC_COLOR
+
+logic -[LOGIC_COLOR]> model : getFilteredPersonList()
+activate model MODEL_COLOR
+
+model --[MODEL_COLOR]> logic : displayed contacts
+deactivate model
+
+logic --[LOGIC_COLOR]> ui : preview and y/n prompt
+deactivate logic
+
+ui --[UI_COLOR]> user
+deactivate ui
+
+user -[USER_COLOR]> ui : "y"
+activate ui UI_COLOR
+
+ui -[UI_COLOR]> logic : execute("y")
+activate logic LOGIC_COLOR
+
+logic -[LOGIC_COLOR]> model : deletePerson(p)
+activate model MODEL_COLOR
+
+model --[MODEL_COLOR]> logic
+deactivate model
+
+logic -[LOGIC_COLOR]> storage : saveContactFile(contactFile)
+activate storage STORAGE_COLOR
+
+storage -[STORAGE_COLOR]> storage : Save to file
+activate storage STORAGE_COLOR_T1
+storage --[STORAGE_COLOR]> storage
+deactivate storage
+
+storage --[STORAGE_COLOR]> logic
+deactivate storage
+
+logic --[LOGIC_COLOR]> ui : deletion result
+deactivate logic
+
+ui --[UI_COLOR]> user
+deactivate ui
 @enduml
