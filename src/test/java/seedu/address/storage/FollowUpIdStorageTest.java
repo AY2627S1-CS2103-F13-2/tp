@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.IntFunction;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -73,6 +74,18 @@ class FollowUpIdStorageTest {
         Person withAction = retired.appendFollowUp(new FollowUp(10, "Next", FollowUp.Status.PENDING));
         assertThrows(IllegalArgumentException.class, () ->
                 withAction.replaceFollowUp(10, new FollowUp(11, "Replacement", FollowUp.Status.PENDING)));
+    }
+
+    @Test
+    void constructor_invalidCounter_rejectsInconsistentAllocatedIds() {
+        FollowUp action = new FollowUp(9, "Call", FollowUp.Status.PENDING);
+        IntFunction<Person> construct = counter -> new Person(ALICE.getName(),
+                ALICE.getCompany().orElse(null), ALICE.getRole().orElse(null), ALICE.getPhone().orElse(null),
+                ALICE.getEmail().orElse(null), ALICE.getLinkedin().orElse(null), null, ALICE.getTags(),
+                ALICE.getEvents(), List.of(action), false, ALICE.getInteractions(), counter);
+        assertThrows(IllegalArgumentException.class, () -> construct.apply(-1));
+        assertThrows(IllegalArgumentException.class, () -> construct.apply(8));
+        assertEquals(9, construct.apply(9).getLastFollowUpId());
     }
 
     private Person readPerson(String json) throws Exception {
