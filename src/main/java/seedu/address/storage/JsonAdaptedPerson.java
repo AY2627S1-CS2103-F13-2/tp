@@ -183,11 +183,31 @@ class JsonAdaptedPerson {
      * @throws IllegalValueException if data constraints are violated
      */
     public Person toModelType() throws IllegalValueException {
+        Set<Tag> modelTags = toTags();
+        Set<Event> modelEvents = toEvents();
+        Name modelName = toName();
+        Company modelCompany = toCompany();
+        Role modelRole = toRole();
+        Phone modelPhone = toPhone();
+        Email modelEmail = toEmail();
+        Linkedin modelLinkedin = toLinkedin();
+        Name modelIntroducer = toIntroducer();
+        List<FollowUp> modelFollowUps = toFollowUps();
+        List<Interaction> modelInteractions = toInteractions();
+        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin,
+                modelIntroducer, modelTags, modelEvents, modelFollowUps, starred, modelInteractions);
+    }
+
+    private Set<Tag> toTags() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
         for (JsonAdaptedTag tag : tags) {
             personTags.add(tag.toModelType());
         }
 
+        return new HashSet<>(personTags);
+    }
+
+    private Set<Event> toEvents() throws IllegalValueException {
         final List<Event> personEvents = new ArrayList<>();
         for (JsonAdaptedEvent event : events) {
             if (event == null) {
@@ -196,6 +216,10 @@ class JsonAdaptedPerson {
             personEvents.add(event.toModelType());
         }
 
+        return new HashSet<>(personEvents);
+    }
+
+    private Name toName() throws IllegalValueException {
         if (name == null) {
             throw new IllegalValueException(
                     String.format(MISSING_FIELD_MESSAGE_FORMAT,
@@ -208,6 +232,10 @@ class JsonAdaptedPerson {
 
         final Name modelName = new Name(name);
 
+        return modelName;
+    }
+
+    private Company toCompany() throws IllegalValueException {
         final Company modelCompany;
         if (company == null) {
             modelCompany = null;
@@ -217,6 +245,10 @@ class JsonAdaptedPerson {
             modelCompany = new Company(company);
         }
 
+        return modelCompany;
+    }
+
+    private Role toRole() throws IllegalValueException {
         final Role modelRole;
         if (role == null) {
             modelRole = null;
@@ -226,6 +258,10 @@ class JsonAdaptedPerson {
             modelRole = new Role(role);
         }
 
+        return modelRole;
+    }
+
+    private Phone toPhone() throws IllegalValueException {
         final Phone modelPhone;
         if (phone == null) {
             modelPhone = null;
@@ -235,6 +271,10 @@ class JsonAdaptedPerson {
             modelPhone = new Phone(phone);
         }
 
+        return modelPhone;
+    }
+
+    private Email toEmail() throws IllegalValueException {
         final Email modelEmail;
         if (email == null) {
             modelEmail = null;
@@ -244,6 +284,10 @@ class JsonAdaptedPerson {
             modelEmail = new Email(email);
         }
 
+        return modelEmail;
+    }
+
+    private Linkedin toLinkedin() throws IllegalValueException {
         final Linkedin modelLinkedin;
         if (linkedin == null) {
             modelLinkedin = null;
@@ -253,6 +297,10 @@ class JsonAdaptedPerson {
             modelLinkedin = new Linkedin(linkedin);
         }
 
+        return modelLinkedin;
+    }
+
+    private Name toIntroducer() throws IllegalValueException {
         final Name modelIntroducer;
         if (introducer == null) {
             modelIntroducer = null;
@@ -262,8 +310,10 @@ class JsonAdaptedPerson {
             modelIntroducer = new Name(introducer);
         }
 
-        final Set<Tag> modelTags = new HashSet<>(personTags);
-        final Set<Event> modelEventSet = new HashSet<>(personEvents);
+        return modelIntroducer;
+    }
+
+    private List<FollowUp> toFollowUps() throws IllegalValueException {
         final List<FollowUp> modelFollowUps = new ArrayList<>();
         final Set<Integer> actionIds = new HashSet<>();
 
@@ -283,6 +333,10 @@ class JsonAdaptedPerson {
             modelFollowUps.add(modelAction);
         }
 
+        return modelFollowUps;
+    }
+
+    private List<Interaction> toInteractions() throws IllegalValueException {
         List<Interaction> modelInteractions = new ArrayList<>();
         for (JsonAdaptedInteraction interaction : interactions) {
             if (interaction == null) {
@@ -294,18 +348,6 @@ class JsonAdaptedPerson {
             }
             modelInteractions.add(modelInteraction);
         }
-        return new Person(
-                modelName,
-                modelCompany,
-                modelRole,
-                modelPhone,
-                modelEmail,
-                modelLinkedin,
-                modelIntroducer,
-                modelTags,
-                modelEventSet,
-                modelFollowUps,
-                starred,
-                modelInteractions);
+        return modelInteractions;
     }
 }
