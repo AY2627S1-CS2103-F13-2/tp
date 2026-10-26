@@ -754,4 +754,76 @@ class FollowUpWorkflowTest {
                 "editfollowup 1 i/99 a/Updated description"));
         assertEquals(0, storage.saveCount);
     }
+
+    @Test
+    void execute_completeAndReopenFollowUp_changesOnlyStatusAndPersists() throws Exception {
+        logic.execute("followup 1 a/Call client d/2020-01-01");
+        logic.execute("followup 1 a/Send portfolio");
+
+        CommandResult completed = logic.execute("completefollowup 1 i/1");
+        FollowUp done = model.getFilteredPersonList().getFirst().getFollowUps().getFirst();
+        assertEquals(new FollowUp(1, "Call client", FollowUp.Status.COMPLETED, LocalDate.of(2020, 1, 1)), done);
+        assertFalse(done.isOverdue());
+        assertTrue(completed.getFeedbackToUser().contains("#1 [COMPLETED] Call client"));
+        assertEquals(List.of(2), model.getPendingFollowUps().stream().map(entry -> entry.followUp().getId()).toList());
+        assertEquals(done, storage.loadForStartup().contacts().getFirst().getFollowUps().getFirst());
+
+        logic.execute("reopenfollowup 1 i/1");
+        List<FollowUp> reopened = model.getFilteredPersonList().getFirst().getFollowUps();
+        assertEquals(new FollowUp(1, "Call client", FollowUp.Status.PENDING, LocalDate.of(2020, 1, 1)),
+                reopened.getFirst());
+        assertTrue(reopened.getFirst().isOverdue());
+        assertEquals(List.of(1, 2), reopened.stream().map(FollowUp::getId).toList());
+        assertEquals(reopened, storage.loadForStartup().contacts().getFirst().getFollowUps());
+        assertEquals(4, storage.saveCount);
+    }
+
+    @Test
+    void execute_repeatedStatusChange_rejectedWithoutSaving() throws Exception {
+        logic.execute("followup 1 a/Call client");
+        logic.execute("completefollowup 1 i/1");
+
+        CommandException completedAgain = assertThrows(CommandException.class, () ->
+                logic.execute("completefollowup 1 i/1"));
+        assertEquals("Follow-up #1 is already completed.", completedAgain.getMessage());
+        logic.execute("reopenfollowup 1 i/1");
+        CommandException reopenedAgain = assertThrows(CommandException.class, () ->
+                logic.execute("reopenfollowup 1 i/1"));
+        assertEquals("Follow-up #1 is already pending.", reopenedAgain.getMessage());
+        assertEquals(3, storage.saveCount);
+    }
+
+    @Test
+    void execute_reopenWithPendingDuplicate_rejectedWithoutSaving() throws Exception {
+        logic.execute("followup 1 a/Call client");
+        logic.execute("completefollowup 1 i/1");
+        logic.execute("followup 1 a/Call client");
+        List<FollowUp> before = model.getFilteredPersonList().getFirst().getFollowUps();
+
+        CommandException exception = assertThrows(CommandException.class, () ->
+                logic.execute("reopenfollowup 1 i/1"));
+        assertTrue(exception.getMessage().contains("#2"));
+        assertEquals(before, model.getFilteredPersonList().getFirst().getFollowUps());
+        assertEquals(3, storage.saveCount);
+    }
+
+    @Test
+    void execute_statusChangeOnMissingTarget_rejectedWithoutSaving() throws Exception {
+        logic.execute("followup 1 a/Call client");
+        assertThrows(CommandException.class, () -> logic.execute("completefollowup 1 i/99"));
+        assertThrows(CommandException.class, () -> logic.execute("completefollowup 99 i/1"));
+        assertThrows(ParseException.class, () -> logic.execute("completefollowup 1"));
+        assertEquals(1, storage.saveCount);
+    }
+
+    @Test
+    void execute_statusChangeSaveFails_restoresPreviousStatus() throws Exception {
+        logic.execute("followup 1 a/Call client");
+        List<FollowUp> before = model.getFilteredPersonList().getFirst().getFollowUps();
+        storage.shouldFail = true;
+
+        assertThrows(CommandException.class, () -> logic.execute("completefollowup 1 i/1"));
+        assertEquals(before, model.getFilteredPersonList().getFirst().getFollowUps());
+        assertEquals(before, storage.loadForStartup().contacts().getFirst().getFollowUps());
+    }
 }
