@@ -444,7 +444,7 @@ Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/D
 * `DATE` and `NOTE` follow the same rules as in `log`: the date uses `YYYY-MM-DD` and cannot be in the future, and the note cannot be blank.
 * Interactions stay in date order, so changing the date can move the interaction to a different number. Astra shows its new number and the full history after the edit.
 * An edit that leaves the interaction exactly as it was, or that makes it the same as another of the person's interactions (same date and note, ignoring letter case), is rejected and nothing changes.
-* The displayed list stays as it was, so the same index still points to the same person.
+* When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
 
 Examples:
 * `editlog John Lim i/2 nt/Discussed frontend internships` corrects the note of the 2nd interaction in John Lim's history.
