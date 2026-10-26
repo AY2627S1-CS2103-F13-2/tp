@@ -23,21 +23,12 @@ public class JsonContactFileStorage {
     private static final Logger logger = LogsCenter.getLogger(JsonContactFileStorage.class);
 
     private final Path filePath;
-    private final ContactStartupOperations startupLoader;
 
     /**
      * Creates storage for the given active contact file.
      */
     public JsonContactFileStorage(Path filePath) {
-        this(filePath, new ContactStartupLoader());
-    }
-
-    /**
-     * Supplies startup operations independently of ordinary JSON reads and saves.
-     */
-    JsonContactFileStorage(Path filePath, ContactStartupOperations startupLoader) {
         this.filePath = filePath;
-        this.startupLoader = requireNonNull(startupLoader);
     }
 
     public Path getContactFilePath() {
@@ -129,21 +120,21 @@ public class JsonContactFileStorage {
      * @throws IOException if startup loading or recovery fails
      */
     public StartupLoadResult loadForStartup() throws IOException {
-        return startupLoader.load(filePath);
+        return new ContactStartupLoader().load(filePath);
     }
 
     /**
      * Creates an unchanged backup and failure report before offering a fresh start.
      */
     public StartupResetPlan prepareStartupReset(IOException failure) throws IOException {
-        return startupLoader.prepareStartupReset(filePath, failure);
+        return new ContactStartupLoader().prepareStartupReset(filePath, failure);
     }
 
     /**
      * Safely replaces the active file with an empty contact file after confirmation.
      */
     public StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException {
-        return startupLoader.resetForStartup(filePath, plan);
+        return new ContactStartupLoader().resetForStartup(filePath, plan);
     }
 
 }

@@ -15,7 +15,7 @@ import seedu.address.model.util.SampleDataUtil;
 /**
  * Loads startup contacts and safely applies recoverable repairs.
  */
-final class ContactStartupLoader implements ContactStartupOperations {
+final class ContactStartupLoader {
 
     private final ContactRecoveryParser parser = new ContactRecoveryParser();
     private final ArchiveWriter archiveWriter;
@@ -43,7 +43,6 @@ final class ContactStartupLoader implements ContactStartupOperations {
      *
      * @throws IOException if loading or recovery cannot finish safely
      */
-    @Override
     public StartupLoadResult load(Path sourceFile) throws IOException {
         Path source = sourceFile.toAbsolutePath().normalize();
         byte[] originalBytes;
@@ -70,7 +69,6 @@ final class ContactStartupLoader implements ContactStartupOperations {
     /**
      * Preserves the failed contact file before offering the user a reset.
      */
-    @Override
     public StartupResetPlan prepareStartupReset(Path sourceFile, IOException failure) throws IOException {
         Path source = sourceFile.toAbsolutePath().normalize();
         byte[] originalBytes = Files.readAllBytes(source);
@@ -98,7 +96,6 @@ final class ContactStartupLoader implements ContactStartupOperations {
      * Installs an empty contact file after the user chooses to start anew.
      * The archived original and current active file must still match the preserved snapshot.
      */
-    @Override
     public StartupLoadResult resetForStartup(Path sourceFile, StartupResetPlan plan) throws IOException {
         Path source = sourceFile.toAbsolutePath().normalize();
         if (!source.equals(plan.sourceFile())) {
