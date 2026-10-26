@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<VBox fx:id="confirmationPanel" spacing="8" styleClass="confirmation-panel"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <padding><Insets top="10" right="12" bottom="10" left="12" /></padding>
+  <Label text="Confirmation required" styleClass="confirmation-title" />
+  <TextArea fx:id="confirmationPreview" editable="false" wrapText="true" prefRowCount="5"
+            minHeight="90" prefHeight="130" maxHeight="180" accessibleText="Confirmation preview" />
+  <HBox spacing="10">
+    <Button fx:id="confirmButton" text="Confirm (y)" accessibleText="Confirm the previewed action" />
+    <Button fx:id="cancelButton" text="Cancel (n)" accessibleText="Cancel without changes" />
+  </HBox>
+  <Label text="Reply y, n, or cancel. Tab moves to the buttons."
+         wrapText="true" styleClass="confirmation-hint" />
+</VBox>

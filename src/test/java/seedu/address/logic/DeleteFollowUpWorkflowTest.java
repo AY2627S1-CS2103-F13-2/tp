@@ -145,6 +145,7 @@ class DeleteFollowUpWorkflowTest {
         logic.execute("deletefollowup 1 i/9");
         logic.execute("y");
         logic.execute("edit 1 c/New Company");
+        logic.execute("y");
         logic.execute("unstar 1");
         logic.execute("introduce Alice i/New Introducer");
         logic.execute("y");

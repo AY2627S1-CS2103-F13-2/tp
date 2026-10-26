@@ -208,7 +208,8 @@ references rather than resolving a displayed index again later.
 
 Logic handles n/cancel centrally, restores the pre-request filter, and discards
 the request. Invalid replies repeat the current prompt; unrelated commands are
-not executed while a reply is pending. A completed or failed confirmed request
+not executed while a confirmation or destructive selection is pending. Read-only
+follow-up review selections may hand off to normal commands. A completed or failed confirmed request
 clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
 shared confirmation API with an "Add another?" question for duplicate pending
 actions.
@@ -689,8 +690,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User enters an edit command, identifying the contact either by its index in the displayed list or by name, with the new values of one or more fields.
-2. Astra finds the contact and validates the new values.
-3. Astra updates the contact, saves the contact list and lists every updated field.
+2. Astra finds the contact, validates the new values, and previews the changes and resulting contact.
+3. User confirms with `y` or the confirmation panel's Confirm button.
+4. Astra revalidates the retained target, updates it, saves once, and lists every updated field.
 
    Use case ends.
 
@@ -732,8 +734,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 2e. The new name is exactly the name of another contact.
-    * 2e1. Astra rejects the edit and changes nothing.
+* 2e. The resulting contact conflicts with another contact's name/email identity.
+    * 2e1. Astra rejects the edit and changes nothing. A shared name alone is not an identity conflict.
 
       Use case ends.
 
@@ -742,10 +744,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+* 3a. User replies `n`/`cancel`: restore the pre-request view without saving.
+  Other replies repeat the prompt and cannot run unrelated commands.
+* 4a. The target changed, uniqueness now conflicts, or saving fails: reject the edit,
+  restore the original contact data and view, and discard the pending request.
+
 **Deferred to a later version**
-* Choosing one of several matching contacts at a prompt instead of entering the command again, and cancelling at
-  an edit prompt. Delete and clear already use the shared pending-request layer;
-  edit retains its existing numbered command-retry behavior.
+* Choosing one of several matching contacts at a prompt instead of entering the command again.
+  Edit retains its numbered command-retry behavior for ambiguity; every resolved valid edit then
+  uses the shared confirmation request and supports cancellation.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
   rejecting an identical name outright. This also needs the pending-command layer.
 
@@ -1251,7 +1258,7 @@ Keep their stored order different from alphabetical order.
 
 1. _{ more test cases …​ }_
 
-### Follow-up deletion (v1.5)
+### Follow-up deletion and confirmation panel (v1.5)
 
 `DeleteFollowUpCommandParser` accepts `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`.
 The command resolves the displayed contact and stable action ID before producing a
@@ -1260,13 +1267,29 @@ removes exactly one action without renumbering survivors or changing `lastFollow
 Logic saves once on success and restores the original model, filter, and counter on failure.
 Deletion is permanent; the existing contact undo feature does not undo action deletion.
 
-#### Manual deletion checks for Wednesday 28 October 2026
+`ConfirmationPanel` renders any `ConfirmationRequest`, including UC04 edit, delete, clear,
+follow-up deletion, duplicate follow-ups, and other existing y/n confirmations. Selection requests
+are not shown as confirmations. MainWindow feeds both typed and button replies through Logic;
+the panel never mutates the model. A revision check discards events from a hidden/replaced panel.
+Invalid replies retain the prompt; completion, cancellation, or failure hides/unmanages it.
+The preview wraps and scrolls; Tab navigation and the command box remain available.
 
-1. Create actions #1 and #2. Preview deletion of #2, cancel, retry, and confirm.
-   Check that the correct action disappears and #1 retains its details, date, status, and position.
-2. Delete every action, restart, and create another: expect #3, never reuse #1 or #2.
-3. Filter to a contact that is not first in storage, then delete its action using displayed index 1.
-   Check the filter, other contacts, metadata, and remaining action order.
-4. During a preview enter `maybe`, `list`, and an invalid number; no mutation or save may occur.
-5. Simulate a failed confirmed save with the workflow storage double; disk bytes, history,
-   retired IDs, and the original filtered view must be restored. A standalone `y` must then fail.
+![Shared confirmation workflow](images/ConfirmationActivityDiagram.svg)
+
+#### Manual checks for Wednesday 28 October 2026
+
+1. Create actions with IDs `#1` and `#2`. Delete `#2`, cancel once, then confirm a new request.
+   Check that the right action was removed and `#1` retained its description, date, and status.
+2. Delete the remaining action, restart, and create another. Expect `#3`, never `#1` or `#2`.
+3. Filter to a contact that is not first in storage. Delete an action using displayed index `1`;
+   verify the other contacts, active filter, events, interactions, introducer, tags, and star are unchanged.
+4. Edit by index and by name, including removing optional fields. Check the preview, cancel, retry,
+   and confirm. During each prompt try `list`, `maybe`, and `yes`: no command or mutation may occur.
+5. Preview an ambiguous contact deletion, select a candidate, and confirm/cancel. Confirm that the
+   panel appears only after selection and that cancellation restores the original filtered view.
+6. Exercise delete, clear, duplicate follow-ups, and edit using both buttons and typed replies.
+   Resize to the minimum window size; inspect wrapped previews, scrolling, focus, and Tab navigation.
+7. Simulate save failures with the workflow/UI storage doubles. Verify unchanged disk bytes/model/view,
+   a hidden panel, and rejection of a subsequent standalone `y`.
+8. Run `./gradlew check` on Java 25, including both Checkstyle tasks. Assertions are enabled by Gradle;
+   external IDE or direct-JAR launches must also enable assertions (`-ea`) to exercise these invariants.
