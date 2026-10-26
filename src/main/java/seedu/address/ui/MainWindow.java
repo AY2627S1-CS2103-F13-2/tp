@@ -209,7 +209,7 @@ public class MainWindow extends UiPart<Stage> {
         try {
             FieldOrder previousOrder = logic.getFieldOrderProperty().get();
             CommandResult commandResult = logic.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
             confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
             String feedback = commandResult.getFeedbackToUser();
             if (!previousOrder.equals(logic.getFieldOrderProperty().get()) && personForDetails != null) {
@@ -230,7 +230,7 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException | RuntimeException e) {
-            logger.info("An error occurred while executing command: " + commandText);
+            logger.fine("Command failed: " + e.getClass().getSimpleName());
             confirmationPanel.showRequest(null);
             String feedback = e.getMessage() == null ? "Unexpected command failure." : e.getMessage();
             if (personForDetails != null) {

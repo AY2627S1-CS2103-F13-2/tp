@@ -88,13 +88,17 @@ public class JsonContactFileStorage {
         requireNonNull(contactFile);
         requireNonNull(filePath);
 
+        ContactFile expected = new ContactFile(contactFile);
         Path target = filePath.toAbsolutePath().normalize();
         Files.createDirectories(target.getParent());
         Path temporary = Files.createTempFile(target.getParent(), ".astra-save-", ".tmp");
         try {
-            writeCandidate(contactFile, temporary);
-            verifyCandidate(contactFile, temporary);
+            logger.fine("Writing and validating a temporary contact snapshot");
+            writeCandidate(expected, temporary);
+            verifyCandidate(expected, temporary);
             replaceActiveFile(temporary, target);
+            logger.fine("Atomically replaced active contact file with " + expected.getPersonList().size()
+                    + " validated contacts");
         } finally {
             try {
                 Files.deleteIfExists(temporary);

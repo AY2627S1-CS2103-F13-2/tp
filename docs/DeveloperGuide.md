@@ -1290,6 +1290,6 @@ The preview wraps and scrolls; Tab navigation and the command box remain availab
 6. Exercise delete, clear, duplicate follow-ups, and edit using both buttons and typed replies.
    Resize to the minimum window size; inspect wrapped previews, scrolling, focus, and Tab navigation.
 7. Simulate save failures with the workflow/UI storage doubles. Verify unchanged disk bytes/model/view,
-   a hidden panel, and rejection of a subsequent standalone `y`.
+   a hidden panel, a WARNING with the I/O cause, and rejection of a subsequent standalone `y`.
 8. Run `./gradlew check` on Java 25, including both Checkstyle tasks. Assertions are enabled by Gradle;
    external IDE or direct-JAR launches must also enable assertions (`-ea`) to exercise these invariants.
