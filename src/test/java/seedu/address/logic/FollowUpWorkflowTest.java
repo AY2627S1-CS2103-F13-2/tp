@@ -368,8 +368,9 @@ class FollowUpWorkflowTest {
         }
         CommandResult selected = logic.execute(" 1 ");
         assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
-        assertTrue(selected.getFeedbackToUser().startsWith(
-                "Selected follow-up:\n#1 [PENDING] Call | Due: 2000-02-29 [OVERDUE]"));
+        assertEquals(seedu.address.logic.Messages.format(selected.getPersonForDetails().orElseThrow(),
+                model.getFieldOrder()), selected.getFeedbackToUser());
+        assertEquals("Call", selected.getFollowUpForDetails().orElseThrow().getDescription());
         assertTrue(selected.getPendingRequest().isEmpty());
         assertEquals(List.of(before.getPersonList().getFirst()), model.getFilteredPersonList());
         assertEquals(before, model.getContactFile());

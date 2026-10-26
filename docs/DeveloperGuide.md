@@ -942,8 +942,10 @@ The default view includes all pending actions. Filtered snapshots retain
 the existing order. The command uses the shared formatter, preserves the contact filter and
 never saves data. A nonempty list returns a `FollowUpSelectionRequest`, which
 copies entries in displayed order. Logic retains it through the existing
-pending-request flow. Valid replies return `CommandResult.createFollowUpDetails`
-with the selected action and contact; invalid numeric replies keep the same request.
+pending-request flow. Valid replies call `ViewCommand.forPerson` with the selected contact,
+then attach the selected action using `CommandResult.withSelectedFollowUp`. This reuses the
+normal contact-view result without another name/index lookup or a contact-filter change.
+Invalid numeric replies keep the same request.
 Non-number replies are dispatched through the normal command parser by Logic,
 after clearing the selection request. Other pending requests retain their existing
 reply handling, including confirmation prompts.
@@ -956,8 +958,9 @@ The selection request declares itself read-only. Logic captures the current
 model before each reply instead of reusing the pre-prompt transaction snapshot,
 so cancellation or stale-selection errors cannot undo intervening changes.
 Selection does not save those intervening changes either. The detail result
-retains both the action and contact so field-order refreshes preserve the
-selected action heading and details.
+retains the contact and optional selected action as separate data. The current UI renders
+contact details through the same path as `view`, including field-order refreshes. A future
+follow-up panel can consume the selected action without duplicating contact presentation.
 
 **Use case: UC20 - Filter contacts by tags**
 

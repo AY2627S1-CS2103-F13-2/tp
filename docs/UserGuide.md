@@ -579,8 +579,8 @@ Format: `followups [overdue|today|upcoming|completed|undated]`
 * Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
 * Completed actions appear only in the `completed` view. The default view displays
   `No pending follow-ups remain.` when empty. Other views use their own empty-result messages.
-* When entries are shown, enter a displayed number to open that follow-up's
-  details and its associated contact. Use the numbered row, not the action's
+* When entries are shown, enter a displayed number to open the associated contact using
+  the same display as `view`. The selected action is retained as context. Use the numbered row, not the action's
   `#ID` or a contact index. The contact filter stays unchanged, even if the
   selected contact is hidden by it.
 * Invalid numeric replies repeat the list and instructions. Non-number input

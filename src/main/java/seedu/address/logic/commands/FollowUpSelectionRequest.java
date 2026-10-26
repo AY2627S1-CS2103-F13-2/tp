@@ -67,9 +67,8 @@ final class FollowUpSelectionRequest implements PendingRequest {
                 if (!model.getContactFile().getPersonList().contains(selected.contact())) {
                     throw new CommandException(MESSAGE_CHANGED);
                 }
-                return CommandResult.createFollowUpDetails(
-                        Messages.formatFollowUpDetails(selected.contact(), selected.followUp(), model.getFieldOrder()),
-                        selected.contact(), selected.followUp());
+                return ViewCommand.forPerson(selected.contact()).execute(model)
+                        .withSelectedFollowUp(selected.followUp());
             }
         }
         return new CommandResult(MESSAGE_INVALID + "\n" + getPrompt(), this);
