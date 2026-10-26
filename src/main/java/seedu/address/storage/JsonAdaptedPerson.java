@@ -226,9 +226,7 @@ class JsonAdaptedPerson {
                             Name.class.getSimpleName()));
         }
 
-        if (!Name.isValidName(name)) {
-            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
-        }
+        ContactTextField.NAME.validate(name);
 
         final Name modelName = new Name(name);
 
@@ -239,9 +237,8 @@ class JsonAdaptedPerson {
         final Company modelCompany;
         if (company == null) {
             modelCompany = null;
-        } else if (!Company.isValidCompany(company)) {
-            throw new IllegalValueException(Company.MESSAGE_CONSTRAINTS);
         } else {
+            ContactTextField.COMPANY.validate(company);
             modelCompany = new Company(company);
         }
 
@@ -252,9 +249,8 @@ class JsonAdaptedPerson {
         final Role modelRole;
         if (role == null) {
             modelRole = null;
-        } else if (!Role.isValidRole(role)) {
-            throw new IllegalValueException(Role.MESSAGE_CONSTRAINTS);
         } else {
+            ContactTextField.ROLE.validate(role);
             modelRole = new Role(role);
         }
 
@@ -265,9 +261,8 @@ class JsonAdaptedPerson {
         final Phone modelPhone;
         if (phone == null) {
             modelPhone = null;
-        } else if (!Phone.isValidPhone(phone)) {
-            throw new IllegalValueException(Phone.MESSAGE_CONSTRAINTS);
         } else {
+            ContactTextField.PHONE.validate(phone);
             modelPhone = new Phone(phone);
         }
 
@@ -278,9 +273,8 @@ class JsonAdaptedPerson {
         final Email modelEmail;
         if (email == null) {
             modelEmail = null;
-        } else if (!Email.isValidEmail(email)) {
-            throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
         } else {
+            ContactTextField.EMAIL.validate(email);
             modelEmail = new Email(email);
         }
 
@@ -291,9 +285,8 @@ class JsonAdaptedPerson {
         final Linkedin modelLinkedin;
         if (linkedin == null) {
             modelLinkedin = null;
-        } else if (!Linkedin.isValidLinkedin(linkedin)) {
-            throw new IllegalValueException(Linkedin.MESSAGE_CONSTRAINTS);
         } else {
+            ContactTextField.LINKEDIN.validate(linkedin);
             modelLinkedin = new Linkedin(linkedin);
         }
 
@@ -304,9 +297,8 @@ class JsonAdaptedPerson {
         final Name modelIntroducer;
         if (introducer == null) {
             modelIntroducer = null;
-        } else if (!Name.isValidName(introducer)) {
-            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
         } else {
+            ContactTextField.NAME.validate(introducer);
             modelIntroducer = new Name(introducer);
         }
 
