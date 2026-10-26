@@ -37,7 +37,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
    * `followups`: Reviews pending actions across all contacts in due-date order.
 
-   * `order name phone email company role tags linkedin followups`: Changes the field order for every contact.
+   * `order name phone email company role tags linkedin followups interactions`: Changes the field order for every contact.
 
    * `clear`, then `y`: Deletes all contacts.
 
@@ -193,13 +193,14 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
 * At least one of the optional fields must be provided.
 * If every value you enter is the same as the current one, nothing is changed and an error message is shown.
 * Existing values will be updated to the input values.
+* A new name that is the same as another person's is rejected when neither of them has an email.
 * The new phone number or email must not already belong to another person. Emails are compared without regard to letter case, so `JohnDoe@example.com` and `johndoe@example.com` are the same email.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
-* Use `ev/EVENT` to add an event to the contact. Existing events are retained.
-* If a contact name matches several contacts, Astra displays the matching contacts. Enter the displayed index to select the intended contact.
+* Use `ev/EVENT` to add one event to the contact. Existing events are retained. An event the contact already has is rejected, and `ev/` without an event name is not accepted. Events cannot be removed in this version.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * To remove a person's company, role, phone, email or LinkedIn, enter its prefix with nothing after it, e.g. `c/`. The name cannot be removed.
 * After the edit, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
+* After the edit, the full contact list is shown again.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -314,6 +315,8 @@ Searching interaction notes:
 
 * `find /notes KEYWORDS` finds contacts with a logged interaction whose note contains any of the keywords.
 * Letter case is ignored and partial words are accepted.
+* The result lists each matching contact with the date and note of every matching interaction. Notes longer than 60 characters are shortened to an excerpt around the first match.
+* Everything after `/notes` is treated as keywords, so `/notes` cannot be combined with other search criteria such as `/company`.
 * If no note matches, Astra reports `No matching notes were found.` and leaves the previous list unchanged.
 
 Example:
@@ -402,12 +405,13 @@ Records a conversation or meeting with a person, so you can look back at what yo
 
 Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
 
-* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`.
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`. If several people match the name, they are listed with numbers and nothing is logged; enter the command again with the person's number in place of the name.
 * `DATE` is when the interaction happened, in the format `YYYY-MM-DD`. If you leave it out, today's date is used.
 * The date cannot be in the future, since the interaction has already happened.
 * `NOTE` is what was discussed, and cannot be blank.
 * Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
 * Logging the same note on the same date twice is rejected, so an accidental repeat does not add a second copy. Letter case is ignored when comparing notes.
+* When you give an `INDEX`, the displayed list stays as it was. When you give a `NAME`, the list shows the people matching that name.
 * `view` shows a person's interaction history after their other details. Use `order` to move it.
 
 Examples:
@@ -424,7 +428,7 @@ Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
 * `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
 * Astra first shows the interaction and asks you to confirm. Enter `y` to remove it, or `n` or `cancel` to keep it.
 * After removing it, Astra shows what was removed and the person's remaining history, renumbered.
-* The displayed list stays as it was, so the same index still points to the same person.
+* When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
 * If the person has fewer interactions than `ENTRY`, nothing is removed.
 * To correct an interaction, remove it with `unlog` and then log it again with `log`.
 
