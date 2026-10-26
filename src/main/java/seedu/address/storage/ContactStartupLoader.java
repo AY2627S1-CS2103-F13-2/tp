@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +15,7 @@ import seedu.address.model.util.SampleDataUtil;
 /**
  * Loads startup contacts and safely applies recoverable repairs.
  */
-final class ContactStartupLoader {
+final class ContactStartupLoader implements ContactStartupOperations {
 
     private final ContactRecoveryParser parser = new ContactRecoveryParser();
     private final ArchiveWriter archiveWriter;
@@ -24,10 +23,7 @@ final class ContactStartupLoader {
     private final AtomicReplacement replacement;
 
     ContactStartupLoader() {
-        this(new RecoveryArchiveWriter()::write, (temporary, target) ->
-                Files.move(temporary, target,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING));
+        this(new RecoveryArchiveWriter()::write, AtomicFileWriter::replace);
     }
 
     ContactStartupLoader(ArchiveWriter archiveWriter,
@@ -47,6 +43,7 @@ final class ContactStartupLoader {
      *
      * @throws IOException if loading or recovery cannot finish safely
      */
+    @Override
     public StartupLoadResult load(Path sourceFile) throws IOException {
         Path source = sourceFile.toAbsolutePath().normalize();
         byte[] originalBytes;
@@ -73,6 +70,7 @@ final class ContactStartupLoader {
     /**
      * Preserves the failed contact file before offering the user a reset.
      */
+    @Override
     public StartupResetPlan prepareStartupReset(Path sourceFile, IOException failure) throws IOException {
         Path source = sourceFile.toAbsolutePath().normalize();
         byte[] originalBytes = Files.readAllBytes(source);
@@ -100,6 +98,7 @@ final class ContactStartupLoader {
      * Installs an empty contact file after the user chooses to start anew.
      * The archived original and current active file must still match the preserved snapshot.
      */
+    @Override
     public StartupLoadResult resetForStartup(Path sourceFile, StartupResetPlan plan) throws IOException {
         Path source = sourceFile.toAbsolutePath().normalize();
         if (!source.equals(plan.sourceFile())) {

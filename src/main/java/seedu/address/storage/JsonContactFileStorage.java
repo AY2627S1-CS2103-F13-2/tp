@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -23,13 +22,22 @@ public class JsonContactFileStorage {
 
     private static final Logger logger = LogsCenter.getLogger(JsonContactFileStorage.class);
 
-    private Path filePath;
+    private final Path filePath;
+    private final ContactStartupOperations startupLoader;
 
     /**
      * Creates storage for the given active contact file.
      */
     public JsonContactFileStorage(Path filePath) {
+        this(filePath, new ContactStartupLoader());
+    }
+
+    /**
+     * Supplies startup operations independently of ordinary JSON reads and saves.
+     */
+    JsonContactFileStorage(Path filePath, ContactStartupOperations startupLoader) {
         this.filePath = filePath;
+        this.startupLoader = requireNonNull(startupLoader);
     }
 
     public Path getContactFilePath() {
@@ -89,6 +97,7 @@ public class JsonContactFileStorage {
         requireNonNull(filePath);
 
         Path target = filePath.toAbsolutePath().normalize();
+        Files.createDirectories(target.getParent());
         AtomicFileWriter.write(target, ".astra-save-",
                 temporary -> writeCandidate(contactFile, temporary),
                 temporary -> verifyCandidate(contactFile, temporary), this::replaceActiveFile);
@@ -111,7 +120,7 @@ public class JsonContactFileStorage {
     }
 
     void replaceActiveFile(Path temporary, Path target) throws IOException {
-        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        AtomicFileWriter.replace(temporary, target);
     }
 
     /**
@@ -120,21 +129,21 @@ public class JsonContactFileStorage {
      * @throws IOException if startup loading or recovery fails
      */
     public StartupLoadResult loadForStartup() throws IOException {
-        return new ContactStartupLoader().load(filePath);
+        return startupLoader.load(filePath);
     }
 
     /**
      * Creates an unchanged backup and failure report before offering a fresh start.
      */
     public StartupResetPlan prepareStartupReset(IOException failure) throws IOException {
-        return new ContactStartupLoader().prepareStartupReset(filePath, failure);
+        return startupLoader.prepareStartupReset(filePath, failure);
     }
 
     /**
      * Safely replaces the active file with an empty contact file after confirmation.
      */
     public StartupLoadResult resetForStartup(StartupResetPlan plan) throws IOException {
-        return new ContactStartupLoader().resetForStartup(filePath, plan);
+        return startupLoader.resetForStartup(filePath, plan);
     }
 
 }

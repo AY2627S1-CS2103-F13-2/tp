@@ -3,6 +3,7 @@ package seedu.address.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
@@ -18,7 +19,6 @@ final class AtomicFileWriter {
 
     static void write(Path target, String prefix, FileOperation writer, FileOperation verifier,
                       Replacement replacement) throws IOException {
-        Files.createDirectories(target.getParent());
         Path temporary = Files.createTempFile(target.getParent(), prefix, ".tmp");
         try {
             writer.run(temporary);
@@ -31,6 +31,10 @@ final class AtomicFileWriter {
                 logger.warning("Could not remove temporary file " + temporary + ": " + cleanupFailure.getMessage());
             }
         }
+    }
+
+    static void replace(Path temporary, Path target) throws IOException {
+        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @FunctionalInterface

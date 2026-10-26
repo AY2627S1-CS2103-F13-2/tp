@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 import seedu.address.commons.exceptions.DataLoadingException;
@@ -61,6 +60,7 @@ public class JsonUserPrefsStorage {
     public void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException {
         UserPrefs expected = new UserPrefs(requireNonNull(userPrefs));
         Path target = requireNonNull(filePath).toAbsolutePath().normalize();
+        Files.createDirectories(target.getParent());
         AtomicFileWriter.write(target, ".astra-prefs-",
                 temporary -> writeCandidate(expected, temporary),
                 temporary -> verifyCandidate(expected, temporary), this::replaceActiveFile);
@@ -83,6 +83,6 @@ public class JsonUserPrefsStorage {
     }
 
     void replaceActiveFile(Path temporary, Path target) throws IOException {
-        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        AtomicFileWriter.replace(temporary, target);
     }
 }
