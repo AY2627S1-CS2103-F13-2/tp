@@ -22,7 +22,7 @@ public class Phone {
      * codes and grouping characters are accepted alongside the digits. Anything else, such as a
      * letter, is rejected.
      */
-    public static final String VALIDATION_REGEX = "[\\p{N}() +-]+";
+    public static final String VALIDATION_REGEX = "\\+?[\\p{N}() -]+";
 
     public final String value;
 

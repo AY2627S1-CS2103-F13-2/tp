@@ -11,12 +11,18 @@ import static seedu.address.testutil.TypicalPersons.BENSON;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -133,6 +139,38 @@ class EditConfirmationWorkflowTest {
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(List.of(ALICE, BENSON), model.getContactFile().getPersonList());
         assertEquals(0, storage.saveCount);
+    }
+
+    @Test
+    void execute_saveFailure_logsCauseAndRollbackWithoutRawCommandText() throws Exception {
+        Logger logger = LogsCenter.getLogger(LogicManager.class);
+        Level previous = logger.getLevel();
+        List<LogRecord> records = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                records.add(record);
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {}
+        };
+        logger.addHandler(handler);
+        logger.setLevel(Level.ALL);
+        try {
+            storage.shouldFail = true;
+            logic.execute("edit 1 c/Private Company");
+            assertThrows(CommandException.class, () -> logic.execute("y"));
+            assertTrue(records.stream().anyMatch(record -> record.getLevel() == Level.WARNING
+                    && record.getThrown() instanceof IOException && record.getMessage().contains("rolling back")));
+            assertTrue(records.stream().noneMatch(record -> record.getMessage().contains("Private Company")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previous);
+        }
     }
 
     @Test
