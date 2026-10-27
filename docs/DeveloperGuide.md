@@ -255,6 +255,26 @@ replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
 
+#### Design considerations
+
+**Aspect: How a failed or cancelled request is undone**
+
+* **Alternative 1 (current choice):** Logic takes a `ModelSnapshot` before each
+  request and calls `restore` if the request fails or is cancelled.
+  * Pros: Rollback is handled in one place, so no command needs its own undo
+    logic. The snapshot copies only the list of contacts, not the contacts
+    themselves, because `Person` is immutable. The same snapshot also tells
+    Logic whether anything needs saving.
+  * Cons: Every request copies the contact list and preferences, even one
+    that changes nothing. The snapshot covers only the current request, so it
+    is not a multi-step undo history.
+* **Alternative 2:** Each command reverses its own changes when something
+  fails.
+  * Pros: Nothing is copied unless a command needs it.
+  * Cons: Every command needs its own correct reverse logic, including for
+    the filter and preferences. A missed case leaves the model showing a
+    change that was never saved.
+
 ### Tag filtering (UC20)
 
 `FilterCommandParser` uses the shared prefix tokenizer with repeated `t/`
@@ -361,6 +381,43 @@ The following activity diagram shows the command and transaction boundaries.
 Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 
 ![Recording a follow-up](images/FollowUpActivityDiagram.svg)
+
+#### Design considerations
+
+**Aspect: How a contact is updated**
+
+* **Alternative 1 (current choice):** `Person` is immutable. Every change
+  creates a new `Person`, and `Model#setPerson` puts it in place of the old
+  one.
+  * Pros: Old `Person` objects never change, so `ModelSnapshot` can keep them
+    as they are and rollback needs no deep copy. Replacing the whole object
+    is one list change, which the UI already observes.
+  * Cons: Each change copies every field. The full constructor takes many
+    arguments, and every new field has to be carried through it.
+* **Alternative 2:** Change the fields of the existing `Person` in place.
+  * Pros: Less copying, and simpler code for each update.
+  * Cons: A snapshot would need a deep copy of every contact. A command that
+    fails halfway could leave a half-changed contact, and the UI would need
+    an observable property for every field to notice the change.
+
+**Aspect: How follow-up IDs are allocated**
+
+* **Alternative 1 (current choice):** Each contact stores `lastFollowUpId`,
+  and a new follow-up gets that counter plus one. The counter never goes
+  down.
+  * Pros: A deleted ID is never handed out again, so an ID the user types,
+    such as in `deletefollowup 1 i/2`, always means the same follow-up. IDs
+    stay short and easy to type, and existing IDs never change.
+  * Cons: The counter must be saved and validated with each contact. Deleting
+    leaves gaps in the numbering. Older data files without the counter cannot
+    recover IDs deleted before it was added.
+* **Alternative 2:** Use the follow-up's position, or the list size plus one.
+  * Pros: Nothing extra to store.
+  * Cons: Deleting a follow-up renumbers the later ones or reuses an ID, so a
+    command that names an older ID could change the wrong follow-up.
+* **Alternative 3:** Use random unique IDs, such as UUIDs.
+  * Pros: IDs never clash, even across contacts.
+  * Cons: Long IDs are slow and error-prone to type in a command-line app.
 
 ### Display-field order (UC26)
 
