@@ -1,0 +1,82 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant "a:AddFollowUpCommand" as AddFollowUpCommand LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:ModelManager" as ModelManager MODEL_COLOR
+participant ":ContactFile" as ContactFile MODEL_COLOR
+participant ":UniquePersonList" as UniquePersonList MODEL_COLOR
+participant "p:Person" as Person MODEL_COLOR
+participant "f:FollowUp" as FollowUp MODEL_COLOR
+participant "updated:Person" as UpdatedPerson MODEL_COLOR
+end box
+
+[-> AddFollowUpCommand : execute(m)
+activate AddFollowUpCommand
+
+note right of AddFollowUpCommand
+  FollowUpCommand resolved p from the
+  displayed list and created a. Without a
+  duplicate pending follow-up, a runs
+  straight away; otherwise it runs after
+  the user confirms with y.
+end note
+
+AddFollowUpCommand -> Person : getLastFollowUpId()
+activate Person
+Person --> AddFollowUpCommand : n
+deactivate Person
+
+create FollowUp
+AddFollowUpCommand -> FollowUp : FollowUp(n + 1, description)
+activate FollowUp
+FollowUp --> AddFollowUpCommand
+deactivate FollowUp
+
+AddFollowUpCommand -> Person : appendFollowUp(f)
+activate Person
+
+create UpdatedPerson
+Person -> UpdatedPerson : Person(...)
+activate UpdatedPerson
+note right of UpdatedPerson
+  Copies p, adds f
+  and sets
+  lastFollowUpId
+  to n + 1.
+end note
+UpdatedPerson --> Person
+deactivate UpdatedPerson
+
+Person --> AddFollowUpCommand : updated
+deactivate Person
+
+AddFollowUpCommand -> ModelManager : setPerson(p, updated)
+activate ModelManager
+
+ModelManager -> ContactFile : setPerson(p, updated)
+activate ContactFile
+
+ContactFile -> UniquePersonList : setPerson(p, updated)
+activate UniquePersonList
+note right of UniquePersonList
+  Replaces p with updated at the same
+  position, so the filtered list and
+  the UI update in place.
+end note
+UniquePersonList --> ContactFile
+deactivate UniquePersonList
+
+ContactFile --> ModelManager
+deactivate ContactFile
+
+ModelManager --> AddFollowUpCommand
+deactivate ModelManager
+
+[<-- AddFollowUpCommand : result
+deactivate AddFollowUpCommand
+@enduml

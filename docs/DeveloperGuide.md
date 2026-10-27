@@ -136,6 +136,7 @@ The `Model` component,
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the nine `Field` values exactly once.
 * provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
+* how a follow-up is added through an immutable `Person`, and why follow-up IDs are never reused, is shown in [Follow-up actions (UC16)](#follow-up-actions-uc16).
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 ### Storage component
@@ -302,6 +303,31 @@ greatest allocated ID (`Person.lastFollowUpId`), including deleted and completed
 rather than the list size or last surviving element. Existing IDs and order never change;
 ID exhaustion is rejected without mutation. Every copy preserves the counter, which participates
 in strong equality/hash. `appendFollowUp` rejects reused IDs; replacement preserves the action ID.
+
+The sequence diagram below shows how a follow-up is added inside the Model.
+It starts at `AddFollowUpCommand`, the command `FollowUpCommand` creates for
+the resolved contact. That command runs straight away, or after a `y` reply
+when the same pending follow-up already exists.
+
+1. The new follow-up gets ID `n + 1`, where `n` is the contact's
+   `lastFollowUpId`.
+1. `Person` is immutable, so `appendFollowUp` returns a new `Person` with the
+   follow-up added and the counter raised to `n + 1`. The old `Person` is not
+   changed.
+1. `Model#setPerson` passes the new `Person` down to the `UniquePersonList`,
+   which puts it in the old one's position. The filtered list and the UI
+   update without being rebuilt.
+
+![Adding a follow-up inside the Model](images/FollowUpSequenceDiagram.png)
+
+The object diagram below shows why IDs come from `lastFollowUpId` rather than
+the list size. Each frame is a new `Person`, since every change creates one.
+After follow-up 2 is deleted, the counter stays at 2, so the next follow-up
+gets ID 3. Using the list size would have given it ID 2 again, and a command
+or note that referred to the deleted follow-up 2 would then point at the new
+one.
+
+![Follow-up IDs are never reused](images/FollowUpIdObjectDiagram.png)
 
 `FollowUpCommandParser` requires a positive displayed index and exactly one
 `a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
