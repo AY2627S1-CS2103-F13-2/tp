@@ -212,11 +212,41 @@ clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
 shared confirmation API with an "Add another?" question for duplicate pending
 actions.
 
-`ModelSnapshot` copies contact contents and retains the original predicate.
-Logic compares the completed model with the snapshot and saves only changed
-contact data. Queries, ambiguity results, prompts, selections, cancellations,
-and no-ops perform no contact-file write. On an exception, data and the original
-filter are restored without replacing the observable lists bound to the UI.
+`ModelSnapshot` is the Model's restore point for one request. It copies the
+contact file and the user preferences, and keeps the active filter. Logic uses
+it in three ways:
+
+* **To decide whether to save.** After a command, `hasDataChanged` and
+  `hasPreferencesChanged` compare the model with the snapshot, so only changed
+  data is written. Queries, ambiguity results, prompts, selections,
+  cancellations and no-ops perform no contact-file write.
+* **To roll back a failure.** If a command or a save throws, `restore` puts the
+  copied data and the original filter back, so the model never shows a change
+  that was not saved.
+* **To cancel a pending request.** The snapshot is kept with the request until
+  the user replies. `n` or `cancel` restores it, which also brings back the
+  list the user saw before, such as the full list after a name lookup narrowed
+  it to the candidates.
+
+`restore` copies the saved contacts back into the existing lists instead of
+replacing them, so the observable lists bound to the UI stay connected.
+
+The sequence diagram below shows `delete 1` followed by a reply. The first
+input only takes the snapshot and creates the request; nothing is deleted yet.
+The `alt` frame shows the two replies:
+
+* `y` runs the resolved command, finds that the data changed, and saves. The
+  `opt` frame shows the rollback when that save fails.
+* `n` or `cancel` restores the snapshot straight away, without saving.
+
+Either way, Logic then discards both the request and the snapshot. The details
+of the two `ref` frames are shown in the two diagrams after it.
+
+![Snapshot and rollback during a confirmed delete](images/TransactionSequenceDiagram.png)
+
+![sd create delete confirmation c](images/DeleteConfirmationSequenceDiagram.png)
+
+![sd run confirmed delete](images/ConfirmedDeleteSequenceDiagram.png)
 
 `JsonContactFileStorage` serializes to a sibling temporary file, reloads and
 compares the candidate, then uses atomic replacement. Failures before
