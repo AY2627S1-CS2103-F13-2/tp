@@ -136,14 +136,8 @@ The `Model` component,
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the nine `Field` values exactly once.
 * provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
+* how a follow-up is added through an immutable `Person`, and why follow-up IDs are never reused, is shown in [Follow-up actions (UC16)](#follow-up-actions-uc16).
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
-
-<img src="images/BetterModelClassDiagram.png" width="450" />
-
-</div>
-
 
 ### Storage component
 
@@ -219,17 +213,67 @@ clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
 shared confirmation API with an "Add another?" question for duplicate pending
 actions.
 
-`ModelSnapshot` copies contact contents and retains the original predicate.
-Logic compares the completed model with the snapshot and saves only changed
-contact data. Queries, ambiguity results, prompts, selections, cancellations,
-and no-ops perform no contact-file write. On an exception, data and the original
-filter are restored without replacing the observable lists bound to the UI.
+`ModelSnapshot` is the Model's restore point for one request. It copies the
+contact file and the user preferences, and keeps the active filter. Logic uses
+it in three ways:
+
+* **To decide whether to save.** After a command, `hasDataChanged` and
+  `hasPreferencesChanged` compare the model with the snapshot, so only changed
+  data is written. Queries, ambiguity results, prompts, selections,
+  cancellations and no-ops perform no contact-file write.
+* **To roll back a failure.** If a command or a save throws, `restore` puts the
+  copied data and the original filter back, so the model never shows a change
+  that was not saved.
+* **To cancel a pending request.** The snapshot is kept with the request until
+  the user replies. `n` or `cancel` restores it, which also brings back the
+  list the user saw before, such as the full list after a name lookup narrowed
+  it to the candidates.
+
+`restore` copies the saved contacts back into the existing lists instead of
+replacing them, so the observable lists bound to the UI stay connected.
+
+The sequence diagram below shows `delete 1` followed by a reply. The first
+input only takes the snapshot and creates the request; nothing is deleted yet.
+The `alt` frame shows the two replies:
+
+* `y` runs the resolved command, finds that the data changed, and saves. The
+  `opt` frame shows the rollback when that save fails.
+* `n` or `cancel` restores the snapshot straight away, without saving.
+
+Either way, Logic then discards both the request and the snapshot. The details
+of the two `ref` frames are shown in the two diagrams after it.
+
+![Snapshot and rollback during a confirmed delete](images/TransactionSequenceDiagram.png)
+
+![sd create delete confirmation c](images/DeleteConfirmationSequenceDiagram.png)
+
+![sd run confirmed delete](images/ConfirmedDeleteSequenceDiagram.png)
 
 `JsonContactFileStorage` serializes to a sibling temporary file, reloads and
 compares the candidate, then uses atomic replacement. Failures before
 replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
+
+#### Design considerations
+
+**Aspect: How a failed or cancelled request is undone**
+
+* **Alternative 1 (current choice):** Logic takes a `ModelSnapshot` before each
+  request and calls `restore` if the request fails or is cancelled.
+  * Pros: Rollback is handled in one place, so no command needs its own undo
+    logic. The snapshot copies only the list of contacts, not the contacts
+    themselves, because `Person` is immutable. The same snapshot also tells
+    Logic whether anything needs saving.
+  * Cons: Every request copies the contact list and preferences, even one
+    that changes nothing. The snapshot covers only the current request, so it
+    is not a multi-step undo history.
+* **Alternative 2:** Each command reverses its own changes when something
+  fails.
+  * Pros: Nothing is copied unless a command needs it.
+  * Cons: Every command needs its own correct reverse logic, including for
+    the filter and preferences. A missed case leaves the model showing a
+    change that was never saved.
 
 ### Tag filtering (UC20)
 
@@ -280,6 +324,31 @@ rather than the list size or last surviving element. Existing IDs and order neve
 ID exhaustion is rejected without mutation. Every copy preserves the counter, which participates
 in strong equality/hash. `appendFollowUp` rejects reused IDs; replacement preserves the action ID.
 
+The sequence diagram below shows how a follow-up is added inside the Model.
+It starts at `AddFollowUpCommand`, the command `FollowUpCommand` creates for
+the resolved contact. That command runs straight away, or after a `y` reply
+when the same pending follow-up already exists.
+
+1. The new follow-up gets ID `n + 1`, where `n` is the contact's
+   `lastFollowUpId`.
+1. `Person` is immutable, so `appendFollowUp` returns a new `Person` with the
+   follow-up added and the counter raised to `n + 1`. The old `Person` is not
+   changed.
+1. `Model#setPerson` passes the new `Person` down to the `UniquePersonList`,
+   which puts it in the old one's position. The filtered list and the UI
+   update without being rebuilt.
+
+![Adding a follow-up inside the Model](images/FollowUpSequenceDiagram.png)
+
+The object diagram below shows why IDs come from `lastFollowUpId` rather than
+the list size. Each frame is a new `Person`, since every change creates one.
+After follow-up 2 is deleted, the counter stays at 2, so the next follow-up
+gets ID 3. Using the list size would have given it ID 2 again, and a command
+or note that referred to the deleted follow-up 2 would then point at the new
+one.
+
+![Follow-up IDs are never reused](images/FollowUpIdObjectDiagram.png)
+
 `FollowUpCommandParser` requires a positive displayed index and exactly one
 `a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
 rejected instead of being silently stored as description text. Exact trimmed,
@@ -312,6 +381,43 @@ The following activity diagram shows the command and transaction boundaries.
 Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 
 ![Recording a follow-up](images/FollowUpActivityDiagram.svg)
+
+#### Design considerations
+
+**Aspect: How a contact is updated**
+
+* **Alternative 1 (current choice):** `Person` is immutable. Every change
+  creates a new `Person`, and `Model#setPerson` puts it in place of the old
+  one.
+  * Pros: Old `Person` objects never change, so `ModelSnapshot` can keep them
+    as they are and rollback needs no deep copy. Replacing the whole object
+    is one list change, which the UI already observes.
+  * Cons: Each change copies every field. The full constructor takes many
+    arguments, and every new field has to be carried through it.
+* **Alternative 2:** Change the fields of the existing `Person` in place.
+  * Pros: Less copying, and simpler code for each update.
+  * Cons: A snapshot would need a deep copy of every contact. A command that
+    fails halfway could leave a half-changed contact, and the UI would need
+    an observable property for every field to notice the change.
+
+**Aspect: How follow-up IDs are allocated**
+
+* **Alternative 1 (current choice):** Each contact stores `lastFollowUpId`,
+  and a new follow-up gets that counter plus one. The counter never goes
+  down.
+  * Pros: A deleted ID is never handed out again, so an ID the user types,
+    such as in `deletefollowup 1 i/2`, always means the same follow-up. IDs
+    stay short and easy to type, and existing IDs never change.
+  * Cons: The counter must be saved and validated with each contact. Deleting
+    leaves gaps in the numbering. Older data files without the counter cannot
+    recover IDs deleted before it was added.
+* **Alternative 2:** Use the follow-up's position, or the list size plus one.
+  * Pros: Nothing extra to store.
+  * Cons: Deleting a follow-up renumbers the later ones or reuses an ID, so a
+    command that names an older ID could change the wrong follow-up.
+* **Alternative 3:** Use random unique IDs, such as UUIDs.
+  * Pros: IDs never clash, even across contacts.
+  * Cons: Long IDs are slow and error-prone to type in a command-line app.
 
 ### Display-field order (UC26)
 
@@ -486,11 +592,6 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Cons: We must ensure that the implementation of each individual command is correct.
 
 _{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
 
 --------------------------------------------------------------------------------------------------------------------
 
