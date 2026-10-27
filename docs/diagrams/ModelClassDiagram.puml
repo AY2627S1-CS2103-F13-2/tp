@@ -1,60 +1,165 @@
 @startuml
 !include style.puml
 skinparam arrowThickness 1.1
-skinparam arrowColor MODEL_COLOR
-skinparam classBackgroundColor MODEL_COLOR
+skinparam arrowColor #9D0012
+skinparam classBackgroundColor #F97181
+skinparam classFontColor #000000
+skinparam classStereotypeFontColor #000000
+skinparam classAttributeFontColor #000000
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #9D0012
+skinparam ArrowFontStyle plain
+skinparam nodesep 110
+skinparam ranksep 80
+hide circle
+skinparam Shadowing false
+show members
+hide empty members
 
-Package Model as ModelPackage <<Rectangle>>{
-Class "<<interface>>\nReadOnlyContactFile" as ReadOnlyContactFile
-Class "<<interface>>\nReadOnlyUserPrefs" as ReadOnlyUserPrefs
-Class "<<interface>>\nModel" as Model
-Class ContactFile
-Class ModelManager
-Class UserPrefs
+package Model <<Rectangle>> {
 
-Class UniquePersonList
-Class Person
-Class Company
-Class Email
-Class Linkedin
-Class Name
-Class Phone
-Class Role
-Class Tag
-
-Class I #FFFFFF
+interface ReadOnlyContactFile <<interface>> {
+  +{abstract} getPersonList() : ObservableList<Person>
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Model
+interface Model <<interface>> {
+  +{abstract} addPerson(person : Person)
+  +{abstract} deletePerson(target : Person)
+  +{abstract} setPerson(target : Person, editedPerson : Person)
+  +{abstract} hasPerson(person : Person) : boolean
+  +{abstract} getFilteredPersonList() : ObservableList<Person>
+  +{abstract} updateFilteredPersonList(predicate : Predicate<Person>)
+  +{abstract} getPendingFollowUps() : List<FollowUpEntry>
+  +{abstract} setFieldOrder(fieldOrder : FieldOrder)
+}
 
-ContactFile .up.|> ReadOnlyContactFile
+interface ReadOnlyUserPrefs <<interface>> {
+  +{abstract} getGuiSettings() : GuiSettings
+  +{abstract} getFieldOrder() : FieldOrder
+}
 
-ModelManager .up.|> Model
-Model .right.> ReadOnlyUserPrefs
+class ModelManager
+
+class ContactFile
+
+class UserPrefs {
+  -guiSettings : GuiSettings
+  -commandAliases : Map<String, String>
+}
+
+class ModelSnapshot <<final>> {
+  -filter : Predicate<Person>
+  +hasDataChanged(model : Model) : boolean
+  +restore(model : Model)
+}
+
+class FieldOrder <<final>> {
+  +{static} DEFAULT : FieldOrder
+}
+
+enum Field <<enumeration>> {
+  NAME
+  TAGS
+  COMPANY
+  ROLE
+  PHONE
+  EMAIL
+  LINKEDIN
+  FOLLOWUPS
+  INTERACTIONS
+}
+
+class UniquePersonList
+
+class Person {
+  -name : Name
+  -company : Company [0..1]
+  -role : Role [0..1]
+  -phone : Phone [0..1]
+  -email : Email [0..1]
+  -linkedin : Linkedin [0..1]
+  -introducer : Name [0..1]
+  -tags : Tag [*]
+  -starred : boolean
+  -lastFollowUpId : int
+  +isSamePerson(otherPerson : Person) : boolean
+  +withStarred(starred : boolean) : Person
+  +withEvent(event : Event) : Person
+  +appendFollowUp(action : FollowUp) : Person
+  +removeFollowUp(followUpId : int) : Person
+  +withInteraction(interaction : Interaction) : Person
+}
+
+class Event {
+  -name : String
+  -date : String
+}
+
+class FollowUp <<final>> {
+  -id : int
+  -description : String
+  -dueDate : LocalDate [0..1]
+  +isOverdue() : boolean
+}
+
+enum Status <<enumeration>> {
+  PENDING
+  COMPLETED
+}
+
+class Interaction {
+  -date : LocalDate
+  -note : String
+}
+
+class FollowUpEntry <<record>>
+
+
+}
+
+' Row 1: interfaces
+ReadOnlyContactFile -[hidden]right- Model
+Model -[hidden]right- ReadOnlyUserPrefs
 Model .left.> ReadOnlyContactFile
-ModelManager -left-> "1" ContactFile
-ModelManager -right-> "1" UserPrefs
+Model .right.> ReadOnlyUserPrefs
+
+' Row 2: implementations
+ModelManager .up.|> Model
+ContactFile .up.|> ReadOnlyContactFile
 UserPrefs .up.|> ReadOnlyUserPrefs
 
-ContactFile *--> "1" UniquePersonList
-UniquePersonList --> "~* all" Person
-Person *--> "1" Name
-Person *--> "0..1" Company
-Person *--> "0..1" Role
-Person *--> "0..1" Phone
-Person *--> "0..1" Email
-Person *--> "0..1" Linkedin
-Person *--> "*" Tag
+' <U+00A0> (non-breaking space) padding nudges a role name off its arrowhead
 
-Person -[hidden]up--> I
-UniquePersonList -[hidden]right-> I
+' Compositions: the owner creates its own copy and never shares it
+ModelManager *-left-> "<U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0>1\n<U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0>contactFile" ContactFile
+ModelManager *-right-> "1\nuserPrefs" UserPrefs
+ContactFile *-down-> "1\npersons" UniquePersonList
 
-Name -[hidden]right-> Company
-Company -[hidden]right-> Role
-Role -[hidden]right-> Phone
-Phone -[hidden]right-> Email
-Email -[hidden]right-> Linkedin
+' Associations: the referenced objects are shared
+UserPrefs -down-> "1<U+00A0><U+00A0><U+00A0>\nfieldOrder<U+00A0><U+00A0><U+00A0>" FieldOrder
+FieldOrder -down-> "9\nfields" Field
+UniquePersonList -down-> "*\ninternalList" Person
+ModelManager -down-> "*\nfilteredPersons" Person
+Person -down-> "*\ninteractions" Interaction
+Person -down-> "*\nevents" Event
+Interaction -[hidden]right- Event
+Person -down-> "*\nfollowUps<U+00A0><U+00A0><U+00A0>" FollowUp
+Event -[hidden]right- FollowUp
+FollowUp -right-> "1\nstatus" Status
 
-ModelManager --> "~* filtered" Person
+' FollowUpEntry pairs a contact with one of its pending follow-ups
+FollowUpEntry --> "1\ncontact" Person
+FollowUpEntry --> "1\nfollowUp" FollowUp
+
+' Dependencies
+ModelManager ..> FollowUpEntry : <U+00A0><U+00A0>creates
+
+' Keeps UniquePersonList left so the two arrows into Person stay apart
+UniquePersonList -[hidden]down- Interaction
+
+' ModelSnapshot sits at the bottom so its arrows run up the outside edges
+Event -[hidden]down- ModelSnapshot
+FollowUp -[hidden]down- ModelSnapshot
+ModelSnapshot *-up-> "1<U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0>\ncontactFile<U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0><U+00A0>" ContactFile
+ModelSnapshot *-up-> "1<U+00A0><U+00A0><U+00A0>\nuserPrefs<U+00A0><U+00A0><U+00A0>" UserPrefs
 @enduml
