@@ -119,18 +119,23 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="450" />
+<img src="images/ModelClassDiagram.png" width="750" />
 
+The diagram shows only the methods discussed in this guide. `ModelManager` implements every method of `Model`, so its methods are not repeated.
 
 The `Model` component,
 
-* stores the contact file data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
-* a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
+* stores the contact file data i.e., all `Person` objects, in a `UniquePersonList` inside a `ContactFile`. `ModelManager` builds its own copies of the `ContactFile` and `UserPrefs` it is given, so it owns them (composition).
+* a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email`, `Linkedin` and an introducer (the `Name` of the person who introduced them). Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value. These single-value classes, and `Tag`, are shown as attributes of `Person` rather than as separate classes.
+* a `Person` also holds any number of tags, `Event`s, `FollowUp`s and `Interaction`s, a starred flag, and the last follow-up ID it allocated.
+* `Person` is immutable. `withStarred`, `withEvent`, `appendFollowUp`, `removeFollowUp` and `withInteraction` each return a new `Person`, which `Model#setPerson` puts in place of the old one. The new `Person` shares its unchanged `Event`, `FollowUp` and `Interaction` objects with the old one, so these are drawn as associations rather than compositions.
 * `Person#isSamePerson` compares equal names and emails that are either both absent or equal ignoring case.
   Current add/edit validation separately rejects shared normalized phone numbers and case-insensitive emails.
   Follow-ups, retired action IDs, events, interactions, and starred status do not change contact identity.
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (GUI settings and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* a `FollowUp` has an ID, a description, an optional due date and a `Status` (`PENDING` or `COMPLETED`). `FollowUp#isOverdue` is true for a pending follow-up whose due date has passed. `Model#getPendingFollowUps` creates a `FollowUpEntry` for each pending follow-up, pairing it with its contact.
+* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the nine `Field` values exactly once.
+* provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
