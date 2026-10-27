@@ -138,13 +138,6 @@ The `Model` component,
 * provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
-
-<img src="images/BetterModelClassDiagram.png" width="450" />
-
-</div>
-
-
 ### Storage component
 
 **API** : [`Storage.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/storage/Storage.java)
