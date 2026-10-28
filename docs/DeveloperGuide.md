@@ -132,7 +132,7 @@ The `Model` component,
 * `Person#isSamePerson` compares equal names and emails that are either both absent or equal ignoring case.
   Current add/edit validation separately rejects shared normalized phone numbers and case-insensitive emails.
   Follow-ups, retired action IDs, events, interactions, and starred status do not change contact identity.
-* a `FollowUp` has an ID, a description, an optional due date and a `Status` (`PENDING` or `COMPLETED`). `FollowUp#isOverdue` is true for a pending follow-up whose due date has passed. `Model#getPendingFollowUps` creates a `FollowUpEntry` for each pending follow-up, pairing it with its contact.
+* a `FollowUp` has an ID, a description, an optional due date and a `Status` (`PENDING` or `COMPLETED`). `FollowUp#isOverdue` is true for a pending follow-up whose due date has passed. `Model#getFollowUps` creates a `FollowUpEntry` for each follow-up, pairing it with its contact; `Model#getPendingFollowUps` retains only pending actions from that snapshot.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the nine `Field` values exactly once.
 * provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
@@ -1033,13 +1033,13 @@ today. Duplicate confirmation retains the requested date and creates a separate
 action. Follow-up editing and deletion have separate commands; completion commands and
 links to events remain outside UC16.
 
-**Use case: UC12 - Review pending follow-ups**
+**Use case: UC12 - Review follow-ups**
 
 **MSS**
 
-1. User enters `followups`, optionally adding `overdue`, `today` or `upcoming`.
-2. Astra retrieves pending actions across all stored contacts, including contacts
-   hidden by a contact filter, and applies the selected date filter.
+1. User enters `followups`, optionally adding `overdue`, `today`, `upcoming`, `completed` or `undated`.
+2. Astra retrieves actions across all stored contacts, including contacts hidden by a contact filter,
+   and applies the selected status or date filter. The default view includes pending actions only.
 3. Astra displays numbered entries with the contact name, stable action ID,
    description, status and due date. Dates sort ascending; equal dates retain
    contact order and stored action order. Pending actions due before today are
@@ -1062,16 +1062,19 @@ links to events remain outside UC16.
 
 **Implementation and scope**
 
-`ModelManager.getPendingFollowUps()` returns an unmodifiable snapshot of
-`FollowUpEntry` records, pairing each action with its contact. The command uses
-`FollowUpDateFilter` to select overdue, today or upcoming actions using one local date
-from its clock per execution. Upcoming has no upper date limit; date views exclude undated
-and completed actions. The default view includes all pending actions. Filtered snapshots retain
+`ModelManager.getFollowUps()` returns an unmodifiable, sorted snapshot of all actions paired
+with their contacts as `FollowUpEntry` records. The pending-only query reuses this snapshot.
+The command applies `FollowUpFilter` using one local date from its clock per execution.
+Completed includes all completed actions; undated includes only pending actions without dates.
+Upcoming has no upper date limit; date views exclude undated and completed actions.
+The default view includes all pending actions. Filtered snapshots retain
 the existing order. The command uses the shared formatter, preserves the contact filter and
 never saves data. A nonempty list returns a `FollowUpSelectionRequest`, which
 copies entries in displayed order. Logic retains it through the existing
-pending-request flow. Valid replies return `CommandResult.createFollowUpDetails`
-with the selected action and contact; invalid numeric replies keep the same request.
+pending-request flow. Valid replies call `ViewCommand.forPerson` with the selected contact,
+then attach the selected action using `CommandResult.withSelectedFollowUp`. This reuses the
+normal contact-view result without another name/index lookup or a contact-filter change.
+Invalid numeric replies keep the same request.
 Non-number replies are dispatched through the normal command parser by Logic,
 after clearing the selection request. Other pending requests retain their existing
 reply handling, including confirmation prompts.
@@ -1084,8 +1087,9 @@ The selection request declares itself read-only. Logic captures the current
 model before each reply instead of reusing the pre-prompt transaction snapshot,
 so cancellation or stale-selection errors cannot undo intervening changes.
 Selection does not save those intervening changes either. The detail result
-retains both the action and contact so field-order refreshes preserve the
-selected action heading and details.
+retains the contact and optional selected action as separate data. The current UI renders
+contact details through the same path as `view`, including field-order refreshes. A future
+follow-up panel can consume the selected action without duplicating contact presentation.
 
 **Use case: UC20 - Filter contacts by tags**
 

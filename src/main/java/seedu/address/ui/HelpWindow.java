@@ -22,8 +22,8 @@ public class HelpWindow extends UiPart<Stage> {
             + "\nDelete an action: deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID, then y or n/cancel."
             + "\nContact edits, deletions, clear, and duplicate follow-ups show a shared confirmation panel."
             + " Use its buttons or type y, n, or cancel."
-            + "\nReview pending follow-ups: followups [overdue|today|upcoming]."
-            + " Upcoming includes all dates after today."
+            + "\nReview follow-ups: followups [overdue|today|upcoming|completed|undated]."
+            + " Default: pending actions. Upcoming includes all dates after today; undated is pending-only."
             + " Then enter a displayed number to view its details/contact,"
             + " or n/cancel to stop.";
 

@@ -25,6 +25,7 @@ import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.ContactFileBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests for {@code ViewCommand}.
@@ -124,6 +125,29 @@ public class ViewCommandTest {
     }
 
     @Test
+    public void execute_resolvedContact_reusesViewWithoutLookupOrFilterChanges() throws Exception {
+        CommandResult indexed = new ViewCommand(Index.fromOneBased(1)).execute(model);
+        model.addPerson(new PersonBuilder(ALICE).withPhone("81112222").withEmail("other@example.com").build());
+        model.updateFilteredPersonList(person -> person.equals(BENSON));
+
+        CommandResult resolved = ViewCommand.forPerson(ALICE).execute(model);
+
+        assertEquals(indexed, resolved);
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+        assertTrue(resolved.getFollowUpForDetails().isEmpty());
+    }
+
+    @Test
+    public void execute_changedOrDeletedResolvedContact_rejectsStaleTarget() {
+        ViewCommand command = ViewCommand.forPerson(ALICE);
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withName("Changed").build());
+        assertCommandFailure(command, model, ViewCommand.MESSAGE_CONTACT_CHANGED);
+        model.deletePerson(BENSON);
+        assertCommandFailure(ViewCommand.forPerson(BENSON), model, ViewCommand.MESSAGE_CONTACT_CHANGED);
+        assertThrows(NullPointerException.class, () -> ViewCommand.forPerson(null));
+    }
+
+    @Test
     public void equals() {
         Index firstIndex = Index.fromOneBased(1);
         Index secondIndex = Index.fromOneBased(2);
@@ -141,6 +165,9 @@ public class ViewCommandTest {
         assertFalse(nameCommand.equals(new ViewCommand("Benson")));
         assertFalse(nameCommand.equals(firstCommand));
         assertFalse(firstCommand.equals(nameCommand));
+        assertTrue(ViewCommand.forPerson(ALICE).equals(ViewCommand.forPerson(ALICE)));
+        assertFalse(ViewCommand.forPerson(ALICE).equals(ViewCommand.forPerson(BENSON)));
+        assertFalse(ViewCommand.forPerson(ALICE).equals(nameCommand));
     }
 
     @Test
@@ -149,9 +176,9 @@ public class ViewCommandTest {
         ViewCommand command = new ViewCommand(index);
 
         String expected = ViewCommand.class.getCanonicalName()
-                + "{targetIndex=" + index + ", targetName=null}";
+                + "{targetIndex=" + index + ", targetName=null, targetPerson=null}";
         assertEquals(expected, command.toString());
-        assertEquals(ViewCommand.class.getCanonicalName() + "{targetIndex=null, targetName=Alice}",
+        assertEquals(ViewCommand.class.getCanonicalName() + "{targetIndex=null, targetName=Alice, targetPerson=null}",
                 new ViewCommand("Alice").toString());
     }
 }

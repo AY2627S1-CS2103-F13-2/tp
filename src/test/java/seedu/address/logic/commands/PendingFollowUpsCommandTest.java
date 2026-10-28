@@ -17,7 +17,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.ContactFile;
-import seedu.address.model.FollowUpDateFilter;
+import seedu.address.model.FollowUpFilter;
 import seedu.address.model.ModelManager;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
@@ -77,11 +77,11 @@ class PendingFollowUpsCommandTest {
         model.addPerson(BENSON);
         model.updateFilteredPersonList(person -> person.equals(BENSON));
         ContactFile before = new ContactFile(model.getContactFile());
-        Map<FollowUpDateFilter, String> headings = Map.of(FollowUpDateFilter.OVERDUE, "Overdue follow-ups",
-                FollowUpDateFilter.TODAY, "Follow-ups due today", FollowUpDateFilter.UPCOMING, "Upcoming follow-ups");
-        Map<FollowUpDateFilter, Integer> expectedIds = Map.of(FollowUpDateFilter.OVERDUE, 1,
-                FollowUpDateFilter.TODAY, 2, FollowUpDateFilter.UPCOMING, 3);
-        for (FollowUpDateFilter filter : headings.keySet()) {
+        Map<FollowUpFilter, String> headings = Map.of(FollowUpFilter.OVERDUE, "Overdue follow-ups",
+                FollowUpFilter.TODAY, "Follow-ups due today", FollowUpFilter.UPCOMING, "Upcoming follow-ups");
+        Map<FollowUpFilter, Integer> expectedIds = Map.of(FollowUpFilter.OVERDUE, 1,
+                FollowUpFilter.TODAY, 2, FollowUpFilter.UPCOMING, 3);
+        for (FollowUpFilter filter : headings.keySet()) {
             CommandResult result = new PendingFollowUpsCommand(filter, clock).execute(model);
             assertTrue(result.getFeedbackToUser().startsWith(headings.get(filter) + " (1):"));
             assertFalse(result.shouldSaveContactFile());
@@ -97,10 +97,12 @@ class PendingFollowUpsCommandTest {
 
     @Test
     void execute_emptyDateViews_showSpecificReadOnlyMessages() {
-        Map<FollowUpDateFilter, String> expected = Map.of(FollowUpDateFilter.ALL, PendingFollowUpsCommand.MESSAGE_EMPTY,
-                FollowUpDateFilter.OVERDUE, "No overdue follow-ups remain.", FollowUpDateFilter.TODAY,
-                "No follow-ups are due today.", FollowUpDateFilter.UPCOMING, "No upcoming follow-ups remain.");
-        for (Map.Entry<FollowUpDateFilter, String> entry : expected.entrySet()) {
+        Map<FollowUpFilter, String> expected = Map.of(FollowUpFilter.PENDING, PendingFollowUpsCommand.MESSAGE_EMPTY,
+                FollowUpFilter.OVERDUE, "No overdue follow-ups remain.", FollowUpFilter.TODAY,
+                "No follow-ups are due today.", FollowUpFilter.UPCOMING, "No upcoming follow-ups remain.",
+                FollowUpFilter.COMPLETED, "No completed follow-ups found.",
+                FollowUpFilter.UNDATED, "No undated pending follow-ups remain.");
+        for (Map.Entry<FollowUpFilter, String> entry : expected.entrySet()) {
             CommandResult result = new PendingFollowUpsCommand(entry.getKey()).execute(new ModelManager());
             assertEquals(entry.getValue(), result.getFeedbackToUser());
             assertTrue(result.getPendingRequest().isEmpty());
@@ -117,12 +119,42 @@ class PendingFollowUpsCommandTest {
         model.addPerson(new PersonBuilder(ALICE).withFollowUps(
                 new FollowUp(1, "Call", FollowUp.Status.PENDING, LocalDate.of(2026, 10, 26))).build());
 
-        assertTrue(new PendingFollowUpsCommand(FollowUpDateFilter.TODAY, utc).execute(model)
+        assertTrue(new PendingFollowUpsCommand(FollowUpFilter.TODAY, utc).execute(model)
                 .getPendingRequest().isPresent());
-        assertTrue(new PendingFollowUpsCommand(FollowUpDateFilter.TODAY, previousDay).execute(model)
+        assertTrue(new PendingFollowUpsCommand(FollowUpFilter.TODAY, previousDay).execute(model)
                 .getPendingRequest().isEmpty());
-        assertTrue(new PendingFollowUpsCommand(FollowUpDateFilter.UPCOMING, previousDay).execute(model)
+        assertTrue(new PendingFollowUpsCommand(FollowUpFilter.UPCOMING, previousDay).execute(model)
                 .getPendingRequest().isPresent());
+    }
+
+    @Test
+    void execute_completedAndUndatedViews_selectStoredActionsFromHiddenContacts() throws Exception {
+        Person alice = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(8, "Done undated", FollowUp.Status.COMPLETED),
+                new FollowUp(4, "Done dated", FollowUp.Status.COMPLETED, LocalDate.MIN),
+                new FollowUp(7, "Pending undated", FollowUp.Status.PENDING),
+                new FollowUp(9, "Pending dated", FollowUp.Status.PENDING, LocalDate.MAX)).build();
+        ModelManager model = new ModelManager();
+        model.addPerson(alice);
+        model.addPerson(BENSON);
+        model.updateFilteredPersonList(person -> person.equals(BENSON));
+
+        CommandResult completed = new PendingFollowUpsCommand(FollowUpFilter.COMPLETED).execute(model);
+        assertTrue(completed.getFeedbackToUser().startsWith("Completed follow-ups (2):"));
+        PendingRequest request = completed.getPendingRequest().orElseThrow();
+        assertTrue(request.respond("99", model).getFeedbackToUser().contains("Completed follow-ups (2):"));
+        CommandResult selected = request.respond("2", model);
+        assertEquals(8, selected.getFollowUpForDetails().orElseThrow().getId());
+        assertEquals(alice, selected.getPersonForDetails().orElseThrow());
+        assertFalse(completed.getFeedbackToUser().contains("[OVERDUE]"));
+
+        CommandResult undated = new PendingFollowUpsCommand(FollowUpFilter.UNDATED).execute(model);
+        assertTrue(undated.getFeedbackToUser().startsWith("Undated pending follow-ups (1):"));
+        assertEquals(7, undated.getPendingRequest().orElseThrow().respond("1", model)
+                .getFollowUpForDetails().orElseThrow().getId());
+        assertFalse(completed.shouldSaveContactFile());
+        assertFalse(undated.shouldSaveContactFile());
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
     }
 
     @Test

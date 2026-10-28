@@ -19,7 +19,6 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FieldOrder;
-import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -42,7 +41,6 @@ public class MainWindow extends UiPart<Stage> {
     private ConfirmationPanel confirmationPanel;
     private HelpWindow helpWindow;
     private Person personForDetails;
-    private FollowUp followUpForDetails;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -216,7 +214,6 @@ public class MainWindow extends UiPart<Stage> {
                 feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
             } else {
                 personForDetails = commandResult.getPersonForDetails().orElse(null);
-                followUpForDetails = commandResult.getFollowUpForDetails().orElse(null);
             }
             resultDisplay.setFeedbackToUser(feedback);
 
@@ -242,7 +239,6 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private String formatDetails(FieldOrder order) {
-        return followUpForDetails == null ? Messages.format(personForDetails, order)
-                : Messages.formatFollowUpDetails(personForDetails, followUpForDetails, order);
+        return Messages.format(personForDetails, order);
     }
 }

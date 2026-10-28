@@ -30,6 +30,7 @@ interface Model <<interface>> {
   +{abstract} getFilteredPersonList() : ObservableList<Person>
   +{abstract} updateFilteredPersonList(predicate : Predicate<Person>)
   +{abstract} getPendingFollowUps() : List<FollowUpEntry>
+  +{abstract} getFollowUps() : List<FollowUpEntry>
   +{abstract} setFieldOrder(fieldOrder : FieldOrder)
 }
 
@@ -147,7 +148,7 @@ Person -down-> "*\nfollowUps<U+00A0><U+00A0><U+00A0>" FollowUp
 Event -[hidden]right- FollowUp
 FollowUp -right-> "1\nstatus" Status
 
-' FollowUpEntry pairs a contact with one of its pending follow-ups
+' FollowUpEntry pairs a contact with one of its follow-ups, pending or completed
 FollowUpEntry --> "1\ncontact" Person
 FollowUpEntry --> "1\nfollowUp" FollowUp
 

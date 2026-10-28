@@ -115,10 +115,79 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_historyViews_preserveFilesFiltersAndSelectionOrder() throws Exception {
+        Person alice = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(9, "Alice done undated", FollowUp.Status.COMPLETED),
+                new FollowUp(4, "Alice done first", FollowUp.Status.COMPLETED, LocalDate.of(2000, 1, 1)),
+                new FollowUp(2, "Alice done second", FollowUp.Status.COMPLETED, LocalDate.of(2000, 1, 1)),
+                new FollowUp(8, "Alice pending", FollowUp.Status.PENDING)).build();
+        Person benson = new PersonBuilder(BENSON).withFollowUps(
+                new FollowUp(9, "Benson done", FollowUp.Status.COMPLETED),
+                new FollowUp(8, "Benson pending", FollowUp.Status.PENDING)).build();
+        model.setPerson(ALICE, alice);
+        model.setPerson(BENSON, benson);
+        model.updateFilteredPersonList(person -> person.equals(alice));
+        storage.saveContactFile(model.getContactFile());
+        storage.saveCount = 0;
+        storage.shouldFail = true;
+        byte[] original = Files.readAllBytes(file);
+        ContactFile before = new ContactFile(model.getContactFile());
+
+        for (String selector : List.of("completed", "undated")) {
+            int count = selector.equals("completed") ? 4 : 2;
+            CommandResult listed = logic.execute("followups " + selector);
+            assertTrue(listed.getFeedbackToUser().contains(" (" + count + "):"));
+            assertTrue(logic.execute("99").getFeedbackToUser().contains(listed.getFeedbackToUser()));
+            CommandResult selected = logic.execute(Integer.toString(count));
+            assertEquals(benson, selected.getPersonForDetails().orElseThrow());
+            assertEquals(selector.equals("completed") ? 9 : 8,
+                    selected.getFollowUpForDetails().orElseThrow().getId());
+            logic.execute("followups " + selector);
+            logic.execute("cancel");
+            assertThrows(ParseException.class, () -> logic.execute("1"));
+        }
+        logic.execute("followups completed");
+        assertTrue(logic.execute("followups undated").getFeedbackToUser().startsWith("Undated pending follow-ups"));
+        logic.execute("cancel");
+        assertEquals(before, model.getContactFile());
+        assertEquals(List.of(alice), model.getFilteredPersonList());
+        assertArrayEquals(original, Files.readAllBytes(file));
+
+        ModelManager reloaded = new ModelManager(storage.readContactFile().orElseThrow(), new UserPrefs());
+        LogicManager restarted = new LogicManager(reloaded, new StorageManager(storage,
+                new JsonUserPrefsStorage(testFolder.resolve("restart-prefs.json"))));
+        assertTrue(restarted.execute("followups completed").getFeedbackToUser().contains(" (4):"));
+        assertEquals(benson, restarted.execute("4").getPersonForDetails().orElseThrow());
+        assertTrue(restarted.execute("followups undated").getFeedbackToUser().contains(" (2):"));
+        assertEquals(0, storage.saveCount);
+    }
+
+    @Test
+    void execute_changedCompletedStatus_rejectsStaleSelectionAndRefreshesViews() throws Exception {
+        Person alice = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(1, "Call", FollowUp.Status.COMPLETED)).build();
+        model.setPerson(ALICE, alice);
+        logic.execute("followups completed");
+        Person reopened = new PersonBuilder(alice).withFollowUps(
+                new FollowUp(1, "Call", FollowUp.Status.PENDING)).build();
+        model.setPerson(alice, reopened);
+        storage.shouldFail = true;
+        byte[] original = Files.readAllBytes(file);
+
+        assertThrows(CommandException.class, () -> logic.execute("1"));
+        assertEquals(reopened, model.getContactFile().getPersonList().getFirst());
+        assertTrue(logic.execute("followups completed").getPendingRequest().isEmpty());
+        assertTrue(logic.execute("followups undated").getPendingRequest().isPresent());
+        assertEquals(FollowUp.Status.PENDING, logic.execute("1").getFollowUpForDetails().orElseThrow().getStatus());
+        assertArrayEquals(original, Files.readAllBytes(file));
+        assertEquals(0, storage.saveCount);
+    }
+
+    @Test
     void execute_emptyDateFilter_doesNotAskForSelectionOrSave() throws Exception {
         byte[] original = Files.readAllBytes(file);
         storage.shouldFail = true;
-        for (String selector : List.of("overdue", "today", "upcoming")) {
+        for (String selector : List.of("overdue", "today", "upcoming", "completed", "undated")) {
             assertTrue(logic.execute("followups " + selector).getPendingRequest().isEmpty());
             assertThrows(ParseException.class, () -> logic.execute("1"));
         }
@@ -301,8 +370,9 @@ class FollowUpWorkflowTest {
         }
         CommandResult selected = logic.execute(" 1 ");
         assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());
-        assertTrue(selected.getFeedbackToUser().startsWith(
-                "Selected follow-up:\n#1 [PENDING] Call | Due: 2000-02-29 [OVERDUE]"));
+        assertEquals(seedu.address.logic.Messages.format(selected.getPersonForDetails().orElseThrow(),
+                model.getFieldOrder()), selected.getFeedbackToUser());
+        assertEquals("Call", selected.getFollowUpForDetails().orElseThrow().getDescription());
         assertTrue(selected.getPendingRequest().isEmpty());
         assertEquals(List.of(before.getPersonList().getFirst()), model.getFilteredPersonList());
         assertEquals(before, model.getContactFile());
