@@ -52,6 +52,11 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 Always launch Astra from the same home folder so it can find your saved contacts in `data/contactfile.json`.
 
 * **No saved contact file:** Astra shows sample contacts and a welcome message explaining how to clear them.
+  The samples include starred contacts, introducers, events, tags, dated interaction notes, and
+  pending and completed follow-ups. Try `followups`, `followups today`, `followups upcoming`,
+  `followups completed`, or `followups undated` to explore them. Sample dates are based on the
+  day the samples are first loaded; once saved, they stay as recorded. Existing saved contacts
+  are never replaced by the sample data.
 * **Saved contacts load successfully:** The message area shows the number of loaded contacts and the full path to the contact file. A saved empty contact file stays empty.
 * **Another Astra instance is using the same contact file:** Startup stops with an error. Close that instance, then launch Astra again.
 
@@ -120,6 +125,7 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
 * Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
+* The phone number and email must not already belong to another contact. Two contacts may share a name only if they have different emails; names are compared without regard to letter case, so `John Doe` and `john doe` without emails are the same contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -593,6 +599,9 @@ command does not need to be repeated while answering the prompt.
 
 Lists follow-ups across all contacts, including contacts hidden by
 the current `find` or `filter` results. Your contact filter stays unchanged.
+Results appear as selectable rows in the left panel. Selecting a row shows its
+contact and selected action in the right detail card. The bottom area shows
+command summaries and errors, rather than the full follow-up list or contact details.
 
 Format: `followups [overdue|today|upcoming|completed|undated]`
 
@@ -613,23 +622,24 @@ Format: `followups [overdue|today|upcoming|completed|undated]`
 * Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
 * Completed actions appear only in the `completed` view. The default view displays
   `No pending follow-ups remain.` when empty. Other views use their own empty-result messages.
-* When entries are shown, enter a displayed number to open the associated contact using
+* When entries are shown, click a row or use the arrow keys to preview the associated contact.
+  You can also enter a displayed number to open the associated contact using
   the same display as `view`. The selected action is retained as context. Use the numbered row, not the action's
   `#ID` or a contact index. The contact filter stays unchanged, even if the
   selected contact is hidden by it.
-* Invalid numeric replies repeat the list and instructions. Non-number input
+* Invalid numeric replies keep the list visible and show a short error below it. Non-number input
   leaves selection and runs as a normal command: for example, `list`, `view 1`,
   `help`, or `followup 1 a/Call`. Unknown or malformed commands show their usual
   error and still end selection. Enter `n` or `cancel` to leave without running
   another command. An empty result requires no reply.
-* Selection uses the exact order shown in the prompt. If the selected contact
+* Numbered selection uses the exact order shown in the list. If the selected contact
   or its follow-ups have changed or the contact was deleted, Astra asks you to
   run `followups` again rather than opening stale details.
 * Running this command does not change or save contact data. Run it again to
   refresh the results after selecting or cancelling, adding an action, or when
   the day changes. Pending selections are not retained across restart.
 
-Example output (when today is 2026-10-21):
+Example list contents (when today is 2026-10-21):
 
 ```text
 Pending follow-ups (3):
