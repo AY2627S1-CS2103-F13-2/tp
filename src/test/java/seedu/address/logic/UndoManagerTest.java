@@ -59,6 +59,19 @@ public class UndoManagerTest {
                 undoManager.executeUndo(model, true).getFeedbackToUser());
     }
 
+    @Test
+    public void executeUndo_batchDeletion_restoresAllDeletedContacts() throws Exception {
+        UndoManager undoManager = new UndoManager();
+        List<Person> before = List.of(ALICE, BENSON, CARL);
+        List<Person> after = List.of(CARL);
+        undoManager.recordChange(new DeleteCommand(Index.fromOneBased(1)), before, after, "Deleted Alice and Benson");
+        Model model = createModel(after);
+        undoManager.executeUndo(model, false);
+
+        undoManager.executeUndo(model, true);
+        assertEquals(List.of(ALICE, BENSON, CARL), model.getContactFile().getPersonList());
+    }
+
     private Model createModel(List<Person> persons) {
         ContactFile contactFile = new ContactFile();
         contactFile.setPersons(persons);
