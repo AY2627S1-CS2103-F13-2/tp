@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
@@ -31,11 +32,15 @@ class TagChipsUiTest {
     void separateChips_keepTextAndColourWhenSwitchingContacts() throws Exception {
         FxTestUtil.runOnFxThread(() -> {
             PersonDetailsPanel panel = new PersonDetailsPanel();
-            new Scene(panel.getRoot(), 400, 600);
+            Scene scene = new Scene(panel.getRoot(), 400, 600);
+            scene.getStylesheets().addAll(PersonDetailsPanel.class.getResource("/view/DarkTheme.css").toExternalForm(),
+                    PersonDetailsPanel.class.getResource("/view/AstraTheme.css").toExternalForm());
             panel.getRoot().applyCss();
             Person first = new PersonBuilder(ALICE).withTags("friends", "work", "Aa", "BB").build();
             panel.showPerson(first, FieldOrder.DEFAULT);
             FlowPane chips = (FlowPane) panel.getRoot().lookup("#tagChips");
+            panel.getRoot().applyCss();
+            assertEquals(new Insets(3, 9, 3, 9), ((Label) chips.getChildren().getFirst()).getPadding());
             assertEquals(List.of("Aa", "BB", "friends", "work"), chips.getChildren().stream()
                     .map(node -> ((Label) node).getText()).toList());
             assertEquals(4, new HashSet<>(chips.getChildren().stream().map(node -> node.getStyle()).toList()).size());

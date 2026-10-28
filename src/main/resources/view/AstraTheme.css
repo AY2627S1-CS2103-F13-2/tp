@@ -171,7 +171,14 @@
     -fx-line-spacing: 6;
 }
 
-.contact-details .tag-chip {
+.contact-details #tags .detail-caption {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-text-fill: #6c7c91;
+    -fx-font-size: 13px;
+}
+
+.contact-details #tags .tag-chip {
     -fx-padding: 3 9;
     -fx-background-radius: 12;
     -fx-font-size: 12px;
