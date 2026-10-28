@@ -59,6 +59,8 @@ Always launch Astra from the same home folder so it can find your saved contacts
 
 If the file can be read but contains some invalid or duplicate contacts, Astra automatically keeps the valid contacts and skips the affected records. For duplicate contacts, the first valid record is kept. Recovery proceeds only if at least one valid contact remains.
 
+An invalid saved event entry, such as `null` in a contact's `events` list, causes that entire contact to be skipped and reported. Astra does not recover individual fields or events from the damaged contact.
+
 Before replacing the active file with the recovered contacts, Astra preserves the original file as `contactfile.original.json` and writes a `report.txt` in a separate folder under `data/recovery/`. The startup message shows how many contacts were recovered and skipped, along with the paths to the active file, backup, and report.
 
 Read the report for the positions and reasons for skipped records in the original file. Keep the backup unchanged; use it to look up missing details, correct them, and add those contacts through Astra. Recovery is complete only when Astra displays the successful recovery message.
