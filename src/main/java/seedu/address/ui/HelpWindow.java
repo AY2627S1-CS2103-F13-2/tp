@@ -19,6 +19,9 @@ public class HelpWindow extends UiPart<Stage> {
     public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL
             + "\nFollow-ups: followup INDEX a/DESCRIPTION [d/DATE]."
             + " Pending duplicates ask y/n; cancel stops the request."
+            + "\nDelete an action: deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID, then y or n/cancel."
+            + "\nContact edits, deletions, clear, and duplicate follow-ups show a shared confirmation panel."
+            + " Use its buttons or type y, n, or cancel."
             + "\nReview pending follow-ups: followups. Then enter a displayed number to view its details/contact,"
             + " or n/cancel to stop.";
 
