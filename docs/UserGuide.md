@@ -223,12 +223,14 @@ Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…�
 * Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
 * Astra first displays the proposed removal in the confirmation panel. Reply `y` to apply it,
   or `n`/`cancel` to stop. Until confirmed, the contact file is unchanged and not saved.
-  A command submitted initially with `--confirm` still applies immediately for compatibility.
+  You do not need to type the command again with `--confirm`.
+* Ending the command with `--confirm` skips the preview and removes the values immediately,
+  without asking. Use it only when you are sure of the values.
 * Repeating `t/TAG` removes only those selected tags; all other tags and contact details are retained.
 
 Examples:
 * `drop 1 t/outdated` Shows the selected tag removal for the 1st contact.
-* `drop 1 t/outdated --confirm` Removes that tag while keeping the contact's other tags.
+* `drop 1 t/outdated --confirm` Removes that tag immediately, without a preview, while keeping the contact's other tags.
 * `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
 * `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
 
