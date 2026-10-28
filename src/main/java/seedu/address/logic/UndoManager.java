@@ -82,13 +82,21 @@ public class UndoManager {
         }
         pendingEntry = undoableEntry;
         ConfirmationRequest request = new ConfirmationRequest(String.format(MESSAGE_CONFIRM_UNDO,
-                undoableEntry.action, undoableEntry.feedback), new Command() {
+                undoableEntry.action, getDisplayFeedback(undoableEntry)), new Command() {
                     @Override
                     public CommandResult execute(Model model) throws CommandException {
                         return confirmUndo(model);
                     }
                 });
         return new CommandResult(request.getPrompt(), request);
+    }
+
+    private String getDisplayFeedback(HistoryEntry entry) {
+        if (!"deletion".equals(entry.action)) {
+            return entry.feedback;
+        }
+        int lastLineStart = entry.feedback.lastIndexOf('\n');
+        return lastLineStart < 0 ? entry.feedback : entry.feedback.substring(0, lastLineStart);
     }
 
     private CommandResult confirmUndo(Model model) {
@@ -153,7 +161,7 @@ public class UndoManager {
         for (int i = history.size() - 1; i >= 0; i--) {
             HistoryEntry entry = history.get(i);
             lines.add(String.format("%d. %s%s: %s", history.size() - i, entry.action,
-                    entry.isUndone ? " (undone)" : "", entry.feedback.replace("\n", " ")));
+                    entry.isUndone ? " (undone)" : "", getDisplayFeedback(entry).replace("\n", " ")));
         }
         return String.join("\n", lines);
     }
