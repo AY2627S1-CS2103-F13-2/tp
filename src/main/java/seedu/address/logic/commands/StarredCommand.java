@@ -16,7 +16,7 @@ public class StarredCommand extends Command {
             + ": Lists all starred contacts.\n"
             + "Example: " + COMMAND_WORD;
 
-    public static final String MESSAGE_SUCCESS = "Listed %1$d starred contacts.";
+    public static final String MESSAGE_SUCCESS = "Listed %1$d starred %2$s.";
     public static final String MESSAGE_NO_STARRED_CONTACTS = "There are no starred contacts.";
 
     @Override
@@ -29,6 +29,7 @@ public class StarredCommand extends Command {
             return new CommandResult(MESSAGE_NO_STARRED_CONTACTS);
         }
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS, starredCount));
+        String contactLabel = starredCount == 1 ? "contact" : "contacts";
+        return new CommandResult(String.format(MESSAGE_SUCCESS, starredCount, contactLabel));
     }
 }
