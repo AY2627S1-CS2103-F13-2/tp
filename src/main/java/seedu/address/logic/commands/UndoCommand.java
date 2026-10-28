@@ -11,28 +11,24 @@ import seedu.address.model.Model;
  */
 public class UndoCommand extends Command {
     public static final String COMMAND_WORD = "undo";
-    public static final String CONFIRM_OPTION = "--confirm";
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Previews the most recent edit or deletion. Add " + CONFIRM_OPTION + " to confirm.\n"
-            + "Example: " + COMMAND_WORD + " " + CONFIRM_OPTION;
+            + ": Previews the most recent edit or deletion and asks for y/n confirmation.\n"
+            + "Example: " + COMMAND_WORD;
 
     private final UndoManager undoManager;
-    private final boolean confirmed;
 
     /**
-     * Creates an undo command.
+     * Creates a command to preview and confirm undoing the latest supported change.
      *
      * @param undoManager session history to query or update
-     * @param confirmed whether the user confirmed the undo
      */
-    public UndoCommand(UndoManager undoManager, boolean confirmed) {
+    public UndoCommand(UndoManager undoManager) {
         requireNonNull(undoManager);
         this.undoManager = undoManager;
-        this.confirmed = confirmed;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
-        return undoManager.executeUndo(model, confirmed);
+        return undoManager.executeUndo();
     }
 }
