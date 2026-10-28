@@ -48,9 +48,9 @@ public class AddCommand extends Command {
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the contact file.";
     public static final String MESSAGE_DUPLICATE_EMAIL = "A person with the same "
-                                                           + "email already exist in the contact file.";
+                                                           + "email already exists in the contact file.";
     public static final String MESSAGE_DUPLICATE_PHONE = "A person with the same "
-                                                            + "phone already exist in the contact file";
+                                                            + "phone already exists in the contact file.";
 
     private final Person toAdd;
 
