@@ -121,9 +121,15 @@ public class ModelManager implements Model {
 
     @Override
     public List<FollowUpEntry> getPendingFollowUps() {
+        return getFollowUps().stream()
+                .filter(entry -> entry.followUp().getStatus() == FollowUp.Status.PENDING)
+                .toList();
+    }
+
+    @Override
+    public List<FollowUpEntry> getFollowUps() {
         return contactFile.getPersonList().stream()
                 .flatMap(contact -> contact.getFollowUps().stream()
-                        .filter(action -> action.getStatus() == FollowUp.Status.PENDING)
                         .map(action -> new FollowUpEntry(contact, action)))
                 .sorted(Comparator.comparing(entry -> entry.followUp().getDueDate().orElse(null),
                         Comparator.nullsLast(Comparator.naturalOrder())))

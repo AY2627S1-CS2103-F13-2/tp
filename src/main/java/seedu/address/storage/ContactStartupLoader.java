@@ -4,13 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
-import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ContactFile;
 import seedu.address.model.util.SampleDataUtil;
@@ -20,19 +17,13 @@ import seedu.address.model.util.SampleDataUtil;
  */
 final class ContactStartupLoader {
 
-    private static final Logger logger =
-            LogsCenter.getLogger(ContactStartupLoader.class);
-
     private final ContactRecoveryParser parser = new ContactRecoveryParser();
     private final ArchiveWriter archiveWriter;
     private final FailureArchiveWriter failureArchiveWriter;
     private final AtomicReplacement replacement;
 
     ContactStartupLoader() {
-        this(new RecoveryArchiveWriter()::write, (temporary, target) ->
-                Files.move(temporary, target,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING));
+        this(new RecoveryArchiveWriter()::write, AtomicFileWriter::replace);
     }
 
     ContactStartupLoader(ArchiveWriter archiveWriter,
@@ -154,17 +145,12 @@ final class ContactStartupLoader {
 
     private void replaceActiveFile(Path source, byte[] originalBytes,
                                    ContactRecoveryResult result) throws IOException {
-        Path temporary = Files.createTempFile(
-                source.getParent(), "contactfile-recovery-", ".json");
-
-        try {
-            writeRecoveredFile(temporary, result);
-            verifyRecoveredFile(temporary, result);
-            verifyOriginalUnchanged(source, originalBytes);
-            replacement.replace(temporary, source);
-        } finally {
-            removeTemporaryFile(temporary);
-        }
+        AtomicFileWriter.write(source, "contactfile-recovery-",
+                temporary -> writeRecoveredFile(temporary, result),
+                temporary -> verifyRecoveredFile(temporary, result), (temporary, target) -> {
+                    verifyOriginalUnchanged(target, originalBytes);
+                    replacement.replace(temporary, target);
+                });
     }
 
     private void writeRecoveredFile(Path temporary,
@@ -189,15 +175,6 @@ final class ContactStartupLoader {
         if (!Arrays.equals(originalBytes, Files.readAllBytes(source))) {
             throw new IOException(
                     "The contact file changed during recovery. Restart Astra and try again.");
-        }
-    }
-
-    private void removeTemporaryFile(Path temporary) {
-        try {
-            Files.deleteIfExists(temporary);
-        } catch (IOException e) {
-            logger.warning("Could not remove recovery temporary file " + temporary
-                    + ": " + e.getMessage());
         }
     }
 

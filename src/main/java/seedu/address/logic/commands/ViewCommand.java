@@ -17,6 +17,7 @@ import seedu.address.model.person.Person;
 public class ViewCommand extends Command {
 
     public static final String COMMAND_WORD = "view";
+    public static final String MESSAGE_CONTACT_CHANGED = "Contact changed. Run view again.";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Displays all information about the person identified by the index number "
@@ -25,9 +26,10 @@ public class ViewCommand extends Command {
             + "Example: " + COMMAND_WORD + " 1\n"
             + "Example: " + COMMAND_WORD + " Alice Pauline";
 
-    // Exactly one selector is set. Index selection uses the current displayed list.
+    // Exactly one selector is set. A resolved contact bypasses name/index lookup.
     private final Index targetIndex;
     private final String targetName;
+    private final Person targetPerson;
 
     /**
      * Creates a ViewCommand to display the person at the specified index.
@@ -38,6 +40,7 @@ public class ViewCommand extends Command {
         requireNonNull(targetIndex);
         this.targetIndex = targetIndex;
         this.targetName = null;
+        this.targetPerson = null;
     }
 
     /**
@@ -48,20 +51,42 @@ public class ViewCommand extends Command {
     public ViewCommand(String targetName) {
         this.targetIndex = null;
         this.targetName = requireNonNull(targetName);
+        this.targetPerson = null;
+    }
+
+    private ViewCommand(Person targetPerson) {
+        this.targetIndex = null;
+        this.targetName = null;
+        this.targetPerson = requireNonNull(targetPerson);
+    }
+
+    /**
+     * Views an already selected contact without repeating lookup or changing the contact filter.
+     */
+    public static ViewCommand forPerson(Person person) {
+        return new ViewCommand(person);
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
-        Person personToView;
-        switch (PersonNameResolver.resolveTarget(model, targetIndex, targetName, COMMAND_WORD)) {
-            case PersonNameResolver.Outcome.Unique unique -> personToView = unique.person();
-            case PersonNameResolver.Outcome.Several several -> {
-                return new CommandResult(several.message());
+        Person personToView = targetPerson;
+        if (targetPerson != null) {
+            if (!model.getContactFile().getPersonList().contains(targetPerson)) {
+                throw new CommandException(MESSAGE_CONTACT_CHANGED);
+            }
+        } else {
+            switch (PersonNameResolver.resolveTarget(model, targetIndex, targetName, COMMAND_WORD)) {
+                case PersonNameResolver.Outcome.Unique unique -> personToView = unique.person();
+                case PersonNameResolver.Outcome.Several several -> {
+                    return new CommandResult(several.message());
+                }
             }
         }
 
+        assert model.getContactFile().getPersonList().contains(personToView)
+                : "Viewed contact must belong to the active contact file";
         return CommandResult.createPersonDetails(Messages.format(personToView, model.getFieldOrder()), personToView);
     }
 
@@ -76,7 +101,8 @@ public class ViewCommand extends Command {
         }
 
         return Objects.equals(targetIndex, otherViewCommand.targetIndex)
-                && Objects.equals(targetName, otherViewCommand.targetName);
+                && Objects.equals(targetName, otherViewCommand.targetName)
+                && Objects.equals(targetPerson, otherViewCommand.targetPerson);
     }
 
     @Override
@@ -84,6 +110,7 @@ public class ViewCommand extends Command {
         return new ToStringBuilder(this)
                 .add("targetIndex", targetIndex)
                 .add("targetName", targetName)
+                .add("targetPerson", targetPerson)
                 .toString();
     }
 }

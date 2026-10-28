@@ -35,9 +35,9 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
-   * `followups`: Reviews pending actions across all contacts in due-date order.
+   * `followups [overdue|today|upcoming|completed|undated]`: Reviews follow-ups across all contacts by date or status.
 
-   * `order name phone email company role tags linkedin followups`: Changes the field order for every contact.
+   * `order name phone email company role tags linkedin followups interactions`: Changes the field order for every contact.
 
    * `clear`, then `y`: Deletes all contacts.
 
@@ -58,6 +58,8 @@ Always launch Astra from the same home folder so it can find your saved contacts
 ### Recovering contacts at startup
 
 If the file can be read but contains some invalid or duplicate contacts, Astra automatically keeps the valid contacts and skips the affected records. For duplicate contacts, the first valid record is kept. Recovery proceeds only if at least one valid contact remains.
+
+An invalid saved event entry, such as `null` in a contact's `events` list, causes that entire contact to be skipped and reported. Astra does not recover individual fields or events from the damaged contact.
 
 Before replacing the active file with the recovered contacts, Astra preserves the original file as `contactfile.original.json` and writes a `report.txt` in a separate folder under `data/recovery/`. The startup message shows how many contacts were recovered and skipped, along with the paths to the active file, backup, and report.
 
@@ -188,18 +190,22 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
 
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, …​
 * Instead of an index, you can give all or part of the person's name, e.g. `edit John Lim p/91234567`. Letter case is ignored.
-  * If exactly one person's name contains it, that person is edited.
+  * If exactly one person's name contains it, Astra previews an edit for that person.
   * If several do, they are listed with numbers and nothing is edited. Enter the command again with the person's number from that list in place of the name.
 * At least one of the optional fields must be provided.
 * If every value you enter is the same as the current one, nothing is changed and an error message is shown.
-* Existing values will be updated to the input values.
+* Valid edits first show the proposed changes and resulting contact in the confirmation panel.
+  Enter `y` or choose **Confirm** to apply; `n`/`cancel` or **Cancel** discards them.
+  Other replies repeat the prompt. Nothing is saved before confirmation.
+* Existing values will be updated to the input values after confirmation.
+* A new name that is the same as another person's is rejected when neither of them has an email.
 * The new phone number or email must not already belong to another person. Emails are compared without regard to letter case, so `JohnDoe@example.com` and `johndoe@example.com` are the same email.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
-* Use `ev/EVENT` to add an event to the contact. Existing events are retained.
-* If a contact name matches several contacts, Astra displays the matching contacts. Enter the displayed index to select the intended contact.
+* Use `ev/EVENT` to add one event to the contact. Existing events are retained. An event the contact already has is rejected, and `ev/` without an event name is not accepted. Events cannot be removed in this version.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * To remove a person's company, role, phone, email or LinkedIn, enter its prefix with nothing after it, e.g. `c/`. The name cannot be removed.
-* After the edit, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
+* After confirmation, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
+* After confirmation, the full contact list is shown again.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -215,7 +221,9 @@ Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…�
 
 * `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them and makes no changes.
 * Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
-* Astra first displays the proposed removal. Repeat the command with `--confirm` to apply it. Until confirmed, the contact file is unchanged and not saved.
+* Astra first displays the proposed removal in the confirmation panel. Reply `y` to apply it,
+  or `n`/`cancel` to stop. Until confirmed, the contact file is unchanged and not saved.
+  A command submitted initially with `--confirm` still applies immediately for compatibility.
 * Repeating `t/TAG` removes only those selected tags; all other tags and contact details are retained.
 
 Examples:
@@ -232,7 +240,9 @@ Format: `introduce NAME i/INTRODUCER [--confirm]`
 
 * `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
-* If an introducer is already recorded, Astra displays that name and asks before replacing it. Confirm by repeating the command with `--confirm` at the end.
+* If an introducer is already recorded, Astra displays that name in the confirmation panel.
+  Reply `y` to replace it or `n`/`cancel` to stop. An initial command ending in `--confirm`
+  still applies immediately for compatibility.
 * Astra displays the updated contact after recording the introducer.
 
 Examples:
@@ -314,6 +324,8 @@ Searching interaction notes:
 
 * `find /notes KEYWORDS` finds contacts with a logged interaction whose note contains any of the keywords.
 * Letter case is ignored and partial words are accepted.
+* The result lists each matching contact with the date and note of every matching interaction. Notes longer than 60 characters are shortened to an excerpt around the first match.
+* Everything after `/notes` is treated as keywords, so `/notes` cannot be combined with other search criteria such as `/company`.
 * If no note matches, Astra reports `No matching notes were found.` and leaves the previous list unchanged.
 
 Example:
@@ -402,12 +414,13 @@ Records a conversation or meeting with a person, so you can look back at what yo
 
 Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
 
-* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`.
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`. If several people match the name, they are listed with numbers and nothing is logged; enter the command again with the person's number in place of the name.
 * `DATE` is when the interaction happened, in the format `YYYY-MM-DD`. If you leave it out, today's date is used.
 * The date cannot be in the future, since the interaction has already happened.
 * `NOTE` is what was discussed, and cannot be blank.
 * Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
 * Logging the same note on the same date twice is rejected, so an accidental repeat does not add a second copy. Letter case is ignored when comparing notes.
+* When you give an `INDEX`, the displayed list stays as it was. When you give a `NAME`, the list shows the people matching that name.
 * `view` shows a person's interaction history after their other details. Use `order` to move it.
 
 Examples:
@@ -424,13 +437,31 @@ Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
 * `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
 * Astra first shows the interaction and asks you to confirm. Enter `y` to remove it, or `n` or `cancel` to keep it.
 * After removing it, Astra shows what was removed and the person's remaining history, renumbered.
-* The displayed list stays as it was, so the same index still points to the same person.
+* When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
 * If the person has fewer interactions than `ENTRY`, nothing is removed.
-* To correct an interaction, remove it with `unlog` and then log it again with `log`.
+* To correct an interaction's date or note instead of removing it, use `editlog`.
 
 Examples:
 * `unlog John Lim i/2` removes the 2nd interaction in John Lim's history.
 * `unlog 1 i/1` removes the earliest interaction with the 1st person in the list.
+
+### Editing a logged interaction: `editlog`
+
+Corrects the date or note of an interaction you have logged, e.g. a typo in the note or the wrong date.
+
+Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`
+
+* Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `log`.
+* `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
+* Give at least one of `d/DATE` and `nt/NOTE`. A part you leave out keeps its current value.
+* `DATE` and `NOTE` follow the same rules as in `log`: the date uses `YYYY-MM-DD` and cannot be in the future, and the note cannot be blank.
+* Interactions stay in date order, so changing the date can move the interaction to a different number. Astra shows its new number and the full history after the edit.
+* An edit that leaves the interaction exactly as it was, or that makes it the same as another of the person's interactions (same date and note, ignoring letter case), is rejected and nothing changes.
+* When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
+
+Examples:
+* `editlog John Lim i/2 nt/Discussed frontend internships` corrects the note of the 2nd interaction in John Lim's history.
+* `editlog 1 i/1 d/2026-09-30` moves the earliest interaction with the 1st person in the list to 30 September 2026.
 
 ### Deleting a person: `delete`
 
@@ -538,8 +569,11 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   another action with the requested date and leaves the existing action unchanged.
   Other replies repeat the prompt; cancel before entering another command.
 * A completed action with the same description does not require confirmation.
-  Completed history is retained. Marking actions complete and editing or deleting
-  individual follow-ups are not available in this version.
+  Completed history is retained. Use `completefollowup` and `reopenfollowup` to
+  change an action's status, `editfollowup` to correct an action, and
+  `deletefollowup` to remove a mistaken action.
+* Action IDs are unique within each contact and are never renumbered or reused after deletion,
+  including after restart. Older files infer the greatest allocated ID from their existing history.
 * Actions survive restart and ordinary contact edits. A failed save preserves
   the file, previous action history, and current view.
 
@@ -555,24 +589,32 @@ The second asks whether another is wanted; enter `y` to add `#2` due on
 `2026-11-01`, or `n` to keep just `#1`. The original
 command does not need to be repeated while answering the prompt.
 
-### Reviewing pending follow-ups: `followups`
+### Reviewing follow-ups: `followups`
 
-Lists incomplete follow-ups across all contacts, including contacts hidden by
+Lists follow-ups across all contacts, including contacts hidden by
 the current `find` or `filter` results. Your contact filter stays unchanged.
 
-Format: `followups`
+Format: `followups [overdue|today|upcoming|completed|undated]`
 
-* Takes no arguments. Extra arguments are rejected with usage instructions.
+* Omit the selector to list all pending actions, including undated actions.
+* `overdue` includes pending actions due before today; `today` includes those due today.
+* `upcoming` includes pending actions due after today, with no upper date limit.
+* `completed` includes completed actions with or without due dates.
+* `undated` includes pending actions without due dates; completed undated actions are excluded.
+* Date-based views exclude completed and undated actions. Selectors ignore letter case.
+* Supply at most one selector. Unknown selectors and extra arguments show usage instructions.
+* Today uses your computer's local date when the command runs. Each view has its own heading
+  and empty-result message.
 * Dated actions appear in ascending due-date order, followed by undated actions.
 * Equal dates retain contact order, then each contact's stored action order.
   Undated actions retain that same order.
 * Each numbered entry shows the contact name, stable action ID, status,
   description, and due date in `yyyy-MM-dd` format or `No due date`.
 * Pending actions due before today show `[OVERDUE]`. Actions due today are not overdue.
-* Completed actions are excluded. If none remain, Astra displays
-  `No pending follow-ups remain.`
-* When entries are shown, enter a displayed number to open that follow-up's
-  details and its associated contact. Use the numbered row, not the action's
+* Completed actions appear only in the `completed` view. The default view displays
+  `No pending follow-ups remain.` when empty. Other views use their own empty-result messages.
+* When entries are shown, enter a displayed number to open the associated contact using
+  the same display as `view`. The selected action is retained as context. Use the numbered row, not the action's
   `#ID` or a contact index. The contact filter stays unchanged, even if the
   selected contact is hidden by it.
 * Invalid numeric replies repeat the list and instructions. Non-number input
@@ -625,6 +667,70 @@ editfollowup 1 i/2 d/2026-11-05
 editfollowup 1 i/2 a/Call client d/2026-11-05
 editfollowup 1 i/2 d/
 ```
+
+### Completing or reopening a follow-up: `completefollowup`, `reopenfollowup`
+
+Marks a pending follow-up as completed, or reopens a completed follow-up as pending.
+
+Format:
+
+`completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br>
+`reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`
+
+* `CONTACT_INDEX` is the contact number in the currently displayed list.
+* `FOLLOW_UP_ID` is the follow-up's stable ID, shown as `#ID` on the contact card,
+  in `view`, and in `followups`. It is not the row number of the `followups` list.
+* Only the status changes. The ID, description, due date and position in the
+  contact's history are kept.
+* A completed follow-up moves to `followups completed` and leaves the default,
+  `overdue`, `today`, `upcoming` and `undated` views. It is never shown as
+  `[OVERDUE]`. Reopening it moves it back to the views that match its due date.
+* Completing a follow-up that is already completed, or reopening one that is
+  already pending, is rejected and changes nothing.
+* A follow-up cannot be reopened while another pending follow-up of the same
+  contact has the same description. Complete or edit that follow-up first.
+* The change is saved immediately and survives restart.
+
+Examples:
+
+```text
+completefollowup 1 i/2
+reopenfollowup 1 i/2
+```
+
+The first command changes `#2 [PENDING] Call client | Due: 2026-11-05` to
+`#2 [COMPLETED] Call client | Due: 2026-11-05`. The second reverts it to pending.
+
+### Deleting a follow-up: `deletefollowup`
+
+Previews one pending or completed action before permanently removing it.
+
+Format: `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`
+
+* `CONTACT_INDEX` refers to the currently displayed contact list. `FOLLOW_UP_ID` is
+  the stable number after `#` in that contact's history, not a dashboard row number.
+  Both values must be positive integers.
+* The confirmation panel shows the contact, action ID, description, status, and due date.
+  Enter `y` or choose **Confirm** to delete; `n`/`cancel` or **Cancel** keeps the action.
+  Invalid replies repeat the prompt and unrelated commands wait until you answer or cancel.
+* Only that action is removed. Remaining action order and IDs, contact fields, tags,
+  events, introducer, star, and interactions are preserved. The current contact filter remains active.
+* IDs are never reused, even after deleting the highest ID or the entire history and restarting.
+* Invalid contact indices or action IDs change nothing. A failed save restores the
+  original file, contact history, retired IDs, and pre-request view. Start a new request to retry.
+
+Example: `deletefollowup 1 i/9`, then `y`, removes action `#9` from the first displayed contact.
+
+### Using the confirmation panel
+
+Contact edits, contact deletion, clear, follow-up deletion, and duplicate follow-up creation
+share one scrollable panel. Existing y/n requests from other commands use it too. Read the preview,
+then use the buttons or enter `y`, `n`, or `cancel` in the command box. Tab reaches the buttons;
+Enter or Space activates the focused button. Showing the panel does not take focus from the command box.
+
+Invalid replies leave the panel open. Completion, cancellation, or failure hides it.
+An old button event cannot confirm a later request. Contact/action selection lists still ask for a
+number before showing a final confirmation, where applicable.
 
 ### Clearing all entries: `clear`
 
@@ -768,18 +874,22 @@ Action | Format, Examples
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
-**Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields)<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
+**Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields), then `y` to confirm or `n`/`cancel` to stop<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
 **Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
 **Undo** | `undo` to preview the most recent edit or deletion; `undo --confirm` to restore it
 **History** | `history`
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/2`
 **Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
 e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
+**Complete follow-up** | `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `completefollowup 1 i/2`
+**Reopen follow-up** | `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `reopenfollowup 1 i/2`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
-**Pending follow-ups** | `followups`, then a displayed number to view details/contact or `n`/`cancel` to stop
+**Follow-ups** | `followups [overdue|today|upcoming|completed|undated]`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
+**Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change

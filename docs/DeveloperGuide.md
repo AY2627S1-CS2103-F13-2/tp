@@ -36,8 +36,8 @@ The following provides a quick overview of the main components and their interac
 
 **Main components of the architecture**
 
-**`Main`** (consisting of classes [`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
-* At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
+**`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+* At app launch, it initializes the other components in the correct sequence, and connects them up with each other. It loads the saved contacts through `Storage` before creating `Model`, so that any recovery done at startup can be reported by `UI`.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
 
 The bulk of the app's work is done by the following four components:
@@ -49,12 +49,22 @@ The bulk of the app's work is done by the following four components:
 
 [**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
 
+In the diagram, a solid arrow means the component holds a reference to the other one, and a dashed arrow means it only
+depends on it. `UI` keeps a reference to `Logic` and shows data from `Model`, but never changes `Model` itself: every
+user command goes through `Logic`, which updates `Model` and asks `Storage` to save the changes. `UI` depends on
+`Storage` only for the startup result it displays (whether the contacts were loaded or recovered), and
+`Storage` depends on `Model` for the data it reads and writes.
+
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows `delete 1` followed by `y`, including the
-preview before mutation and the atomic save after confirmation.
+The *Sequence Diagram* below shows how the components interact when the user enters `delete 1` and then
+confirms with `y`.
 
-<img src="images/ArchitectureSequenceDiagram.svg" width="100%" />
+<img src="images/ArchitectureSequenceDiagram.png" width="574" />
+
+The first command only looks up the contact on display and returns a preview with a y/n prompt, so nothing is
+changed or saved yet. The reply `y` makes `Logic` delete the contact from `Model` and save the contact file
+through `Storage`. If saving fails, `Logic` restores the data that was in `Model` before the command.
 
 Each of the four main components (also shown in the diagram above),
 
@@ -125,24 +135,25 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="450" />
+<img src="images/ModelClassDiagram.png" width="750" />
 
+The diagram shows only the methods discussed in this guide. `ModelManager` implements every method of `Model`, so its methods are not repeated.
 
 The `Model` component,
 
-* stores the contact file data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
-* a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email` and `Linkedin`. Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value.
-* `Person#isSamePerson` retains the legacy identity rule: equal names and equal email presence (both present or both absent). Email values do not participate in that rule. Add/edit separately reject shared normalized phone numbers and case-insensitive email addresses. This differs from the intended phone/email key policy; changing identity requires a separate compatibility decision.
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (GUI settings and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* stores the contact file data i.e., all `Person` objects, in a `UniquePersonList` inside a `ContactFile`. `ModelManager` builds its own copies of the `ContactFile` and `UserPrefs` it is given, so it owns them (composition).
+* a `Person` always has a `Name`, and may additionally have a `Company`, `Role`, `Phone`, `Email`, `Linkedin` and an introducer (the `Name` of the person who introduced them). Every field other than the name is optional, because a contact met at a networking event is often captured with only the details that were exchanged. Optional fields are exposed as `Optional<...>` so callers must handle an absent value. These single-value classes, and `Tag`, are shown as attributes of `Person` rather than as separate classes.
+* a `Person` also holds any number of tags, `Event`s, `FollowUp`s and `Interaction`s, a starred flag, and the last follow-up ID it allocated.
+* `Person` is immutable. `withStarred`, `withEvent`, `appendFollowUp`, `removeFollowUp` and `withInteraction` each return a new `Person`, which `Model#setPerson` puts in place of the old one. The new `Person` shares its unchanged `Event`, `FollowUp` and `Interaction` objects with the old one, so these are drawn as associations rather than compositions.
+* `Person#isSamePerson` compares equal names and emails that are either both absent or equal ignoring case.
+  Current add/edit validation separately rejects shared normalized phone numbers and case-insensitive emails.
+  Follow-ups, retired action IDs, events, interactions, and starred status do not change contact identity.
+* a `FollowUp` has an ID, a description, an optional due date and a `Status` (`PENDING` or `COMPLETED`). `FollowUp#isOverdue` is true for a pending follow-up whose due date has passed. `Model#getFollowUps` creates a `FollowUpEntry` for each follow-up, pairing it with its contact; `Model#getPendingFollowUps` retains only pending actions from that snapshot.
+* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the nine `Field` values exactly once.
+* provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
+* how a follow-up is added through an immutable `Person`, and why follow-up IDs are never reused, is shown in [Follow-up actions (UC16)](#follow-up-actions-uc16).
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `ContactFile`, and each `Person` references tags from that list. This lets `ContactFile` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
-
-<img src="images/BetterModelClassDiagram.png" width="450" />
-
-</div>
-
 
 ### Storage component
 
@@ -153,7 +164,16 @@ The `Model` component,
 The `Storage` component,
 * can save both contact file data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonContactFileStorage` and `JsonUserPrefsStorage` (one class per data file).
+  Both use `AtomicFileWriter` for candidate writing, verification, atomic replacement and cleanup.
+  Callers retain data-specific validation. `ContactStartupLoader` also retains recovery archiving and
+  the original-file change check.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+`JsonAdaptedPerson` uses one optional-scalar helper for absent-value handling, validation and construction.
+Required-name validation and collection-specific rules remain in separate conversion helpers.
+`ContactTextField` holds the shared text-field constraints used by conversion and startup recovery.
+Recovery still checks raw JSON types and collects field-specific errors before conversion; it owns
+the decision to skip a record and retains the original record positions in its report.
 
 ### Common classes
 
@@ -249,22 +269,73 @@ references rather than resolving a displayed index again later.
 
 Logic handles n/cancel centrally, restores the pre-request filter, and discards
 the request. Invalid replies repeat the current prompt; unrelated commands are
-not executed while a reply is pending. A completed or failed confirmed request
+not executed while a confirmation or destructive selection is pending. Read-only
+follow-up review selections may hand off to normal commands. A completed or failed confirmed request
 clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
 shared confirmation API with an "Add another?" question for duplicate pending
 actions.
 
-`ModelSnapshot` copies contact contents and retains the original predicate.
-Logic compares the completed model with the snapshot and saves only changed
-contact data. Queries, ambiguity results, prompts, selections, cancellations,
-and no-ops perform no contact-file write. On an exception, data and the original
-filter are restored without replacing the observable lists bound to the UI.
+`ModelSnapshot` is the Model's restore point for one request. It copies the
+contact file and the user preferences, and keeps the active filter. Logic uses
+it in three ways:
+
+* **To decide whether to save.** After a command, `hasDataChanged` and
+  `hasPreferencesChanged` compare the model with the snapshot, so only changed
+  data is written. Queries, ambiguity results, prompts, selections,
+  cancellations and no-ops perform no contact-file write.
+* **To roll back a failure.** If a command or a save throws, `restore` puts the
+  copied data and the original filter back, so the model never shows a change
+  that was not saved.
+* **To cancel a pending request.** The snapshot is kept with the request until
+  the user replies. `n` or `cancel` restores it, which also brings back the
+  list the user saw before, such as the full list after a name lookup narrowed
+  it to the candidates.
+
+`restore` copies the saved contacts back into the existing lists instead of
+replacing them, so the observable lists bound to the UI stay connected.
+
+The sequence diagram below shows `delete 1` followed by a reply. The first
+input only takes the snapshot and creates the request; nothing is deleted yet.
+The `alt` frame shows the two replies:
+
+* `y` runs the resolved command, finds that the data changed, and saves. The
+  `opt` frame shows the rollback when that save fails.
+* `n` or `cancel` restores the snapshot straight away, without saving.
+
+Either way, Logic then discards both the request and the snapshot. The details
+of the two `ref` frames are shown in the two diagrams after it.
+
+![Snapshot and rollback during a confirmed delete](images/TransactionSequenceDiagram.png)
+
+![sd create delete confirmation c](images/DeleteConfirmationSequenceDiagram.png)
+
+![sd run confirmed delete](images/ConfirmedDeleteSequenceDiagram.png)
 
 `JsonContactFileStorage` serializes to a sibling temporary file, reloads and
 compares the candidate, then uses atomic replacement. Failures before
 replacement preserve the previous active file. Temporary-file cleanup never
 turns an already successful replacement into a reported transaction failure.
 No unsafe in-place fallback is used when atomic replacement is unavailable.
+
+#### Design considerations
+
+**Aspect: How a failed or cancelled request is undone**
+
+* **Alternative 1 (current choice):** Logic takes a `ModelSnapshot` before each
+  request and calls `restore` if the request fails or is cancelled.
+  * Pros: Rollback is handled in one place, so no command needs its own undo
+    logic. The snapshot copies only the list of contacts, not the contacts
+    themselves, because `Person` is immutable. The same snapshot also tells
+    Logic whether anything needs saving.
+  * Cons: Every request copies the contact list and preferences, even one
+    that changes nothing. The snapshot covers only the current request, so it
+    is not a multi-step undo history.
+* **Alternative 2:** Each command reverses its own changes when something
+  fails.
+  * Pros: Nothing is copied unless a command needs it.
+  * Cons: Every command needs its own correct reverse logic, including for
+    the filter and preferences. A missed case leaves the model showing a
+    change that was never saved.
 
 ### Tag filtering (UC20)
 
@@ -310,9 +381,38 @@ both fields; older files default to unstarred contacts with empty action history
 `Person` owns an immutable ordered `List<FollowUp>`. Each action has a positive
 ID unique within that contact, a stripped non-blank description, and a
 `PENDING` or `COMPLETED` status. IDs are allocated as one greater than the
-maximum existing ID, including completed history, rather than the list size or
-last element. Existing IDs and order never change; ID exhaustion is rejected
-without mutation. This version does not remove actions or implement completion.
+greatest allocated ID (`Person.lastFollowUpId`), including deleted and completed history,
+rather than the list size or last surviving element. Existing IDs and order never change;
+ID exhaustion is rejected without mutation. Every copy preserves the counter, which participates
+in strong equality/hash. `appendFollowUp` rejects reused IDs; replacement preserves the action ID.
+
+The sequence diagram below shows how a follow-up is added inside the Model.
+It starts at `AddFollowUpCommand`, the command `FollowUpCommand` creates for
+the resolved contact. That command runs straight away, or after a `y` reply
+when the same pending follow-up already exists.
+
+1. The new follow-up gets ID `n + 1`, where `n` is the contact's
+   `lastFollowUpId`.
+1. `Person` is immutable, so `appendFollowUp` returns a new `Person` with the
+   follow-up added and the counter raised to `n + 1`. The old `Person` is not
+   changed.
+1. `Model#setPerson` passes the new `Person` down to the `UniquePersonList`,
+   which puts it in the old one's position. The filtered list and the UI
+   update without being rebuilt.
+
+![Adding a follow-up inside the Model](images/FollowUpSequenceDiagram.png)
+
+The object diagram below shows why IDs come from `lastFollowUpId` rather than
+the list size. Each frame is a new `Person`, since every change creates one.
+After follow-up 2 is deleted, the counter stays at 2, so the next follow-up
+gets ID 3. Using the list size would have given it ID 2 again, and a command
+or note that referred to the deleted follow-up 2 would then point at the new
+one.
+
+![Follow-up IDs are never reused](images/FollowUpIdObjectDiagram.png)
+
+Status changes are described in
+[Completing and reopening follow-ups](#completing-and-reopening-follow-ups-uc17).
 
 `FollowUpCommandParser` requires a positive displayed index and exactly one
 `a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
@@ -322,7 +422,7 @@ actions trigger confirmation. The command retains the resolved contact and
 description in the shared request. A later displayed index cannot redirect a
 confirmed action; a changed or missing target invalidates the request.
 
-Strong `Person` equality/hash include ordered follow-ups so Logic detects and
+Strong `Person` equality/hash include allocated IDs and ordered follow-ups so Logic detects and
 saves an action change. Contact identity and phone/email duplicate checks do
 not include actions. `EditCommand` carries existing history into the replacement
 contact, and `PersonBuilder` preserves history when copying a contact in tests.
@@ -335,13 +435,75 @@ positive integer IDs, non-blank descriptions, and supported status values;
 duplicate IDs and null actions invalidate the entire contact. Startup recovery
 uses the same conversion and reports/skips the affected record, preserving its
 original bytes in the existing recovery archive. Valid histories retain their
-order, status, and IDs through normal saves and recovery. Failed immediate or
+order, status, and IDs through normal saves and recovery. `lastFollowUpId` is stored as an integer
+at least as large as every remaining ID. Missing/null legacy values infer the maximum remaining ID
+(or zero for no actions); invalid types, negative values, overflow, and counters below existing IDs
+invalidate the contact. Historical deleted IDs cannot be reconstructed from a legacy file that never
+stored them. Failed immediate or
 confirmed saves restore the original action history, model, and predicate.
 
 The following activity diagram shows the command and transaction boundaries.
 Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 
 ![Recording a follow-up](images/FollowUpActivityDiagram.svg)
+
+#### Design considerations
+
+**Aspect: How a contact is updated**
+
+* **Alternative 1 (current choice):** `Person` is immutable. Every change
+  creates a new `Person`, and `Model#setPerson` puts it in place of the old
+  one.
+  * Pros: Old `Person` objects never change, so `ModelSnapshot` can keep them
+    as they are and rollback needs no deep copy. Replacing the whole object
+    is one list change, which the UI already observes.
+  * Cons: Each change copies every field. The full constructor takes many
+    arguments, and every new field has to be carried through it.
+* **Alternative 2:** Change the fields of the existing `Person` in place.
+  * Pros: Less copying, and simpler code for each update.
+  * Cons: A snapshot would need a deep copy of every contact. A command that
+    fails halfway could leave a half-changed contact, and the UI would need
+    an observable property for every field to notice the change.
+
+**Aspect: How follow-up IDs are allocated**
+
+* **Alternative 1 (current choice):** Each contact stores `lastFollowUpId`,
+  and a new follow-up gets that counter plus one. The counter never goes
+  down.
+  * Pros: A deleted ID is never handed out again, so an ID the user types,
+    such as in `deletefollowup 1 i/2`, always means the same follow-up. IDs
+    stay short and easy to type, and existing IDs never change.
+  * Cons: The counter must be saved and validated with each contact. Deleting
+    leaves gaps in the numbering. Older data files without the counter cannot
+    recover IDs deleted before it was added.
+* **Alternative 2:** Use the follow-up's position, or the list size plus one.
+  * Pros: Nothing extra to store.
+  * Cons: Deleting a follow-up renumbers the later ones or reuses an ID, so a
+    command that names an older ID could change the wrong follow-up.
+* **Alternative 3:** Use random unique IDs, such as UUIDs.
+  * Pros: IDs never clash, even across contacts.
+  * Cons: Long IDs are slow and error-prone to type in a command-line app.
+
+### Completing and reopening follow-ups (UC17)
+
+`completefollowup` and `reopenfollowup` share `ChangeFollowUpStatusCommand`, which
+holds the displayed contact index, the follow-up ID and the target `FollowUp.Status`.
+`ContactFileParser` registers one `ChangeFollowUpStatusCommandParser` per command
+word, each fixed to its target status, so the parser only accepts
+`CONTACT_INDEX i/FOLLOW_UP_ID` and reports the usage of the word that was typed.
+
+On execution the command resolves the contact from the filtered list and the
+action by its stable ID, then builds a replacement `FollowUp` that copies the ID,
+description and due date with the new status. `Person#replaceFollowUp` keeps the
+action at the same position, so history order and later ID allocation are
+unaffected. The command rejects, without mutation, a follow-up that already has
+the target status, and a reopen that would leave two pending actions with the
+same description. That matches the duplicate rule used by `editfollowup`.
+Because the overdue flag and every `followups` view (`FollowUpFilter`) read the
+status, a completed action moves from the pending and date-based views to
+`followups completed` and loses `[OVERDUE]` with no extra bookkeeping, and a
+reopened one moves back. Logic saves the change through the usual transactional save, and
+a failed save restores the previous status.
 
 ### Display-field order (UC26)
 
@@ -424,6 +586,31 @@ file written before this feature has no `interactions` field, which loads as an 
 the same rules as `log`: a future date, a blank note or a repeated interaction makes that contact invalid, and it
 goes through the usual recovery path.
 
+A name target goes through `PersonNameResolver#resolveTarget`, which filters the displayed list to the
+contacts matching the name. `log`, `unlog` and `editlog` leave that filter in place, so after a name target the list shows
+those matches; after an index target the list is unchanged.
+
+`unlog` (`UnlogCommand`) removes one entry, addressed by its number in the date-ordered history. Because a
+removal cannot be undone and later entries are renumbered, the command returns a `ConfirmationRequest` that
+shows the entry, and only the confirmed inner command changes the contact. That inner command first checks that
+the contact is still stored unchanged, so a reply cannot remove an entry from a history that changed in between.
+
+`find /notes KEYWORDS` is parsed by `FindCommandParser` into a `FindNotesCommand` with a
+`NoteContainsKeywordsPredicate`. A contact matches when any of its notes contains any keyword as a substring,
+ignoring letter case. The command filters the displayed list like `find`, and its result groups the matching
+notes under each contact, shortening notes longer than 60 characters to an excerpt around the first match. When
+nothing matches, the displayed list is left as it was.
+
+`editlog` (`EditLogCommand`) corrects one entry in place. `EditLogCommandParser` accepts the same target
+forms as `log` and `unlog`, a required `i/ENTRY`, and at least one of `d/` and `nt/`; it reuses
+`LogCommandParser#parsePastDate`, so an edited date follows the same rules as a logged one. The command resolves
+the contact through `PersonNameResolver`, builds a new `Interaction` from the given parts and the current
+values of the rest, and replaces the entry through `Person#withInteractions`, which sorts the history again.
+It rejects an edit that changes nothing and an edit that would duplicate another entry, so the stored
+history never breaks the rules that loading checks. A new date can move the entry, so the result reports
+its new number together with the renumbered history. No confirmation is asked, because the change can be
+reversed by another `editlog`, unlike `unlog`.
+
 Design considerations:
 
 * **Where the history lives:** as a list inside `Person` (chosen) or as a separate store keyed by contact.
@@ -432,6 +619,26 @@ Design considerations:
   makes hard to forget.
 * **Order:** sorted by date when stored (chosen), or kept in the order logged. Sorting means an interaction
   logged late appears where it belongs, and the entry numbers that `view` shows are stable.
+* **Correcting an entry:** an `editlog` command (chosen), or only `unlog` followed by `log`. Editing keeps
+  the other part of the entry, needs one command instead of two and no confirmation, and cannot lose the
+  entry if the second command fails.
+
+### Command shortcuts
+
+`alias` (`AliasCommand`, parsed by `AliasCommandParser`) defines, replaces, removes and lists shortcuts. Shortcuts
+are a `Map<String, String>` from a lower-case shortcut to the command text it stands for, held in `UserPrefs` and
+saved to `preferences.json`. `LogicManager` saves the preferences straight after a command changes them, and a
+failed save restores the previous shortcuts.
+
+`ContactFileParser` keeps the only list of built-in command words. `ContactFileParser#expandShortcut` replaces a
+leading shortcut with its command text and keeps the rest of the input, and is skipped when the first word is a
+built-in command word, so a shortcut can never hide a command. `AliasCommandParser` uses the same list to reject a
+shortcut named after a command, and a target that does not start with a built-in command word other than `alias`,
+which also rules out a shortcut standing for another shortcut. When Logic
+starts, `AliasCommandParser#validAliases` drops any entry in a hand-edited preferences file that breaks these rules.
+
+`LogicManager` expands the input before parsing. When a shortcut was used, it prefixes the result, and any
+error, with `Ran: <expanded command>`, so the user sees exactly what was run.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -516,11 +723,6 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Cons: We must ensure that the implementation of each individual command is correct.
 
 _{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -727,8 +929,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User enters an edit command, identifying the contact either by its index in the displayed list or by name, with the new values of one or more fields.
-2. Astra finds the contact and validates the new values.
-3. Astra updates the contact, saves the contact list and lists every updated field.
+2. Astra finds the contact, validates the new values, and previews the changes and resulting contact.
+3. User confirms with `y` or the confirmation panel's Confirm button.
+4. Astra revalidates the retained target, updates it, saves once, and lists every updated field.
 
    Use case ends.
 
@@ -770,8 +973,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 2e. The new name is exactly the name of another contact.
-    * 2e1. Astra rejects the edit and changes nothing.
+* 2e. The resulting contact conflicts with another contact's name/email identity.
+    * 2e1. Astra rejects the edit and changes nothing. A shared name alone is not an identity conflict.
 
       Use case ends.
 
@@ -780,10 +983,20 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+* 2g. The event to add is already associated with the contact.
+    * 2g1. Astra shows that the contact already has that event and changes nothing.
+
+      Use case ends.
+
+* 3a. User replies `n`/`cancel`: restore the pre-request view without saving.
+  Other replies repeat the prompt and cannot run unrelated commands.
+* 4a. The target changed, uniqueness now conflicts, or saving fails: reject the edit,
+  restore the original contact data and view, and discard the pending request.
+
 **Deferred to a later version**
-* Choosing one of several matching contacts at a prompt instead of entering the command again, and cancelling at
-  an edit prompt. Delete and clear already use the shared pending-request layer;
-  edit retains its existing numbered command-retry behavior.
+* Choosing one of several matching contacts at a prompt instead of entering the command again.
+  Edit retains its numbered command-retry behavior for ambiguity; every resolved valid edit then
+  uses the shared confirmation request and supports cancellation.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
   rejecting an identical name outright. This also needs the pending-command layer.
 
@@ -994,20 +1207,61 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 
 Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
 proposed confirmation suffix by user decision. IDs, completed status, and
-history storage support future UC17. Creation accepts an optional
+history storage support UC17. Creation accepts an optional
 `d/DATE` before or after `a/DESCRIPTION`, in ISO, day/month/year, or English abbreviated-month format. Dates
 display in ISO format with an overdue indicator for pending actions due before
 today. Duplicate confirmation retains the requested date and creates a separate
-action. Completion commands, editing or deleting individual follow-ups, and
+action. Completion and reopening (UC17), editing and deletion have separate commands;
 links to events remain outside UC16.
 
-**Use case: UC12 - Review pending follow-ups**
+**Use case: UC17 - Complete or reopen a follow-up action**
 
 **MSS**
 
-1. User enters `followups`.
-2. Astra retrieves pending actions across all stored contacts, including contacts
-   hidden by a contact filter.
+1. User requests to complete a pending follow-up of a displayed contact, giving its ID.
+2. Astra marks the action as completed, keeping its ID, description, due date and position.
+3. Astra saves the change and shows the updated action, which now appears only in the completed follow-ups view.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The index or format is invalid: report the usage without modifying or saving contacts.
+* 1b. The contact has no follow-up with that ID: report the error without saving.
+* 1c. User requests to reopen a completed action instead: Astra marks it as
+  pending, and it reappears in the pending follow-ups (with `[OVERDUE]` if its
+  due date is before today).
+    * 1c1. Another pending action of the contact has the same description:
+      report the conflicting ID without saving.
+* 2a. The action already has the requested status: report it without saving.
+* 3a. Saving fails: restore the previous status, file and view, and report the failure.
+
+**Use case: UC11 - Edit a logged interaction**
+
+**MSS**
+
+1. User requests to change the date and/or note of an entry in a contact's interaction history.
+2. Astra replaces the entry, keeping the history in date order.
+3. Astra saves the change and shows the entry's new number and the updated history.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The format is invalid, neither a date nor a note is given, the date is in the future, or the note is
+  blank: report the error without modifying or saving contacts.
+* 1b. The name matches several contacts: list them and change nothing.
+* 1c. The contact has no entry with that number: report how many entries it has, without saving.
+* 2a. The edit leaves the entry unchanged, or makes it the same as another entry: report it without saving.
+* 3a. Saving fails: restore the previous history, file and view, and report the failure.
+
+**Use case: UC12 - Review follow-ups**
+
+**MSS**
+
+1. User enters `followups`, optionally adding `overdue`, `today`, `upcoming`, `completed` or `undated`.
+2. Astra retrieves actions across all stored contacts, including contacts hidden by a contact filter,
+   and applies the selected status or date filter. The default view includes pending actions only.
 3. Astra displays numbered entries with the contact name, stable action ID,
    description, status and due date. Dates sort ascending; equal dates retain
    contact order and stored action order. Pending actions due before today are
@@ -1018,9 +1272,9 @@ links to events remain outside UC16.
 
 **Extensions**
 
-* 2a. No pending actions remain: show `No pending follow-ups remain.`
+* 2a. No matching actions remain: show an empty message for the selected view.
 * 3a. Undated actions: list them after dated actions with `No due date`.
-* 1a. Extra arguments: reject the command and display usage instructions.
+* 1a. An unknown selector or extra arguments: reject the command and display usage instructions.
 * 4a. Invalid numeric reply: repeat the retained list and selection instructions.
 * 4d. Non-number input: clear selection and parse/execute the input as a normal
   command. Invalid commands show their normal errors and leave selection closed.
@@ -1030,13 +1284,19 @@ links to events remain outside UC16.
 
 **Implementation and scope**
 
-`ModelManager.getPendingFollowUps()` returns an unmodifiable snapshot of
-`FollowUpEntry` records, pairing each action with its contact. The command uses
-the shared follow-up formatter, preserves the current contact filter and does
-not save data. A nonempty list returns a `FollowUpSelectionRequest`, which
+`ModelManager.getFollowUps()` returns an unmodifiable, sorted snapshot of all actions paired
+with their contacts as `FollowUpEntry` records. The pending-only query reuses this snapshot.
+The command applies `FollowUpFilter` using one local date from its clock per execution.
+Completed includes all completed actions; undated includes only pending actions without dates.
+Upcoming has no upper date limit; date views exclude undated and completed actions.
+The default view includes all pending actions. Filtered snapshots retain
+the existing order. The command uses the shared formatter, preserves the contact filter and
+never saves data. A nonempty list returns a `FollowUpSelectionRequest`, which
 copies entries in displayed order. Logic retains it through the existing
-pending-request flow. Valid replies return `CommandResult.createPersonDetails`
-with the selected action and contact; invalid numeric replies keep the same request.
+pending-request flow. Valid replies call `ViewCommand.forPerson` with the selected contact,
+then attach the selected action using `CommandResult.withSelectedFollowUp`. This reuses the
+normal contact-view result without another name/index lookup or a contact-filter change.
+Invalid numeric replies keep the same request.
 Non-number replies are dispatched through the normal command parser by Logic,
 after clearing the selection request. Other pending requests retain their existing
 reply handling, including confirmation prompts.
@@ -1049,8 +1309,9 @@ The selection request declares itself read-only. Logic captures the current
 model before each reply instead of reusing the pre-prompt transaction snapshot,
 so cancellation or stale-selection errors cannot undo intervening changes.
 Selection does not save those intervening changes either. The detail result
-retains both the action and contact so field-order refreshes preserve the
-selected action heading and details.
+retains the contact and optional selected action as separate data. The current UI renders
+contact details through the same path as `view`, including field-order refreshes. A future
+follow-up panel can consume the selected action without duplicating contact presentation.
 
 **Use case: UC20 - Filter contacts by tags**
 
@@ -1319,18 +1580,50 @@ Use a fresh copy of sample data.
    and a confirmed duplicate: expect unchanged file bytes, actions, order,
    filtered view, and observable-list binding. A later y must not replay it.
 
+### Completing and reopening follow-ups
+
+Use a fresh copy of sample data.
+
+1. Run `followup 1 a/Call client d/2020-01-01` and `followup 1 a/Send portfolio`.
+   Expect `#1 ... [OVERDUE]` and `#2`, both pending.
+2. Run `completefollowup 1 i/1`: expect `#1 [COMPLETED] Call client | Due: 2020-01-01`
+   without `[OVERDUE]`. Run `followups`: expect only `#2`. Run `followups completed`:
+   expect only `#1`. Run `followups overdue`: expect no follow-ups.
+3. Run `completefollowup 1 i/1` again: expect "already completed" and no save.
+   Run `reopenfollowup 1 i/2`: expect "already pending".
+4. Run `followup 1 a/Call client`, which adds pending `#3` without a prompt. Run
+   `reopenfollowup 1 i/1`: expect a rejection naming `#3`. Run
+   `completefollowup 1 i/3`, then `reopenfollowup 1 i/1`: expect `#1` pending
+   and overdue again, still first in the card.
+5. Try `completefollowup 0 i/1`, `completefollowup 1 i/0`, `completefollowup 1 i/99`,
+   `completefollowup 1`, and `completefollowup 1 i/1 i/2`: expect an error and no change.
+6. Restart Astra: expect the statuses, IDs and order to remain.
+
+### Editing logged interactions
+
+Use a fresh copy of sample data.
+
+1. Run `log 1 d/2026-10-01 nt/Coffee chat` and `log 1 d/2026-10-05 nt/Mock interview`.
+2. Run `editlog 1 i/1 nt/Coffee chat about internships`: expect entry 1 to show the new note with the same date.
+3. Run `editlog 1 i/1 d/2026-10-09`: expect the entry to become number 2, after `Mock interview`.
+4. Run `editlog 1 i/2 d/2026-10-05 nt/mock INTERVIEW`: expect a duplicate rejection and no change. Run
+   `editlog 1 i/1 nt/Mock interview`: expect "already reads" and no change.
+5. Try `editlog 1 i/1`, `editlog 1 i/9 nt/x`, `editlog 1 i/0 nt/x`, `editlog 1 i/1 nt/ `, a future
+   `d/`, and `editlog 1 i/1 nt/a nt/b`: expect an error and no change.
+6. Restart Astra: expect the edited history to remain, in date order.
+
 ### Reordering displayed fields
 
-1. Run `order`: expect `name tags company role phone email linkedin followups`
+1. Run `order`: expect `name tags company role phone email linkedin followups interactions`
    on a default profile. Run the same complete order: expect "unchanged" and
    no preference-file write.
-2. Run `view 1`, then `order followups phone email name tags company role linkedin`:
+2. Run `view 1`, then `order followups phone email name tags company role linkedin interactions`:
    expect existing cards to reorder immediately and the viewed details to be
    redisplayed in that order. The displayed index moves with the name; contact
    order, active filter, and contact-file bytes remain unchanged.
 3. Test contacts with only a name and contacts with actions/tags/all optional
    fields. Missing values must have no visible/managed blank row in any order.
-4. Try missing `followups`, repeated `name`, an unknown field, and an extra
+4. Try missing `followups` or `interactions`, repeated `name`, an unknown field, and an extra
    token: expect the accepted fields with unchanged preferences and display.
    A complete upper-case order must succeed.
 5. Restart Astra: expect the saved order in cards and `view`. Load an old
@@ -1379,3 +1672,39 @@ Keep their stored order different from alphabetical order.
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
 1. _{ more test cases …​ }_
+
+### Follow-up deletion and confirmation panel (v1.5)
+
+`DeleteFollowUpCommandParser` accepts `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`.
+The command resolves the displayed contact and stable action ID before producing a
+`ConfirmationRequest`. Its retained contact must still match at confirmation. `Person.removeFollowUp`
+removes exactly one action without renumbering survivors or changing `lastFollowUpId`.
+Logic saves once on success and restores the original model, filter, and counter on failure.
+Deletion is permanent; the existing contact undo feature does not undo action deletion.
+
+`ConfirmationPanel` renders any `ConfirmationRequest`, including UC04 edit, delete, clear,
+follow-up deletion, duplicate follow-ups, and other existing y/n confirmations. Selection requests
+are not shown as confirmations. MainWindow feeds both typed and button replies through Logic;
+the panel never mutates the model. A revision check discards events from a hidden/replaced panel.
+Invalid replies retain the prompt; completion, cancellation, or failure hides/unmanages it.
+The preview wraps and scrolls; Tab navigation and the command box remain available.
+
+![Shared confirmation workflow](images/ConfirmationActivityDiagram.svg)
+
+#### Manual checks for Wednesday 28 October 2026
+
+1. Create actions with IDs `#1` and `#2`. Delete `#2`, cancel once, then confirm a new request.
+   Check that the right action was removed and `#1` retained its description, date, and status.
+2. Delete the remaining action, restart, and create another. Expect `#3`, never `#1` or `#2`.
+3. Filter to a contact that is not first in storage. Delete an action using displayed index `1`;
+   verify the other contacts, active filter, events, interactions, introducer, tags, and star are unchanged.
+4. Edit by index and by name, including removing optional fields. Check the preview, cancel, retry,
+   and confirm. During each prompt try `list`, `maybe`, and `yes`: no command or mutation may occur.
+5. Preview an ambiguous contact deletion, select a candidate, and confirm/cancel. Confirm that the
+   panel appears only after selection and that cancellation restores the original filtered view.
+6. Exercise delete, clear, duplicate follow-ups, and edit using both buttons and typed replies.
+   Resize to the minimum window size; inspect wrapped previews, scrolling, focus, and Tab navigation.
+7. Simulate save failures with the workflow/UI storage doubles. Verify unchanged disk bytes/model/view,
+   a hidden panel, a WARNING with the I/O cause, and rejection of a subsequent standalone `y`.
+8. Run `./gradlew check` on Java 25, including both Checkstyle tasks. Assertions are enabled by Gradle;
+   external IDE or direct-JAR launches must also enable assertions (`-ea`) to exercise these invariants.
