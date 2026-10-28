@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
@@ -18,6 +19,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class UndoManagerTest {
 
@@ -46,6 +48,7 @@ public class UndoManagerTest {
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO,
                 request.respond("y", model).getFeedbackToUser());
         assertEquals(List.of(ALICE), model.getContactFile().getPersonList());
+        assertTrue(undoManager.getHistory().contains("deletion (undone): Deleted Alice"));
     }
 
     @Test
@@ -85,6 +88,36 @@ public class UndoManagerTest {
 
         request.respond("y", model);
         assertEquals(List.of(ALICE, BENSON, CARL), model.getContactFile().getPersonList());
+    }
+
+    @Test
+    public void executeUndo_restoredContactWithDuplicatePhone_reportsConflict() throws Exception {
+        Person duplicatePhone = new PersonBuilder(ALICE).withName("Different Person")
+                .withPhone(ALICE.getPhone().orElseThrow().value).withEmail("different@example.com").build();
+        assertDeletionUndoConflict(duplicatePhone);
+    }
+
+    @Test
+    public void executeUndo_restoredContactWithSameNameAndEmail_reportsConflict() throws Exception {
+        Person samePerson = new PersonBuilder(ALICE).withPhone("11111111").build();
+        assertDeletionUndoConflict(samePerson);
+    }
+
+    @Test
+    public void executeUndo_restoredContactWithDuplicateEmail_reportsConflict() throws Exception {
+        Person duplicateEmail = new PersonBuilder(ALICE).withName("Different Person")
+                .withPhone("11111111").build();
+        assertDeletionUndoConflict(duplicateEmail);
+    }
+
+    private void assertDeletionUndoConflict(Person conflictingPerson) throws Exception {
+        UndoManager undoManager = new UndoManager();
+        undoManager.recordChange(new DeleteCommand(Index.fromOneBased(1)), List.of(ALICE), List.of(), "Deleted Alice");
+        Model model = createModel(List.of(conflictingPerson));
+        PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
+
+        assertEquals(UndoManager.MESSAGE_UNDO_CONFLICT,
+                request.respond("y", model).getFeedbackToUser());
     }
 
     private Model createModel(List<Person> persons) {
