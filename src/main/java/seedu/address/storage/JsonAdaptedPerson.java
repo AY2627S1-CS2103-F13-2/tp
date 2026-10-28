@@ -206,6 +206,9 @@ class JsonAdaptedPerson {
 
         final List<Event> personEvents = new ArrayList<>();
         for (JsonAdaptedEvent event : events) {
+            if (event == null) {
+                throw new IllegalValueException("Event entries must not be null.");
+            }
             personEvents.add(event.toModelType());
         }
 
