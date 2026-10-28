@@ -147,6 +147,92 @@
     -fx-padding: 10 4 4 4;
 }
 
+/* Keep confirmation previews part of the terminal workspace. */
+.terminal-panel .confirmation-panel {
+    -fx-background-color: #182838;
+    -fx-background-radius: 8;
+    -fx-border-color: #30475b;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 12;
+    -fx-spacing: 8;
+}
+
+.terminal-panel .confirmation-title {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #31d1d7;
+}
+
+.terminal-panel .confirmation-hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: #8fa4ba;
+}
+
+.terminal-panel .confirmation-panel .text-area,
+.terminal-panel .confirmation-panel .text-area .scroll-pane,
+.terminal-panel .confirmation-panel .text-area .viewport,
+.terminal-panel .confirmation-panel .text-area .content {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+
+.terminal-panel .confirmation-panel .text-area {
+    -fx-padding: 0;
+    -fx-font-size: 12px;
+    -fx-text-fill: #dce5ef;
+    -fx-highlight-fill: #203e59;
+}
+
+.terminal-panel .confirmation-panel .button {
+    -fx-background-color: #253b4e;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-border-insets: 0;
+    -fx-border-style: solid;
+    -fx-padding: 6 14;
+    -fx-min-height: 32;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 12px;
+    -fx-text-fill: #dce5ef;
+}
+
+.terminal-panel .confirmation-panel .button:hover {
+    -fx-background-color: #304d64;
+}
+
+.terminal-panel .confirmation-panel .button:pressed {
+    -fx-background-color: #203247;
+}
+
+.terminal-panel .confirmation-panel .confirmation-primary {
+    -fx-background-color: #2bc9cf;
+    -fx-text-fill: #111b28;
+    -fx-font-weight: bold;
+}
+
+.terminal-panel .confirmation-panel .confirmation-primary:hover {
+    -fx-background-color: #64dce0;
+}
+
+.terminal-panel .confirmation-panel .confirmation-primary:pressed {
+    -fx-background-color: #22a8ae;
+}
+
+.terminal-panel .confirmation-panel .button:focused {
+    -fx-border-color: #dce5ef;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-border-insets: 0;
+    -fx-border-style: solid;
+}
+
 .terminal-panel #commandTextField {
     -fx-background-color: transparent;
     -fx-border-width: 0;
