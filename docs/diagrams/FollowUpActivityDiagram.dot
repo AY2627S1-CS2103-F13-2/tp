@@ -2,12 +2,12 @@ digraph FollowUp {
   graph [rankdir=TB, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.4];
   node [shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#5271a3", fontname="Arial", fontsize=12];
   edge [fontname="Arial", fontsize=11, color="#43536b"];
-  input [label="followup INDEX a/DESCRIPTION"];
+  input [label="followup INDEX a/DESCRIPTION [d/DATE]"];
   validate [label="Validate input and resolve displayed contact"];
   duplicate [shape=diamond, label="Identical pending action?"];
-  ask [label="Show existing action; ask Add another?\nNo mutation or save"];
+  ask [label="Show existing action in confirmation panel; ask Add another?\nNo mutation or save"];
   reply [shape=diamond, label="Reply"];
-  append [label="Append PENDING action with max ID + 1\nRetain resolved contact and stored order"];
+  append [label="Append PENDING action with last allocated ID + 1\nRetain resolved contact and stored order"];
   save [label="Atomic save and validation"];
   success [label="Display updated actions and refresh card\nPreserve current filter", fillcolor="#e6f4ea"];
   cancel [label="n / cancel: discard request\nRestore previous view; no save", fillcolor="#fff4d9"];

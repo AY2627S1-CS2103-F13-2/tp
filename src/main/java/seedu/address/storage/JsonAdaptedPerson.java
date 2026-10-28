@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
@@ -42,6 +44,7 @@ class JsonAdaptedPerson {
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
     private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
     private final boolean starred;
+    private final JsonNode lastFollowUpId;
     private final List<JsonAdaptedInteraction> interactions = new ArrayList<>();
 
     /**
@@ -93,6 +96,16 @@ class JsonAdaptedPerson {
     }
 
     /**
+     * Creates an adapted legacy contact whose allocated ID is inferred from its history.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            String introducer, List<JsonAdaptedTag> tags, List<JsonAdaptedEvent> events,
+            List<JsonAdaptedFollowUp> followUps, boolean starred, List<JsonAdaptedInteraction> interactions) {
+        this(name, company, role, phone, email, linkedin, introducer, tags, events, followUps, starred,
+                interactions, null);
+    }
+
+    /**
      * Jackson constructor containing all contact data. A contact file written before interactions were
      * recorded has no {@code interactions} field, which is read as an empty history.
      */
@@ -109,7 +122,8 @@ class JsonAdaptedPerson {
             @JsonProperty("events") List<JsonAdaptedEvent> events,
             @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
             @JsonProperty("starred") boolean starred,
-            @JsonProperty("interactions") List<JsonAdaptedInteraction> interactions) {
+            @JsonProperty("interactions") List<JsonAdaptedInteraction> interactions,
+            @JsonProperty("lastFollowUpId") JsonNode lastFollowUpId) {
         this.name = name;
         this.company = company;
         this.role = role;
@@ -118,6 +132,7 @@ class JsonAdaptedPerson {
         this.linkedin = linkedin;
         this.introducer = introducer;
         this.starred = starred;
+        this.lastFollowUpId = lastFollowUpId;
 
         if (tags != null) {
             this.tags.addAll(tags);
@@ -159,6 +174,7 @@ class JsonAdaptedPerson {
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
         introducer = source.getIntroducer().map(value -> value.fullName).orElse(null);
         starred = source.isStarred();
+        lastFollowUpId = IntNode.valueOf(source.getLastFollowUpId());
 
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
@@ -280,6 +296,16 @@ class JsonAdaptedPerson {
             modelFollowUps.add(modelAction);
         }
 
+        int greatestId = modelFollowUps.stream().mapToInt(FollowUp::getId).max().orElse(0);
+        int modelLastFollowUpId = greatestId;
+        if (lastFollowUpId != null && !lastFollowUpId.isNull()) {
+            if (!lastFollowUpId.isIntegralNumber() || !lastFollowUpId.canConvertToInt()
+                    || lastFollowUpId.intValue() < greatestId) {
+                throw new IllegalValueException("lastFollowUpId must be an integer at least " + greatestId + ".");
+            }
+            modelLastFollowUpId = lastFollowUpId.intValue();
+        }
+
         List<Interaction> modelInteractions = new ArrayList<>();
         for (JsonAdaptedInteraction interaction : interactions) {
             if (interaction == null) {
@@ -303,6 +329,7 @@ class JsonAdaptedPerson {
                 modelEventSet,
                 modelFollowUps,
                 starred,
-                modelInteractions);
+                modelInteractions,
+                modelLastFollowUpId);
     }
 }

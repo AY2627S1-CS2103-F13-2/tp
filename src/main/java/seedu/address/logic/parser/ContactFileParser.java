@@ -19,6 +19,7 @@ import seedu.address.logic.commands.AliasCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DeleteFollowUpCommand;
 import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditFollowUpCommand;
@@ -81,6 +82,8 @@ public class ContactFileParser {
         Map<String, CommandFactory> commands = new LinkedHashMap<>();
         commands.put(AddCommand.COMMAND_WORD, (parser, arguments) -> new AddCommandParser().parse(arguments));
         commands.put(EditCommand.COMMAND_WORD, (parser, arguments) -> new EditCommandParser().parse(arguments));
+        commands.put(DeleteFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
+            new DeleteFollowUpCommandParser().parse(arguments));
         commands.put(EditFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
             new EditFollowUpCommandParser().parse(arguments));
         commands.put(DeleteCommand.COMMAND_WORD, (parser, arguments) -> new DeleteCommandParser().parse(arguments));
