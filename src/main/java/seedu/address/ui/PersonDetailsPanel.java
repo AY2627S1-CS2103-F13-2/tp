@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -22,6 +23,7 @@ import seedu.address.model.person.Person;
  */
 public class PersonDetailsPanel extends UiPart<Region> {
     private static final String FXML = "PersonDetailsPanel.fxml";
+    private final TagPalette tagPalette = new TagPalette();
 
     @FXML
     private VBox fields;
@@ -58,8 +60,7 @@ public class PersonDetailsPanel extends UiPart<Region> {
 
         Map<FieldOrder.Field, Node> rows = Map.of(
                 FieldOrder.Field.NAME, nameRow,
-                FieldOrder.Field.TAGS, row("tags", "Tags", person.getTags().stream()
-                        .map(tag -> tag.tagName).sorted().collect(Collectors.joining(", "))),
+                FieldOrder.Field.TAGS, tagRow(person),
                 FieldOrder.Field.COMPANY, row("company", "Company",
                         person.getCompany().map(value -> value.value).orElse("")),
                 FieldOrder.Field.ROLE, row("role", "Role", person.getRole().map(value -> value.value).orElse("")),
@@ -105,6 +106,32 @@ public class PersonDetailsPanel extends UiPart<Region> {
         row.getStyleClass().add("detail-row");
         row.setVisible(!text.isBlank());
         row.setManaged(!text.isBlank());
+        return row;
+    }
+
+    private HBox tagRow(Person person) {
+        Label caption = new Label("Tags");
+        caption.getStyleClass().add("detail-caption");
+        caption.setMinWidth(92);
+        caption.setPrefWidth(92);
+        FlowPane chips = new FlowPane(6, 6);
+        chips.setId("tagChips");
+        chips.setMinWidth(0);
+        chips.setPrefWidth(100);
+        HBox.setHgrow(chips, Priority.ALWAYS);
+        person.getTags().stream().map(tag -> tag.tagName).sorted().forEach(tagName -> {
+            Label chip = new Label(tagName);
+            chip.getStyleClass().add("tag-chip");
+            chip.setStyle(tagPalette.styleFor(tagName));
+            chip.setWrapText(true);
+            chip.setMaxWidth(180);
+            chips.getChildren().add(chip);
+        });
+        HBox row = new HBox(12, caption, chips);
+        row.setId("tags");
+        row.getStyleClass().add("detail-row");
+        row.setVisible(!person.getTags().isEmpty());
+        row.setManaged(!person.getTags().isEmpty());
         return row;
     }
 }
