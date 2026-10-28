@@ -1,0 +1,329 @@
+/* Terminal workspace with a light, readable contact card. */
+.astra-shell {
+    -fx-background-color: #252f3d;
+    -fx-padding: 10;
+    -fx-font-family: "Segoe UI";
+    -fx-accent: #2bc9cf;
+    -fx-focus-color: #2bc9cf;
+    -fx-faint-focus-color: transparent;
+}
+
+.astra-shell .menu-bar {
+    -fx-background-color: linear-gradient(to bottom, #2c3746, #222c39);
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: #3a4656;
+    -fx-border-width: 1 1 0 1;
+    -fx-border-radius: 8 8 0 0;
+    -fx-padding: 2 8;
+}
+
+.astra-shell .menu-bar .label {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 12px;
+    -fx-text-fill: #bac7d6;
+}
+
+.workspace {
+    -fx-background-color: #111b28;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: #3a4656;
+    -fx-border-width: 0 1 1 1;
+}
+
+.workspace > .split-pane-divider {
+    -fx-background-color: #293646;
+    -fx-border-width: 0;
+    -fx-padding: 0 1;
+}
+
+.terminal-panel {
+    -fx-background-color: linear-gradient(to bottom right, #111b28, #15202e);
+    -fx-padding: 18 14 8 14;
+}
+
+.terminal-panel .stack-pane, .terminal-panel .pane-with-border {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.terminal-panel .label, .terminal-panel .text-field, .terminal-panel .text-area {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 14px;
+    -fx-text-fill: #dce5ef;
+    -fx-opacity: 1;
+}
+
+.terminal-panel .terminal-accent, .contact-summaries .contact-index {
+    -fx-text-fill: #31d1d7;
+}
+
+.command-history {
+    -fx-padding: 0 4 2 4;
+}
+
+.terminal-panel .list-view, .terminal-panel .list-cell,
+.terminal-panel .list-cell:filled:even, .terminal-panel .list-cell:filled:odd {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+}
+
+.terminal-panel .list-cell {
+    -fx-padding: 4 10;
+    -fx-background-radius: 4;
+}
+
+.terminal-panel .list-cell:filled:hover {
+    -fx-background-color: #1b3044;
+}
+
+.terminal-panel .list-cell:filled:selected {
+    -fx-background-color: #203e59;
+}
+
+.contact-summary {
+    -fx-alignment: center-left;
+}
+
+.followup-row {
+    -fx-padding: 8 0;
+}
+
+.terminal-panel .followup-heading, .terminal-panel .followup-contact {
+    -fx-font-weight: bold;
+}
+
+.terminal-panel .followup-metadata, .terminal-panel .followup-hint {
+    -fx-text-fill: #8fa4ba;
+    -fx-font-size: 11px;
+}
+
+.terminal-panel .followup-overdue {
+    -fx-text-fill: #ffb39c;
+    -fx-font-size: 11px;
+}
+
+.terminal-panel .followup-completed {
+    -fx-text-fill: #8fd7b1;
+    -fx-font-size: 11px;
+}
+
+.selected-followup {
+    -fx-background-color: #e5eef5;
+    -fx-background-radius: 5;
+    -fx-padding: 12;
+    -fx-spacing: 7;
+}
+
+.contact-details .selected-followup-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: #245474;
+}
+
+.terminal-panel .list-view .placeholder .label {
+    -fx-text-fill: #8191a6;
+    -fx-font-size: 12px;
+}
+
+.terminal-panel #resultDisplay, .terminal-panel #resultDisplay .content,
+.terminal-panel #resultDisplay .viewport, .terminal-panel #resultDisplay .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+
+.terminal-panel #resultDisplay {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9fb0c3;
+    -fx-padding: 0;
+    -fx-highlight-fill: #203e59;
+}
+
+.terminal-panel .command-entry {
+    -fx-border-color: #2b3b4d;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 10 4 4 4;
+}
+
+/* Keep confirmation previews part of the terminal workspace. */
+.terminal-panel .confirmation-panel {
+    -fx-background-color: #182838;
+    -fx-background-radius: 8;
+    -fx-border-color: #30475b;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 12;
+    -fx-spacing: 8;
+}
+
+.terminal-panel .confirmation-title {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #31d1d7;
+}
+
+.terminal-panel .confirmation-hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: #8fa4ba;
+}
+
+.terminal-panel .confirmation-panel .text-area,
+.terminal-panel .confirmation-panel .text-area .scroll-pane,
+.terminal-panel .confirmation-panel .text-area .viewport,
+.terminal-panel .confirmation-panel .text-area .content {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+
+.terminal-panel .confirmation-panel .text-area {
+    -fx-padding: 0;
+    -fx-font-size: 12px;
+    -fx-text-fill: #dce5ef;
+    -fx-highlight-fill: #203e59;
+}
+
+.terminal-panel .confirmation-panel .button {
+    -fx-background-color: #253b4e;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-border-insets: 0;
+    -fx-border-style: solid;
+    -fx-padding: 6 14;
+    -fx-min-height: 32;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 12px;
+    -fx-text-fill: #dce5ef;
+}
+
+.terminal-panel .confirmation-panel .button:hover {
+    -fx-background-color: #304d64;
+}
+
+.terminal-panel .confirmation-panel .button:pressed {
+    -fx-background-color: #203247;
+}
+
+.terminal-panel .confirmation-panel .confirmation-primary {
+    -fx-background-color: #2bc9cf;
+    -fx-text-fill: #111b28;
+    -fx-font-weight: bold;
+}
+
+.terminal-panel .confirmation-panel .confirmation-primary:hover {
+    -fx-background-color: #64dce0;
+}
+
+.terminal-panel .confirmation-panel .confirmation-primary:pressed {
+    -fx-background-color: #22a8ae;
+}
+
+.terminal-panel .confirmation-panel .button:focused {
+    -fx-border-color: #dce5ef;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-border-insets: 0;
+    -fx-border-style: solid;
+}
+
+.terminal-panel #commandTextField {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 3 0;
+    -fx-prompt-text-fill: #8191a6;
+    -fx-highlight-fill: #203e59;
+}
+
+.details-container {
+    -fx-background-color: #111b28;
+    -fx-padding: 5;
+}
+
+.contact-details, .contact-details > .viewport {
+    -fx-background-color: #f5f7fa;
+    -fx-background-radius: 6;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+}
+
+.contact-details {
+    -fx-border-color: #d4dce5;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-padding: 0;
+}
+
+.detail-fields {
+    -fx-padding: 22 24;
+}
+
+.contact-details .label {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-text-fill: #172334;
+    -fx-opacity: 1;
+}
+
+.contact-details .detail-name {
+    -fx-font-size: 25px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 16 0;
+}
+
+.detail-row {
+    -fx-alignment: top-left;
+    -fx-padding: 9 0;
+    -fx-border-color: #dfe5ed;
+    -fx-border-width: 0 0 1 0;
+}
+
+.contact-details .detail-caption, .contact-details .detail-empty {
+    -fx-text-fill: #6c7c91;
+}
+
+.contact-details .detail-empty {
+    -fx-line-spacing: 6;
+}
+
+.contact-details #tags .detail-caption {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-text-fill: #6c7c91;
+    -fx-font-size: 13px;
+}
+
+.contact-details #tags .tag-chip {
+    -fx-padding: 3 9;
+    -fx-background-radius: 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.astra-shell .status-bar {
+    -fx-background-color: transparent;
+}
+
+.astra-shell .status-bar .label {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 10px;
+    -fx-text-fill: #8b9bb0;
+    -fx-padding: 5 8 0 8;
+}
+
+.astra-shell .scroll-bar {
+    -fx-background-color: transparent;
+    -fx-pref-width: 9;
+    -fx-pref-height: 9;
+}
+
+.astra-shell .scroll-bar .thumb {
+    -fx-background-color: #65768a;
+    -fx-background-radius: 5;
+}

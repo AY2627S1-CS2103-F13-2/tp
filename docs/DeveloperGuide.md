@@ -87,6 +87,18 @@ The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDi
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
+The `PersonListPanel` observes the filtered contact list exposed by the `Model`. When a find command changes the filtered list, the panel refreshes the visible contact cards.
+
+Each contact is rendered by `PersonCard`. The card displays the contact's name, tags, company, role, phone, email, LinkedIn profile, introducer, events, and follow-up information. Optional fields are hidden when they are absent.
+
+The contact card layout is defined in `PersonListCard.fxml`, while common visual styling is defined in `DarkTheme.css`.
+
+`MainWindow` composes the main UI parts, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `StatusBarFooter`, `HelpWindow`, and `ConfirmationPanel`.
+
+`ConfirmationPanel` displays the active confirmation request and its preview. Users can confirm or cancel the request using the panel buttons, or enter `y`, `n`, or `cancel` in the command box. Button responses are passed back through `MainWindow` and use the same command execution path as typed responses.
+
+The panel is shown only while a confirmation request is active. It is hidden after the request is completed, cancelled, or replaced. A revision number is used to ignore delayed button events from an older confirmation request.
+
 The `UI` component,
 
 * executes user commands using the `Logic` component.
@@ -188,6 +200,46 @@ case-insensitive name matching used by find, edit, delete, and view.
 changing the displayed list; delete uses it before creating a pending request.
 Ambiguous delete names display candidates and require a numeric reply followed
 by a separate y/n confirmation. A name never implicitly selects the first match.
+
+### Finding contacts by different criteria
+
+`FindCommandParser` determines the search mode from the user's input and
+creates a `FindCommand` containing the corresponding predicate.
+
+The following predicates support the implemented search modes:
+
+* `NameContainsKeywordsPredicate` performs case-insensitive contiguous and
+  partial name matching.
+* `FuzzyNamePredicate` normalises the query and compares it with each individual
+  word in a contact's name using Levenshtein distance. A contact matches when at
+  least one name word is within a distance of two from the query.
+* `ContactFieldPredicate` searches fields such as phone number, email, company,
+  and role.
+* `EventContainsKeywordsPredicate` searches the names of events associated with
+  each contact.
+* `NoteContainsKeywordsPredicate` performs case-insensitive partial matching
+  against the notes in a contact's interaction history. `FindNotesCommand`
+  executes the `/notes` search and displays contacts with matching notes.
+
+When both `/company` and `/role` are provided, the parser combines the two
+predicates. A contact must satisfy both criteria to be included in the results.
+
+The resulting predicate is passed to the model to update its filtered contact
+list. The UI observes this list and refreshes the displayed `PersonCard`
+objects automatically. Searching does not modify stored contact data.
+
+Invalid search values are rejected by the parser. If no contacts match the
+search, Astra reports the result without modifying the stored contact file.
+
+The following class diagram shows the relationship between the find command
+and its search predicates:
+
+![Find class diagram](images/FindClassDiagram.png)
+
+The following sequence diagram shows how a find command is parsed, executed,
+and reflected in the displayed contact list:
+
+![Find sequence diagram](images/FindSequenceDiagram.png)
 
 ### Viewing contacts by name or displayed index
 
@@ -731,6 +783,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 |`* * `| user                                          | record where I met the contact and what we discussed       | have context for the next conversation                         |
 |`* * `| user                                          | record who introduced me to a contact                     | remember how I am connected to them |
 | `* *`    | user who struggles with names              | find someone without typing the exact spelling of their name        | look them up even when I misremember their name                   |
+| `* * *`  | user                                       | find a contact by company or role                                   | retrieve contacts from a particular organisation or profession     |
+| `* * *`  | user                                       | find contacts by an event                                          | recall who I met at a particular networking event                 |
 | `* *`    | user                                       | filter contacts by categories or custom tags                        | narrow down a large list quickly                                  |
 | `* *`    | frequent user                              | star important contacts                                             | revisit them quickly                                              |
 | `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
@@ -1049,6 +1103,58 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 
       Use case ends.
 
+**Use case: UC07 - Find contacts by company or role**
+
+**MSS**
+
+1. User enters a company search, role search, or combined company-and-role search.
+2. Astra validates the search criteria.
+3. Astra displays the matching contacts.
+4. User selects a contact using its displayed index.
+5. Astra displays the selected contact's details.
+   Use case ends.
+
+**Extensions**
+
+- **1a.** No search value is provided.
+  - Astra displays the accepted command format.
+  - Use case ends.
+
+- **3a.** No contacts match the search criteria.
+  - Astra reports that no matching contacts were found.
+  - Use case ends.
+
+- **3b.** Both company and role are specified.
+  - Astra displays only contacts matching both criteria.
+  - Use case resumes at step 4.
+
+
+**Use case: UC09 - Record and retrieve contacts by event**
+
+**MSS**
+
+1. User adds an event while creating or editing a contact.
+2. Astra validates and stores the event with the contact.
+3. User enters `find /event EVENT`.
+4. Astra displays contacts associated with the event.
+5. User selects a displayed contact.
+6. Astra displays the contact's stored details and events.
+   Use case ends.
+
+**Extensions**
+
+- **1a.** The event name is missing or blank.
+  - Astra displays the accepted command format.
+  - Use case ends.
+
+- **2a.** The event value is invalid.
+  - Astra rejects the command and leaves the contact unchanged.
+  - Use case ends.
+
+- **4a.** No contacts are associated with the event.
+  - Astra reports that no matching contacts were found.
+  - Use case ends.
+
 **Use case: UC21 - Star and retrieve important contacts**
 
 **MSS**
@@ -1341,6 +1447,45 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Finding contacts
+
+Use the sample contacts or create contacts with the required companies, roles,
+and events.
+
+1. Run `find Alice`.
+   Expected: contacts whose names contain `Alice` are displayed.
+
+2. Run `find /fuzzy Alicee`.
+   Expected: contacts with approximately matching names, such as `Alice`, are
+   displayed.
+
+3. Run `find /contact 87438807`.
+   Expected: the contact with the exact phone number is displayed.
+
+4. Run `find /email alexyeoh@example.com`.
+   Expected: the matching contact is displayed.
+
+5. Run `find /company Google`.
+   Expected: contacts associated with Google are displayed.
+
+6. Run `find /role Engineer`.
+   Expected: contacts with the role Engineer are displayed.
+
+7. Run `find /company Google /role Engineer`.
+   Expected: only contacts matching both Google and Engineer are displayed.
+
+8. Add an event using `add n/Test Person ev/Career Fair`, then run
+   `find /event Career Fair`.
+   Expected: Test Person is displayed.
+
+9. Run `find /fuzzy`.
+   Expected: Astra displays the invalid command format and leaves the current
+   contact data unchanged.
+
+10. Run a search with no matching contacts.
+    Expected: Astra reports that no contacts match and does not modify stored
+    contact data.
 
 ### Viewing contacts
 

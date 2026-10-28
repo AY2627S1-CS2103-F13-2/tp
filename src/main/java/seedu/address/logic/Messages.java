@@ -1,5 +1,6 @@
 package seedu.address.logic;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,10 +45,21 @@ public class Messages {
 
     /**
      * Formats full details in the requested order, omitting absent fields.
+     * The introducer follows the LinkedIn profile, as in the contact details panel, so that it is
+     * never printed after a multi-line field where it would read as part of the last entry.
      */
     public static String format(Person person, FieldOrder order) {
-        return order.getFields().stream().map(field -> formatField(person, field))
-                .filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
+        List<String> details = new ArrayList<>();
+        for (FieldOrder.Field field : order.getFields()) {
+            if (field == FieldOrder.Field.INTRODUCER) {
+                continue;
+            }
+            details.add(formatField(person, field));
+            if (field == FieldOrder.Field.LINKEDIN) {
+                details.add(person.getIntroducer().map(value -> "Introduced by: " + value).orElse(""));
+            }
+        }
+        return details.stream().filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
     }
 
     private static String formatField(Person person, FieldOrder.Field field) {
