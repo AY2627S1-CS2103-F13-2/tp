@@ -124,6 +124,7 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
 
 * Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
+  A contact cannot be their own introducer; the comparison ignores letter case and normalizes spacing.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
@@ -245,6 +246,8 @@ Format: `introduce NAME i/INTRODUCER [--confirm]`
 
 * `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
+* The introducer's name must differ from the contact's name, ignoring letter case and normalized spacing.
+  Renaming a contact to their saved introducer's name is also rejected.
 * If an introducer is already recorded, Astra displays that name in the confirmation panel.
   Reply `y` to replace it or `n`/`cancel` to stop. An initial command ending in `--confirm`
   still applies immediately for compatibility.

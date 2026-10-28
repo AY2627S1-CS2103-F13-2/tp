@@ -22,6 +22,7 @@ public class IntroduceCommand extends Command {
 
     public static final String COMMAND_WORD = "introduce";
     public static final String MESSAGE_NAME_REQUIRED = "An introducer's name is required.";
+    public static final String MESSAGE_SELF_INTRODUCTION = "A contact cannot be their own introducer.";
     public static final String MESSAGE_RECORDED = "Recorded introducer for contact:\n%1$s";
     public static final String MESSAGE_CONFIRM_REPLACEMENT =
             "The existing introducer for %1$s is %2$s. Replace it with %3$s?";
@@ -97,6 +98,9 @@ public class IntroduceCommand extends Command {
     }
 
     private CommandResult recordIntroducer(Model model, Person personToUpdate) {
+        if (personToUpdate.getName().fullName.equalsIgnoreCase(introducer.fullName)) {
+            return new CommandResult(MESSAGE_SELF_INTRODUCTION);
+        }
         if (personToUpdate.getIntroducer().isPresent() && !confirmed) {
             String preview = String.format(MESSAGE_CONFIRM_REPLACEMENT,
                     personToUpdate.getName(), personToUpdate.getIntroducer().orElseThrow(), introducer);

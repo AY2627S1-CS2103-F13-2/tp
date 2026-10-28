@@ -142,6 +142,11 @@ public class EditCommand extends Command {
                 personToEdit,
                 editPersonDescriptor);
 
+        if (editedPerson.getIntroducer()
+                .filter(name -> name.fullName.equalsIgnoreCase(editedPerson.getName().fullName)).isPresent()) {
+            throw new CommandException(IntroduceCommand.MESSAGE_SELF_INTRODUCTION);
+        }
+
         if (editedPerson.equals(personToEdit)) {
             throw new CommandException(MESSAGE_NO_CHANGES);
         }
