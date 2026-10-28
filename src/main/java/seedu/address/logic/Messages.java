@@ -46,13 +46,8 @@ public class Messages {
      * Formats full details in the requested order, omitting absent fields.
      */
     public static String format(Person person, FieldOrder order) {
-        String details = order.getFields().stream().map(field -> formatField(person, field))
+        return order.getFields().stream().map(field -> formatField(person, field))
                 .filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
-        if (person.getIntroducer().isPresent()) {
-            String introducer = "Introduced by: " + person.getIntroducer().orElseThrow();
-            details = details.isEmpty() ? introducer : details + "; " + introducer;
-        }
-        return details;
     }
 
     private static String formatField(Person person, FieldOrder.Field field) {
@@ -66,6 +61,7 @@ public class Messages {
             case EMAIL -> person.getEmail().map(value -> "Email: " + value).orElse("");
             case LINKEDIN -> person.getLinkedin().map(value -> "LinkedIn: " + value).orElse("");
             case FOLLOWUPS -> person.getFollowUps().isEmpty() ? "" : "Follow-ups:\n" + formatFollowUps(person);
+            case INTRODUCER -> person.getIntroducer().map(value -> "Introduced by: " + value).orElse("");
             case INTERACTIONS -> person.getInteractions().isEmpty() ? ""
                     : "Interaction history:\n" + formatInteractions(person.getInteractions());
         };

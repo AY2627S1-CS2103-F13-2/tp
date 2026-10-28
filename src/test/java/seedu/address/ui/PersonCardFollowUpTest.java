@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.Messages;
+import seedu.address.model.FieldOrder;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.FxTestUtil;
@@ -54,17 +56,18 @@ class PersonCardFollowUpTest {
     }
 
     @Test
-    void card_withIntroducer_placesIntroducerAfterLinkedin() throws Exception {
+    void card_withIntroducer_placesIntroducerInRequestedOrder() throws Exception {
         FxTestUtil.runOnFxThread(() -> {
             Person person = new PersonBuilder(ALICE).withIntroducer("Jane Doe").build();
-            PersonCard card = new PersonCard(person, 1);
+            FieldOrder order = new FieldOrder(List.of("introducer", "name", "tags", "company", "role", "phone",
+                    "email", "linkedin", "followups", "interactions"));
+            PersonCard card = new PersonCard(person, 1, order);
             VBox fields = (VBox) card.getRoot().lookup("#fields");
-            Label linkedin = (Label) card.getRoot().lookup("#linkedin");
             Label introducer = (Label) card.getRoot().lookup("#introducer");
 
             assertEquals("Introduced by: Jane Doe", introducer.getText());
             assertTrue(introducer.isVisible());
-            assertEquals(fields.getChildren().indexOf(linkedin) + 1, fields.getChildren().indexOf(introducer));
+            assertEquals(0, fields.getChildren().indexOf(introducer));
         });
     }
 

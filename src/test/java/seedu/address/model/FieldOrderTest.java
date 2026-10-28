@@ -18,7 +18,8 @@ import seedu.address.commons.util.JsonUtil;
 
 class FieldOrderTest {
     private static final FieldOrder CUSTOM = new FieldOrder(
-            List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name"));
+            List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                    "introducer", "interactions"));
 
     @Test
     void constructor_validFields_copiesAndCanonicalizesNames() {
@@ -27,17 +28,26 @@ class FieldOrderTest {
         FieldOrder order = new FieldOrder(input);
         input.clear();
         assertEquals(FieldOrder.DEFAULT, order);
-        assertEquals("name tags company role phone email linkedin followups interactions", order.toString());
+        assertEquals("name tags company role phone email linkedin followups introducer interactions", order.toString());
         assertThrows(UnsupportedOperationException.class, () -> order.getFields().clear());
         assertThrows(UnsupportedOperationException.class, () -> order.getFieldNames().clear());
     }
 
     @Test
-    void constructor_orderSavedBeforeInteractions_placesInteractionsLast() {
+    void constructor_orderSavedBeforeInteractions_addsIntroducerBeforeInteractions() {
         FieldOrder order = new FieldOrder(
                 List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name"));
         assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
-                "interactions"), order.getFieldNames());
+                "introducer", "interactions"), order.getFieldNames());
+    }
+
+    @Test
+    void constructor_orderSavedWithInteractions_addsIntroducerBeforeInteractions() {
+        FieldOrder order = new FieldOrder(
+                List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                        "INTERACTIONS"));
+        assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                "introducer", "interactions"), order.getFieldNames());
     }
 
     @Test

@@ -78,7 +78,8 @@ class FollowUpSelectionUiTest {
                 assertTrue(output.getText().contains(ALICE.getPhone().orElseThrow().value));
                 assertEquals(List.of(BENSON), model.getFilteredPersonList());
                 FieldOrder custom = new FieldOrder(
-                        List.of("followups", "phone", "name", "tags", "company", "role", "email", "linkedin"));
+                        List.of("followups", "introducer", "phone", "name", "tags", "company", "role", "email",
+                                "linkedin", "interactions"));
                 model.setFieldOrder(custom);
                 assertEquals(Messages.format(alice, custom), output.getText());
                 execute(input, "not-a-command");
