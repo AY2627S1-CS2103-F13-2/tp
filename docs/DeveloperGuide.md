@@ -533,6 +533,16 @@ file written before this feature has no `interactions` field, which loads as an 
 the same rules as `log`: a future date, a blank note or a repeated interaction makes that contact invalid, and it
 goes through the usual recovery path.
 
+`editlog` (`EditLogCommand`) corrects one entry in place. `EditLogCommandParser` accepts the same target
+forms as `log` and `unlog`, a required `i/ENTRY`, and at least one of `d/` and `nt/`; it reuses
+`LogCommandParser#parsePastDate`, so an edited date follows the same rules as a logged one. The command resolves
+the contact through `PersonNameResolver`, builds a new `Interaction` from the given parts and the current
+values of the rest, and replaces the entry through `Person#withInteractions`, which sorts the history again.
+It rejects an edit that changes nothing and an edit that would duplicate another entry, so the stored
+history never breaks the rules that loading checks. A new date can move the entry, so the result reports
+its new number together with the renumbered history. No confirmation is asked, because the change can be
+reversed by another `editlog`, unlike `unlog`.
+
 Design considerations:
 
 * **Where the history lives:** as a list inside `Person` (chosen) or as a separate store keyed by contact.
@@ -541,6 +551,9 @@ Design considerations:
   makes hard to forget.
 * **Order:** sorted by date when stored (chosen), or kept in the order logged. Sorting means an interaction
   logged late appears where it belongs, and the entry numbers that `view` shows are stable.
+* **Correcting an entry:** an `editlog` command (chosen), or only `unlog` followed by `log`. Editing keeps
+  the other part of the entry, needs one command instead of two and no confirmation, and cannot lose the
+  entry if the second command fails.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -1079,6 +1092,25 @@ links to events remain outside UC16.
 * 2a. The action already has the requested status: report it without saving.
 * 3a. Saving fails: restore the previous status, file and view, and report the failure.
 
+**Use case: UC11 - Edit a logged interaction**
+
+**MSS**
+
+1. User requests to change the date and/or note of an entry in a contact's interaction history.
+2. Astra replaces the entry, keeping the history in date order.
+3. Astra saves the change and shows the entry's new number and the updated history.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The format is invalid, neither a date nor a note is given, the date is in the future, or the note is
+  blank: report the error without modifying or saving contacts.
+* 1b. The name matches several contacts: list them and change nothing.
+* 1c. The contact has no entry with that number: report how many entries it has, without saving.
+* 2a. The edit leaves the entry unchanged, or makes it the same as another entry: report it without saving.
+* 3a. Saving fails: restore the previous history, file and view, and report the failure.
+
 **Use case: UC12 - Review follow-ups**
 
 **MSS**
@@ -1383,6 +1415,19 @@ Use a fresh copy of sample data.
 5. Try `completefollowup 0 i/1`, `completefollowup 1 i/0`, `completefollowup 1 i/99`,
    `completefollowup 1`, and `completefollowup 1 i/1 i/2`: expect an error and no change.
 6. Restart Astra: expect the statuses, IDs and order to remain.
+
+### Editing logged interactions
+
+Use a fresh copy of sample data.
+
+1. Run `log 1 d/2026-10-01 nt/Coffee chat` and `log 1 d/2026-10-05 nt/Mock interview`.
+2. Run `editlog 1 i/1 nt/Coffee chat about internships`: expect entry 1 to show the new note with the same date.
+3. Run `editlog 1 i/1 d/2026-10-09`: expect the entry to become number 2, after `Mock interview`.
+4. Run `editlog 1 i/2 d/2026-10-05 nt/mock INTERVIEW`: expect a duplicate rejection and no change. Run
+   `editlog 1 i/1 nt/Mock interview`: expect "already reads" and no change.
+5. Try `editlog 1 i/1`, `editlog 1 i/9 nt/x`, `editlog 1 i/0 nt/x`, `editlog 1 i/1 nt/ `, a future
+   `d/`, and `editlog 1 i/1 nt/a nt/b`: expect an error and no change.
+6. Restart Astra: expect the edited history to remain, in date order.
 
 ### Reordering displayed fields
 
