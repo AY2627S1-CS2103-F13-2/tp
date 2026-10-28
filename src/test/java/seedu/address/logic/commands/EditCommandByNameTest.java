@@ -64,7 +64,8 @@ public class EditCommandByNameTest {
         new EditCommand("Meier", phoneBob).execute(model);
         Person danielMeier = model.getFilteredPersonList().get(1);
 
-        new EditCommand(Index.fromOneBased(2), phoneBob).execute(model);
+        new EditCommand(Index.fromOneBased(2), phoneBob).execute(model)
+                .getPendingRequest().orElseThrow().respond("y", model);
 
         Person editedDaniel = new PersonBuilder(danielMeier).withPhone(VALID_PHONE_BOB).build();
         assertTrue(model.getContactFile().getPersonList().contains(editedDaniel));

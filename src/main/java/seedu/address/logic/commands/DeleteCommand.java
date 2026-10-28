@@ -178,7 +178,10 @@ public class DeleteCommand extends Command {
             if (!model.getContactFile().getPersonList().containsAll(targets)) {
                 throw new CommandException("Contacts changed. Start the delete request again.");
             }
+            int originalCount = model.getContactFile().getPersonList().size();
             targets.forEach(model::deletePerson);
+            assert model.getContactFile().getPersonList().size() == originalCount - targets.size()
+                    : "Every resolved contact must be deleted exactly once";
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
             String deleted = targets.stream()
                     .map(person -> String.format(MESSAGE_DELETE_PERSON_SUCCESS,

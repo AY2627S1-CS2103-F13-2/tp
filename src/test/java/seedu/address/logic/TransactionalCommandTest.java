@@ -139,7 +139,8 @@ public class TransactionalCommandTest {
         byte[] bytes = Files.readAllBytes(activeFile);
         ContactFile original = new ContactFile(model.getContactFile());
         storage.shouldFail = true;
-        assertThrows(CommandException.class, () -> logic.execute("edit 1 p/76543210"));
+        logic.execute("edit 1 p/76543210");
+        assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(original, model.getContactFile());
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
         assertArrayEquals(bytes, Files.readAllBytes(activeFile));

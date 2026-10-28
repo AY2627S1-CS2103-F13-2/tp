@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyUserPrefs;
@@ -16,6 +18,7 @@ import seedu.address.model.UserPrefs;
  * Reads preferences and saves validated snapshots through atomic file replacement.
  */
 public class JsonUserPrefsStorage {
+    private static final Logger logger = LogsCenter.getLogger(JsonUserPrefsStorage.class);
 
     private final Path filePath;
 
@@ -61,9 +64,11 @@ public class JsonUserPrefsStorage {
         UserPrefs expected = new UserPrefs(requireNonNull(userPrefs));
         Path target = requireNonNull(filePath).toAbsolutePath().normalize();
         Files.createDirectories(target.getParent());
+        logger.fine("Writing and validating temporary preferences");
         AtomicFileWriter.write(target, ".astra-prefs-",
                 temporary -> writeCandidate(expected, temporary),
                 temporary -> verifyCandidate(expected, temporary), this::replaceActiveFile);
+        logger.fine("Atomically replaced validated preferences");
     }
 
     void writeCandidate(UserPrefs expected, Path temporary) throws IOException {

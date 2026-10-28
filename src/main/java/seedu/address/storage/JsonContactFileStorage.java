@@ -87,11 +87,15 @@ public class JsonContactFileStorage {
         requireNonNull(contactFile);
         requireNonNull(filePath);
 
+        ContactFile expected = new ContactFile(contactFile);
         Path target = filePath.toAbsolutePath().normalize();
         Files.createDirectories(target.getParent());
+        logger.fine("Writing and validating a temporary contact snapshot");
         AtomicFileWriter.write(target, ".astra-save-",
-                temporary -> writeCandidate(contactFile, temporary),
-                temporary -> verifyCandidate(contactFile, temporary), this::replaceActiveFile);
+                temporary -> writeCandidate(expected, temporary),
+                temporary -> verifyCandidate(expected, temporary), this::replaceActiveFile);
+        logger.fine("Atomically replaced active contact file with " + expected.getPersonList().size()
+                + " validated contacts");
     }
 
     void writeCandidate(ReadOnlyContactFile contactFile, Path temporary) throws IOException {
