@@ -82,13 +82,21 @@ public class UndoManager {
         }
         pendingEntry = undoableEntry;
         ConfirmationRequest request = new ConfirmationRequest(String.format(MESSAGE_CONFIRM_UNDO,
-                undoableEntry.action, undoableEntry.feedback), new Command() {
+                undoableEntry.action, getUndoFeedback(undoableEntry)), new Command() {
                     @Override
                     public CommandResult execute(Model model) throws CommandException {
                         return confirmUndo(model);
                     }
                 });
         return new CommandResult(request.getPrompt(), request);
+    }
+
+    private String getUndoFeedback(HistoryEntry entry) {
+        if (!"deletion".equals(entry.action)) {
+            return entry.feedback;
+        }
+        int lastLineStart = entry.feedback.lastIndexOf('\n');
+        return lastLineStart < 0 ? entry.feedback : entry.feedback.substring(0, lastLineStart);
     }
 
     private CommandResult confirmUndo(Model model) {

@@ -358,9 +358,13 @@ public class LogicManagerTest {
         AtomicInteger saveCount = useCountingStorage();
 
         logic.execute("delete 1");
-        logic.execute("y");
+        CommandResult deleteResult = logic.execute("y");
+        assertTrue(deleteResult.getFeedbackToUser().contains("0 contact(s) remaining."));
         assertTrue(model.getContactFile().getPersonList().isEmpty());
-        logic.execute("undo");
+        CommandResult undoPreview = logic.execute("undo");
+        assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "deletion",
+                "Deleted person: " + Messages.format(original)) + "\nConfirm? (y/n; cancel to stop)",
+                undoPreview.getFeedbackToUser());
 
         CommandResult undoResult = logic.execute("y");
         assertEquals("Restored contact:\n" + Messages.format(original),
