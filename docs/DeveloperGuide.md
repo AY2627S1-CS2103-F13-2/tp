@@ -358,6 +358,9 @@ one.
 
 ![Follow-up IDs are never reused](images/FollowUpIdObjectDiagram.png)
 
+Status changes are described in
+[Completing and reopening follow-ups](#completing-and-reopening-follow-ups-uc17).
+
 `FollowUpCommandParser` requires a positive displayed index and exactly one
 `a/` description. Extra prefix-shaped tokens (such as `confirm/yes`) are
 rejected instead of being silently stored as description text. Exact trimmed,
@@ -427,6 +430,27 @@ Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 * **Alternative 3:** Use random unique IDs, such as UUIDs.
   * Pros: IDs never clash, even across contacts.
   * Cons: Long IDs are slow and error-prone to type in a command-line app.
+
+### Completing and reopening follow-ups (UC17)
+
+`completefollowup` and `reopenfollowup` share `ChangeFollowUpStatusCommand`, which
+holds the displayed contact index, the follow-up ID and the target `FollowUp.Status`.
+`ContactFileParser` registers one `ChangeFollowUpStatusCommandParser` per command
+word, each fixed to its target status, so the parser only accepts
+`CONTACT_INDEX i/FOLLOW_UP_ID` and reports the usage of the word that was typed.
+
+On execution the command resolves the contact from the filtered list and the
+action by its stable ID, then builds a replacement `FollowUp` that copies the ID,
+description and due date with the new status. `Person#replaceFollowUp` keeps the
+action at the same position, so history order and later ID allocation are
+unaffected. The command rejects, without mutation, a follow-up that already has
+the target status, and a reopen that would leave two pending actions with the
+same description. That matches the duplicate rule used by `editfollowup`.
+Because the overdue flag and every `followups` view (`FollowUpFilter`) read the
+status, a completed action moves from the pending and date-based views to
+`followups completed` and loses `[OVERDUE]` with no extra bookkeeping, and a
+reopened one moves back. Logic saves the change through the usual transactional save, and
+a failed save restores the previous status.
 
 ### Display-field order (UC26)
 
@@ -1063,12 +1087,34 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 
 Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
 proposed confirmation suffix by user decision. IDs, completed status, and
-history storage support future UC17. Creation accepts an optional
+history storage support UC17. Creation accepts an optional
 `d/DATE` before or after `a/DESCRIPTION`, in ISO, day/month/year, or English abbreviated-month format. Dates
 display in ISO format with an overdue indicator for pending actions due before
 today. Duplicate confirmation retains the requested date and creates a separate
-action. Follow-up editing and deletion have separate commands; completion commands and
+action. Completion and reopening (UC17), editing and deletion have separate commands;
 links to events remain outside UC16.
+
+**Use case: UC17 - Complete or reopen a follow-up action**
+
+**MSS**
+
+1. User requests to complete a pending follow-up of a displayed contact, giving its ID.
+2. Astra marks the action as completed, keeping its ID, description, due date and position.
+3. Astra saves the change and shows the updated action, which now appears only in the completed follow-ups view.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The index or format is invalid: report the usage without modifying or saving contacts.
+* 1b. The contact has no follow-up with that ID: report the error without saving.
+* 1c. User requests to reopen a completed action instead: Astra marks it as
+  pending, and it reappears in the pending follow-ups (with `[OVERDUE]` if its
+  due date is before today).
+    * 1c1. Another pending action of the contact has the same description:
+      report the conflicting ID without saving.
+* 2a. The action already has the requested status: report it without saving.
+* 3a. Saving fails: restore the previous status, file and view, and report the failure.
 
 **Use case: UC12 - Review follow-ups**
 
@@ -1355,6 +1401,25 @@ Use a fresh copy of sample data.
 8. Simulate failed saving using the storage test double for both a new action
    and a confirmed duplicate: expect unchanged file bytes, actions, order,
    filtered view, and observable-list binding. A later y must not replay it.
+
+### Completing and reopening follow-ups
+
+Use a fresh copy of sample data.
+
+1. Run `followup 1 a/Call client d/2020-01-01` and `followup 1 a/Send portfolio`.
+   Expect `#1 ... [OVERDUE]` and `#2`, both pending.
+2. Run `completefollowup 1 i/1`: expect `#1 [COMPLETED] Call client | Due: 2020-01-01`
+   without `[OVERDUE]`. Run `followups`: expect only `#2`. Run `followups completed`:
+   expect only `#1`. Run `followups overdue`: expect no follow-ups.
+3. Run `completefollowup 1 i/1` again: expect "already completed" and no save.
+   Run `reopenfollowup 1 i/2`: expect "already pending".
+4. Run `followup 1 a/Call client`, which adds pending `#3` without a prompt. Run
+   `reopenfollowup 1 i/1`: expect a rejection naming `#3`. Run
+   `completefollowup 1 i/3`, then `reopenfollowup 1 i/1`: expect `#1` pending
+   and overdue again, still first in the card.
+5. Try `completefollowup 0 i/1`, `completefollowup 1 i/0`, `completefollowup 1 i/99`,
+   `completefollowup 1`, and `completefollowup 1 i/1 i/2`: expect an error and no change.
+6. Restart Astra: expect the statuses, IDs and order to remain.
 
 ### Reordering displayed fields
 

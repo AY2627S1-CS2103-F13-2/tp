@@ -16,6 +16,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.UndoManager;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.AliasCommand;
+import seedu.address.logic.commands.ChangeFollowUpStatusCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
@@ -41,6 +42,7 @@ import seedu.address.logic.commands.UnlogCommand;
 import seedu.address.logic.commands.UnstarCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.FollowUp;
 
 /**
  * Parses user input.
@@ -86,6 +88,10 @@ public class ContactFileParser {
             new DeleteFollowUpCommandParser().parse(arguments));
         commands.put(EditFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
             new EditFollowUpCommandParser().parse(arguments));
+        commands.put(ChangeFollowUpStatusCommand.COMMAND_WORD_COMPLETE, (parser, arguments) ->
+            new ChangeFollowUpStatusCommandParser(FollowUp.Status.COMPLETED).parse(arguments));
+        commands.put(ChangeFollowUpStatusCommand.COMMAND_WORD_REOPEN, (parser, arguments) ->
+            new ChangeFollowUpStatusCommandParser(FollowUp.Status.PENDING).parse(arguments));
         commands.put(DeleteCommand.COMMAND_WORD, (parser, arguments) -> new DeleteCommandParser().parse(arguments));
         commands.put(DropCommand.COMMAND_WORD, (parser, arguments) -> new DropCommandParser().parse(arguments));
         commands.put(ViewCommand.COMMAND_WORD, (parser, arguments) -> new ViewCommandParser().parse(arguments));
