@@ -3,6 +3,9 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import seedu.address.commons.util.StringUtil;
 
 /**
@@ -15,7 +18,7 @@ public class Phone {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Phone numbers should contain at least " + MINIMUM_DIGITS + " digits, and may also use spaces, "
-            + "hyphens, a leading plus sign and balanced parentheses.";
+            + "hyphens, a leading plus sign and balanced parentheses around digits.";
 
     /*
      * A number exchanged at a networking event is written however the person says it, so country
@@ -55,22 +58,30 @@ public class Phone {
     }
 
     /**
-     * Returns true if every opening parenthesis in {@code test} is matched by a later closing one.
+     * Returns true if every opening parenthesis in {@code test} is matched by a later closing one,
+     * and every pair of parentheses encloses at least one digit, so {@code ()123} is rejected.
      */
     private static boolean hasBalancedParentheses(String test) {
-        int depth = 0;
+        // Each entry records whether the parentheses opened at that level enclose a digit yet.
+        Deque<Boolean> openLevels = new ArrayDeque<>();
         for (int i = 0; i < test.length(); i++) {
             char current = test.charAt(i);
             if (current == '(') {
-                depth++;
+                openLevels.push(false);
             } else if (current == ')') {
-                depth--;
-                if (depth < 0) {
+                if (openLevels.isEmpty() || !openLevels.pop()) {
                     return false;
                 }
+                if (!openLevels.isEmpty()) {
+                    openLevels.pop();
+                    openLevels.push(true);
+                }
+            } else if (Character.isDigit(current) && !openLevels.isEmpty()) {
+                openLevels.pop();
+                openLevels.push(true);
             }
         }
-        return depth == 0;
+        return openLevels.isEmpty();
     }
 
     @Override

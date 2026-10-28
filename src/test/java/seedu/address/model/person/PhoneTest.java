@@ -39,6 +39,9 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("(6591234567")); // unclosed parenthesis
         assertFalse(Phone.isValidPhone("6591234567)")); // unopened parenthesis
         assertFalse(Phone.isValidPhone(")65(91234567")); // parentheses in the wrong order
+        assertFalse(Phone.isValidPhone("()123")); // empty parentheses
+        assertFalse(Phone.isValidPhone("( - )9312 1534")); // parentheses around separators only
+        assertFalse(Phone.isValidPhone("(()65) 9312 1534")); // empty nested parentheses
 
         // valid phone numbers
         assertTrue(Phone.isValidPhone("911")); // exactly 3 digits
