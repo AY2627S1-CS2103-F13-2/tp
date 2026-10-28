@@ -52,6 +52,11 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 Always launch Astra from the same home folder so it can find your saved contacts in `data/contactfile.json`.
 
 * **No saved contact file:** Astra shows sample contacts and a welcome message explaining how to clear them.
+  The samples include starred contacts, introducers, events, tags, dated interaction notes, and
+  pending and completed follow-ups. Try `followups`, `followups today`, `followups upcoming`,
+  `followups completed`, or `followups undated` to explore them. Sample dates are based on the
+  day the samples are first loaded; once saved, they stay as recorded. Existing saved contacts
+  are never replaced by the sample data.
 * **Saved contacts load successfully:** The message area shows the number of loaded contacts and the full path to the contact file. A saved empty contact file stays empty.
 * **Another Astra instance is using the same contact file:** Startup stops with an error. Close that instance, then launch Astra again.
 
