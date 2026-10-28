@@ -314,6 +314,9 @@ public class LogicManagerTest {
         assertTrue(history.contains("edit:"));
         assertTrue(history.contains("introduce:"));
         assertFalse(history.contains("view:"));
+        String deletionHistory = history.lines().filter(line -> line.contains("deletion:")).findFirst().orElseThrow();
+        assertTrue(deletionHistory.contains("deletion: Deleted person: Alice Smith"));
+        assertFalse(deletionHistory.contains("contact(s) remaining."));
     }
 
     @Test
