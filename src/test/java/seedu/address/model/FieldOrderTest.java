@@ -62,6 +62,19 @@ class FieldOrderTest {
     }
 
     @Test
+    void constructor_incompleteLegacyOrdersWithUnexpectedFields_rejectsOrders() {
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "interactions")));
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "introducer")));
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "introducer",
+                        "interactions")));
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "followups", "name")));
+    }
+
+    @Test
     void constructor_legacyListChangesDuringLookup_rejectsMissingInteraction() {
         List<String> names = new AbstractList<>() {
             private boolean firstStream = true;
