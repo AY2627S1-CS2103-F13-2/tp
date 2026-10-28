@@ -252,7 +252,7 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_duplicatePersonUnfilteredList_failure() {
+    public void execute_otherPersonDetailsUnfilteredList_reportsClashingPhone() {
         Person firstPerson =
                 model.getFilteredPersonList()
                         .get(INDEX_FIRST_PERSON.getZeroBased());
@@ -266,11 +266,40 @@ public class EditCommandTest {
         assertCommandFailure(
                 editCommand,
                 model,
-                EditCommand.MESSAGE_DUPLICATE_PERSON);
+                String.format(EditCommand.MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        firstPerson.getPhone().orElseThrow(), firstPerson.getName()));
     }
 
     @Test
-    public void execute_duplicatePersonFilteredList_failure() {
+    public void execute_nameOfOtherPersonWithoutEmail_failure() {
+        Model localModel = new ModelManager();
+        localModel.addPerson(new PersonBuilder().withName("Alice").withPhone("81111111").withEmail(null).build());
+        localModel.addPerson(new PersonBuilder().withName("Bob").withPhone("82222222").withEmail(null).build());
+
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON,
+                new EditPersonDescriptorBuilder().withName("alice").build());
+
+        assertCommandFailure(editCommand, localModel, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_sameNameAndOtherPersonEmail_reportsClashingEmail() {
+        Model localModel = new ModelManager();
+        Person first = new PersonBuilder().withName("Alice").withPhone("81111111")
+                .withEmail("alice@example.com").build();
+        localModel.addPerson(first);
+        localModel.addPerson(new PersonBuilder().withName("Alice").withPhone("82222222")
+                .withEmail("alice2@example.com").build());
+
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON,
+                new EditPersonDescriptorBuilder().withEmail("ALICE@example.com").build());
+
+        assertCommandFailure(editCommand, localModel, String.format(EditCommand.MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                "ALICE@example.com", first.getName()));
+    }
+
+    @Test
+    public void execute_otherPersonDetailsFilteredList_reportsClashingPhone() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         Person personInList =
@@ -287,7 +316,8 @@ public class EditCommandTest {
         assertCommandFailure(
                 editCommand,
                 model,
-                EditCommand.MESSAGE_DUPLICATE_PERSON);
+                String.format(EditCommand.MESSAGE_ALREADY_SAVED_FOR_OTHER,
+                        personInList.getPhone().orElseThrow(), personInList.getName()));
     }
 
     @Test
