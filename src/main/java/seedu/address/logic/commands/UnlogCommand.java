@@ -116,9 +116,7 @@ public class UnlogCommand extends Command {
         List<Interaction> interactions = new ArrayList<>(person.getInteractions());
         Interaction removed = interactions.remove(entry.getZeroBased());
         Person updatedPerson = person.withInteractions(interactions);
-        // Removing an interaction does not change who matches the current filter, so the displayed
-        // list and its indexes are left as they are.
-        model.setPerson(person, updatedPerson);
+        InteractionCommandUtil.setPersonPreservingView(model, person, updatedPerson);
         logger.fine("Removed interaction from " + person.getName() + ": " + removed);
 
         String history = interactions.isEmpty()
