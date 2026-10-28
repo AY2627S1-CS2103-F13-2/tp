@@ -125,6 +125,7 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
 * Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
+* The phone number and email must not already belong to another contact. Two contacts may share a name only if they have different emails; names are compared without regard to letter case, so `John Doe` and `john doe` without emails are the same contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.

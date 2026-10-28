@@ -81,6 +81,23 @@ public class NameTest {
     }
 
     @Test
+    public void isSameName() {
+        Name name = new Name("John Doe");
+
+        // same spelling in a different letter case -> returns true
+        assertTrue(name.isSameName(new Name("john DOE")));
+
+        // same spelling spaced differently -> returns true
+        assertTrue(name.isSameName(new Name(" John  Doe ")));
+
+        // different spelling -> returns false
+        assertFalse(name.isSameName(new Name("John Do")));
+
+        // null -> returns false
+        assertFalse(name.isSameName(null));
+    }
+
+    @Test
     public void hashCode_equalValues_areEqual() {
         assertEquals(new Name("Valid Name").hashCode(), new Name("Valid Name").hashCode());
 
