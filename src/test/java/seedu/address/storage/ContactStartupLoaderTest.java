@@ -112,6 +112,53 @@ class ContactStartupLoaderTest {
     }
 
     @Test
+    void load_nullEventEntry_recoversValidContactsAndPreservesBackup() throws Exception {
+        Path source = writeSource("""
+                {"persons": [
+                  {"name": "Charlie", "events": [{"name": "Career Fair", "date": "2026-10-20"}]},
+                  {"name": "Broken", "events": [null]},
+                  {"name": "Alice"}
+                ]}
+                """);
+        byte[] original = Files.readAllBytes(source);
+
+        StartupLoadResult result = new ContactStartupLoader().load(source);
+
+        assertEquals(StartupLoadResult.Source.RECOVERED, result.source());
+        assertEquals(1, result.skippedCount());
+        assertEquals(List.of("Charlie", "Alice"), result.contacts().stream()
+                .map(person -> person.getName().fullName).toList());
+        assertEquals("Career Fair", result.contacts().get(0).getEvents().iterator().next().getName());
+        RecoveryArchive archive = result.recoveryArchive().orElseThrow();
+        assertArrayEquals(original, Files.readAllBytes(archive.backupFile()));
+        String report = Files.readString(archive.reportFile());
+        assertTrue(report.contains("Record 2: Could not convert record: Event entries must not be null."));
+
+        StartupLoadResult secondLoad = new ContactStartupLoader().load(source);
+        assertEquals(StartupLoadResult.Source.STORED, secondLoad.source());
+        assertEquals(result.contacts(), secondLoad.contacts());
+        assertTrue(secondLoad.recoveryArchive().isEmpty());
+        assertArrayEquals(original, Files.readAllBytes(archive.backupFile()));
+        assertNoTemporaryFiles();
+    }
+
+    @Test
+    void load_onlyNullEventContact_preservesOriginalAndReportsFailure() throws Exception {
+        Path source = writeSource("{\"persons\": [{\"name\": \"Broken\", \"events\": [null]}]}");
+        byte[] original = Files.readAllBytes(source);
+
+        IOException error = assertThrows(IOException.class, () -> new ContactStartupLoader().load(source));
+
+        assertTrue(error.getMessage().contains("No valid contacts could be recovered."));
+        assertArrayEquals(original, Files.readAllBytes(source));
+        Path backup = findBackup();
+        assertArrayEquals(original, Files.readAllBytes(backup));
+        String report = Files.readString(backup.resolveSibling("report.txt"));
+        assertTrue(report.contains("Record 1: Could not convert record: Event entries must not be null."));
+        assertNoTemporaryFiles();
+    }
+
+    @Test
     void load_allRecordsInvalid_preservesOriginalAndCreatesReport() throws Exception {
         Path source = writeSource("{\"persons\": [{\"phone\": \"invalid\"}]}");
         byte[] original = Files.readAllBytes(source);

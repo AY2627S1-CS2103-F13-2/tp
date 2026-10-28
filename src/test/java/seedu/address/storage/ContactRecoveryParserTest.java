@@ -115,6 +115,23 @@ class ContactRecoveryParserTest {
     }
 
     @Test
+    void parse_nullEventEntry_skipsContactAndContinuesWithOriginalPositions() throws Exception {
+        ContactRecoveryResult result = parse("""
+                {"persons": [
+                  {"name": "Charlie"},
+                  {"name": "Broken", "events": [
+                    {"name": "Career Fair", "date": "2026-10-20"}, null]},
+                  {"name": "Alice"}
+                ]}
+                """);
+
+        assertEquals(List.of("Charlie", "Alice"), result.recoveredContacts().stream()
+                .map(person -> person.getName().fullName).toList());
+        assertEquals(List.of(new SkippedContact(2,
+                "Could not convert record: Event entries must not be null.")), result.skippedContacts());
+    }
+
+    @Test
     void parse_emptyContactList_isValid() throws Exception {
         ContactRecoveryResult result = parse("{\"persons\": []}");
 
