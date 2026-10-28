@@ -19,6 +19,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.Messages;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.person.Event;
 import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.FxTestUtil;
@@ -52,6 +53,21 @@ class PersonCardFollowUpTest {
             Label label = (Label) new PersonCard(ALICE, 1).getRoot().lookup("#followUps");
             assertFalse(label.isVisible());
             assertFalse(label.isManaged());
+        });
+    }
+
+    @Test
+    void card_withEvents_appendsEventsRowAfterOrderedFields() throws Exception {
+        FxTestUtil.runOnFxThread(() -> {
+            Person person = new PersonBuilder(ALICE).build().withEvent(new Event("Career fair"));
+            PersonCard card = new PersonCard(person, 1);
+            Label events = (Label) card.getRoot().lookup("#events");
+            VBox fields = (VBox) card.getRoot().lookup("#fields");
+
+            assertEquals("Events:\nCareer fair", events.getText());
+            assertTrue(events.isVisible());
+            assertTrue(events.isManaged());
+            assertEquals(fields.getChildren().size() - 1, fields.getChildren().indexOf(events));
         });
     }
 
