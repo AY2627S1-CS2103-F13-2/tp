@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCombination;
@@ -41,6 +42,14 @@ public class MainWindow extends UiPart<Stage> {
     private ConfirmationPanel confirmationPanel;
     private HelpWindow helpWindow;
     private Person personForDetails;
+    private PersonDetailsPanel personDetailsPanel;
+    private Person selectedContact;
+
+    @FXML
+    private StackPane personDetailsPlaceholder;
+
+    @FXML
+    private Label lastCommand;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -123,11 +132,21 @@ public class MainWindow extends UiPart<Stage> {
      * contact-file load.
      */
     void fillInnerParts(String startupFeedback) {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getFieldOrderProperty());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getFieldOrderProperty(), true);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+
+        personDetailsPanel = new PersonDetailsPanel();
+        personDetailsPlaceholder.getChildren().add(personDetailsPanel.getRoot());
+        personListPanel.selectedPersonProperty().addListener((observable, previous, current) -> showContact(current));
+        logic.getFilteredPersonList().addListener((javafx.collections.ListChangeListener<Person>) change -> {
+            personListPanel.selectFirstIfNeeded();
+            showContact(personListPanel.selectedPersonProperty().get());
+        });
+        personListPanel.selectFirstIfNeeded();
 
         resultDisplay = new ResultDisplay();
         logic.getFieldOrderProperty().addListener((observable, previous, current) -> {
+            personDetailsPanel.showPerson(selectedContact, current);
             if (personForDetails != null) {
                 resultDisplay.setFeedbackToUser(formatDetails(current));
             }
@@ -204,6 +223,7 @@ public class MainWindow extends UiPart<Stage> {
      * @see seedu.address.logic.Logic#execute(String)
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
+        lastCommand.setText(commandText);
         try {
             FieldOrder previousOrder = logic.getFieldOrderProperty().get();
             CommandResult commandResult = logic.execute(commandText);
@@ -216,6 +236,10 @@ public class MainWindow extends UiPart<Stage> {
                 personForDetails = commandResult.getPersonForDetails().orElse(null);
             }
             resultDisplay.setFeedbackToUser(feedback);
+            commandResult.getPersonForDetails().ifPresent(person -> {
+                personListPanel.selectPerson(person);
+                showContact(person);
+            });
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -240,5 +264,10 @@ public class MainWindow extends UiPart<Stage> {
 
     private String formatDetails(FieldOrder order) {
         return Messages.format(personForDetails, order);
+    }
+
+    private void showContact(Person person) {
+        selectedContact = person;
+        personDetailsPanel.showPerson(person, logic.getFieldOrderProperty().get());
     }
 }
