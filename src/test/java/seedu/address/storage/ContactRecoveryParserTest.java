@@ -7,11 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
@@ -129,6 +133,26 @@ class ContactRecoveryParserTest {
                 .map(person -> person.getName().fullName).toList());
         assertEquals(List.of(new SkippedContact(2,
                 "Could not convert record: Event entries must not be null.")), result.skippedContacts());
+    }
+
+    @Test
+    void parse_invalidTextValues_agreesWithAdapterValidation() throws Exception {
+        Map<String, String> invalidValues = Map.of("name", "R@chel", "company", " ", "role", " ",
+                "phone", "bad", "email", "invalid", "linkedin", "not a profile");
+        for (Map.Entry<String, String> entry : invalidValues.entrySet()) {
+            Map<String, String> record = new LinkedHashMap<>();
+            record.put("name", "Alice");
+            record.put(entry.getKey(), entry.getValue());
+            String json = JsonUtil.toJsonString(record);
+            JsonAdaptedPerson adapted = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+            IllegalValueException error = assertThrows(IllegalValueException.class, adapted::toModelType);
+
+            ContactRecoveryResult result = parse("{\"persons\": [" + json + ", {\"name\": \"Good\"}]}");
+
+            assertEquals(List.of(new SkippedContact(1, entry.getKey() + ": " + error.getMessage())),
+                    result.skippedContacts());
+            assertEquals("Good", result.recoveredContacts().get(0).getName().fullName);
+        }
     }
 
     @Test
