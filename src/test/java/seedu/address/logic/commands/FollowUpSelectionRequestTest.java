@@ -56,15 +56,16 @@ class FollowUpSelectionRequestTest {
         model.updateFilteredPersonList(person -> person.equals(alice));
         CommandResult first = request.respond("1", model);
         assertEquals(benson, first.getPersonForDetails().orElseThrow());
-        assertTrue(first.getFeedbackToUser().startsWith(
-                "Selected follow-up:\n#7 [PENDING] Call | Due: 2000-01-01 [OVERDUE]\nContact:\n"));
+        assertEquals(ViewCommand.forPerson(benson).execute(model).getFeedbackToUser(), first.getFeedbackToUser());
+        assertEquals(benson.getFollowUps().getFirst(), first.getFollowUpForDetails().orElseThrow());
         assertTrue(first.getFeedbackToUser().contains(benson.getName().fullName));
         assertFalse(first.getPendingRequest().isPresent());
         CommandResult middle = request.respond("2", model);
         assertEquals(alice.getFollowUps().getFirst(), middle.getFollowUpForDetails().orElseThrow());
         CommandResult last = request.respond("3", model);
         assertEquals(alice, last.getPersonForDetails().orElseThrow());
-        assertTrue(last.getFeedbackToUser().startsWith("Selected follow-up:\n#2 [PENDING] Undated | No due date"));
+        assertEquals(ViewCommand.forPerson(alice).execute(model).getFeedbackToUser(), last.getFeedbackToUser());
+        assertEquals(alice.getFollowUps().getLast(), last.getFollowUpForDetails().orElseThrow());
         assertEquals(List.of(alice), model.getFilteredPersonList());
     }
 

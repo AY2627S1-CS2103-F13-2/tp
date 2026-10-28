@@ -272,7 +272,7 @@ public class DropCommand extends Command {
         // Only the selected values are dropped; events, follow-ups, starring and interactions are kept.
         return new Person(person.getName(), company, role, phone, email, linkedin,
                 introducer, tags, person.getEvents(), person.getFollowUps(), person.isStarred(),
-                person.getInteractions());
+                person.getInteractions(), person.getLastFollowUpId());
     }
 
     private static boolean contains(List<FieldValue> selections, Field field, Object value) {

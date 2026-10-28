@@ -85,6 +85,12 @@ public interface Model {
     List<FollowUpEntry> getPendingFollowUps();
 
     /**
+     * Returns all follow-ups across all contacts, sorted by due date with undated actions last.
+     * The unmodifiable snapshot preserves contact and stored action order for ties.
+     */
+    List<FollowUpEntry> getFollowUps();
+
+    /**
      * Returns true if a person with the same identity as {@code person} exists in the contact file.
      */
     boolean hasPerson(Person person);

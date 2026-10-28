@@ -20,6 +20,7 @@ import seedu.address.logic.commands.ChangeFollowUpStatusCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.DeleteFollowUpCommand;
 import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditFollowUpCommand;
@@ -83,6 +84,8 @@ public class ContactFileParser {
         Map<String, CommandFactory> commands = new LinkedHashMap<>();
         commands.put(AddCommand.COMMAND_WORD, (parser, arguments) -> new AddCommandParser().parse(arguments));
         commands.put(EditCommand.COMMAND_WORD, (parser, arguments) -> new EditCommandParser().parse(arguments));
+        commands.put(DeleteFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
+            new DeleteFollowUpCommandParser().parse(arguments));
         commands.put(EditFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
             new EditFollowUpCommandParser().parse(arguments));
         commands.put(ChangeFollowUpStatusCommand.COMMAND_WORD_COMPLETE, (parser, arguments) ->
@@ -103,13 +106,8 @@ public class ContactFileParser {
         commands.put(LogCommand.COMMAND_WORD, (parser, arguments) -> new LogCommandParser().parse(arguments));
         commands.put(UnlogCommand.COMMAND_WORD, (parser, arguments) -> new UnlogCommandParser().parse(arguments));
         commands.put(FollowUpCommand.COMMAND_WORD, (parser, arguments) -> new FollowUpCommandParser().parse(arguments));
-        commands.put(PendingFollowUpsCommand.COMMAND_WORD, (parser, arguments) -> {
-            if (!arguments.isBlank()) {
-                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
-                        PendingFollowUpsCommand.MESSAGE_USAGE));
-            }
-            return new PendingFollowUpsCommand();
-        });
+        commands.put(PendingFollowUpsCommand.COMMAND_WORD, (parser, arguments) ->
+                new PendingFollowUpsCommandParser().parse(arguments));
         commands.put(OrderCommand.COMMAND_WORD, (parser, arguments) -> new OrderCommandParser().parse(arguments));
         commands.put(ListCommand.COMMAND_WORD, (parser, arguments) -> new ListCommand());
         commands.put(ExitCommand.COMMAND_WORD, (parser, arguments) -> new ExitCommand());

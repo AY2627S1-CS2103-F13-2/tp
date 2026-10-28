@@ -33,6 +33,9 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("+ ()")); // separators but no digits at all
         assertFalse(Phone.isValidPhone("phone")); // non-numeric
         assertFalse(Phone.isValidPhone("9011p041")); // alphabets within digits
+        assertFalse(Phone.isValidPhone("65+93121534")); // plus is only allowed at the start
+        assertFalse(Phone.isValidPhone("++6593121534")); // at most one leading plus
+        assertFalse(Phone.isValidPhone("93121534+")); // trailing plus
         assertFalse(Phone.isValidPhone("(6591234567")); // unclosed parenthesis
         assertFalse(Phone.isValidPhone("6591234567)")); // unopened parenthesis
         assertFalse(Phone.isValidPhone(")65(91234567")); // parentheses in the wrong order

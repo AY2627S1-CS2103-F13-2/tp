@@ -1,6 +1,7 @@
 package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +34,7 @@ public class Person {
     private final Set<Event> events = new HashSet<>();
     private final List<FollowUp> followUps = new ArrayList<>();
     private final boolean starred;
+    private final int lastFollowUpId;
     private final List<Interaction> interactions;
 
     /**
@@ -131,6 +133,16 @@ public class Person {
             Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
             List<FollowUp> followUps, boolean starred,
             List<Interaction> interactions) {
+        this(name, company, role, phone, email, linkedin, introducer, tags, events, followUps, starred,
+                interactions, followUps.stream().mapToInt(FollowUp::getId).max().orElse(0));
+    }
+
+    /**
+     * Constructs a contact retaining the greatest allocated action ID, including deleted actions.
+     */
+    public Person(Name name, Company company, Role role, Phone phone, Email email,
+            Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
+            List<FollowUp> followUps, boolean starred, List<Interaction> interactions, int lastFollowUpId) {
         requireNonNull(name);
         requireNonNull(tags);
         requireNonNull(events);
@@ -145,6 +157,8 @@ public class Person {
         this.linkedin = linkedin;
         this.introducer = introducer;
         this.starred = starred;
+        checkArgument(lastFollowUpId >= 0, "The last follow-up ID must not be negative.");
+        this.lastFollowUpId = lastFollowUpId;
 
         this.tags.addAll(tags);
         this.events.addAll(events);
@@ -157,6 +171,7 @@ public class Person {
         Set<Integer> actionIds = new HashSet<>();
         for (FollowUp action : this.followUps) {
             requireNonNull(action);
+            checkArgument(action.getId() <= lastFollowUpId, "An action ID exceeds the last allocated ID.");
 
             if (!actionIds.add(action.getId())) {
                 throw new IllegalArgumentException(
@@ -233,7 +248,7 @@ public class Person {
      */
     public Person withStarred(boolean starred) {
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, followUps, starred, interactions);
+                introducer, tags, events, followUps, starred, interactions, lastFollowUpId);
     }
 
     /**
@@ -254,7 +269,7 @@ public class Person {
         updatedEvents.add(event);
 
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, updatedEvents, followUps, starred, interactions);
+                introducer, tags, updatedEvents, followUps, starred, interactions, lastFollowUpId);
     }
 
     /**
@@ -263,27 +278,25 @@ public class Person {
     public Person appendFollowUp(FollowUp action) {
         requireNonNull(action);
 
+        checkArgument(action.getId() > lastFollowUpId, "Follow-up IDs must not be reused.");
         List<FollowUp> updatedActions = new ArrayList<>(followUps);
-
-        if (updatedActions.contains(action)) {
-            throw new IllegalArgumentException("Follow-up already exists.");
-        }
 
         updatedActions.add(action);
 
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, updatedActions, starred, interactions);
+                introducer, tags, events, updatedActions, starred, interactions, action.getId());
     }
 
     /**
      * Returns a copy with the follow-up having the given ID replaced.
      *
-     * @param followUpId ID of the follow-up to replace
-     * @param replacement replacement follow-up
-     * @return a new person with the updated follow-up
+     * @param followUpId ID of the follow-up to replace.
+     * @param replacement Replacement follow-up with the same ID.
+     * @return A new person with the updated follow-up.
      */
     public Person replaceFollowUp(int followUpId, FollowUp replacement) {
         requireNonNull(replacement);
+        checkArgument(replacement.getId() == followUpId, "Replacing an action must preserve its ID.");
 
         List<FollowUp> updatedFollowUps = new ArrayList<>(followUps);
 
@@ -292,7 +305,7 @@ public class Person {
                 updatedFollowUps.set(index, replacement);
 
                 return new Person(name, company, role, phone, email, linkedin,
-                        introducer, tags, events, updatedFollowUps, starred, interactions);
+                        introducer, tags, events, updatedFollowUps, starred, interactions, lastFollowUpId);
             }
         }
 
@@ -301,11 +314,30 @@ public class Person {
     }
 
     /**
+     * Returns the greatest allocated follow-up ID, including deleted history.
+     */
+    public int getLastFollowUpId() {
+        return lastFollowUpId;
+    }
+
+    /**
+     * Returns a copy without the specified action, preserving order and retired IDs.
+     */
+    public Person removeFollowUp(int followUpId) {
+        checkArgument(followUps.stream().anyMatch(action -> action.getId() == followUpId),
+                "Follow-up with the specified ID does not exist.");
+        List<FollowUp> remaining = followUps.stream().filter(action -> action.getId() != followUpId).toList();
+        assert remaining.size() == followUps.size() - 1 : "Exactly one action must be removed";
+        return new Person(name, company, role, phone, email, linkedin,
+                introducer, tags, events, remaining, starred, interactions, lastFollowUpId);
+    }
+
+    /**
      * Returns a copy with the given interaction history.
      */
     public Person withInteractions(List<Interaction> interactions) {
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, followUps, starred, interactions);
+                introducer, tags, events, followUps, starred, interactions, lastFollowUpId);
     }
 
     /**
@@ -329,7 +361,7 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name and email presence.
+     * Returns true if names match and emails are both absent or match ignoring case.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -390,6 +422,7 @@ public class Person {
                 && tags.equals(otherPerson.tags)
                 && events.equals(otherPerson.events)
                 && followUps.equals(otherPerson.followUps)
+                && lastFollowUpId == otherPerson.lastFollowUpId
                 && starred == otherPerson.starred
                 && interactions.equals(otherPerson.interactions);
     }
@@ -397,7 +430,7 @@ public class Person {
     @Override
     public int hashCode() {
         return Objects.hash(name, company, role, phone, email, linkedin,
-                introducer, tags, events, followUps, starred, interactions);
+                introducer, tags, events, followUps, starred, interactions, lastFollowUpId);
     }
 
     @Override
@@ -413,6 +446,7 @@ public class Person {
                 .add("tags", tags)
                 .add("events", events)
                 .add("followUps", followUps)
+                .add("lastFollowUpId", lastFollowUpId)
                 .add("starred", starred)
                 .add("interactions", interactions)
                 .toString();
