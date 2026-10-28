@@ -15,7 +15,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 1. Ensure that Java `25` or later is installed on your computer.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
+1. Download the latest `.jar` file from [here](https://github.com/AY2627S1-CS2103-F13-2/tp/releases).
 
 1. Copy the file to the folder you want to use as the _home folder_ for Astra.
 
@@ -514,18 +514,19 @@ Examples:
 
 Reverses the most recent successful edit or deletion in the current Astra session.
 
-Format: `undo [--confirm]`
+Format: `undo`
 
-* Run `undo` to see which edit or deletion will be reversed. Nothing changes until you confirm.
-* Run `undo --confirm` to restore the contact information. Astra displays the restored contact and saves the contact file.
+* Run `undo` to see which edit or deletion will be reversed.
+* Enter `y` to restore the contact information; Astra displays the restored contact and saves the contact file.
+* Enter `n` or `cancel` to keep the current contact information.
 * Only edits and deletions can be undone. Adding, clearing, or otherwise changing contact data after an edit or deletion makes that earlier change unavailable to undo.
 * If restoring the information would violate contact uniqueness rules, Astra reports the conflict and makes no changes.
 * Undo history is kept only for the current session and is cleared when Astra closes.
 
 Examples:
 * `edit 1 p/91234567`, followed by `undo`, previews the edit that would be reversed.
-* `undo --confirm` restores the previous phone number after the preview.
-* `delete John Lim`, followed by `undo` and `undo --confirm`, restores John Lim.
+* Enter `y` after the preview to restore the previous phone number.
+* `delete John Lim`, followed by `undo` and `y`, restores John Lim.
 
 ### Viewing edit and deletion history: `history`
 
@@ -882,7 +883,7 @@ Action | Format, Examples
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields), then `y` to confirm or `n`/`cancel` to stop<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
 **Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
-**Undo** | `undo` to preview the most recent edit or deletion; `undo --confirm` to restore it
+**Undo** | `undo` to preview the most recent edit or deletion; enter `y` to restore it or `n`/`cancel` to stop
 **History** | `history`
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`

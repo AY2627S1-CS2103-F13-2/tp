@@ -331,13 +331,19 @@ public class LogicManagerTest {
 
         CommandResult preview = logic.execute("undo");
         assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "edit",
-                "Updated Alice Smith's phone to 87654321."), preview.getFeedbackToUser());
+                "Updated Alice Smith's phone to 87654321.") + "\nConfirm? (y/n; cancel to stop)",
+                preview.getFeedbackToUser());
         assertFalse(preview.shouldSaveContactFile());
+        assertTrue(preview.getPendingRequest().isPresent());
         assertEquals(edited, model.getContactFile().getPersonList().getFirst());
         assertEquals(savesAfterEdit, saveCount.get());
-        assertTrue(logic.execute("history").getFeedbackToUser().contains("edit:"));
 
-        CommandResult undoResult = logic.execute("undo --confirm");
+        assertEquals("Request cancelled. No contacts changed.", logic.execute("n").getFeedbackToUser());
+        assertEquals(edited, model.getContactFile().getPersonList().getFirst());
+        assertEquals(savesAfterEdit, saveCount.get());
+
+        logic.execute("undo");
+        CommandResult undoResult = logic.execute("y");
         assertEquals("Restored contact:\n" + Messages.format(original),
                 undoResult.getFeedbackToUser());
         assertEquals(original, model.getContactFile().getPersonList().getFirst());
@@ -356,7 +362,7 @@ public class LogicManagerTest {
         assertTrue(model.getContactFile().getPersonList().isEmpty());
         logic.execute("undo");
 
-        CommandResult undoResult = logic.execute("undo --confirm");
+        CommandResult undoResult = logic.execute("y");
         assertEquals("Restored contact:\n" + Messages.format(original),
                 undoResult.getFeedbackToUser());
         assertEquals(original, model.getContactFile().getPersonList().getFirst());
@@ -408,7 +414,7 @@ public class LogicManagerTest {
         var stateBeforeConfirmation = List.copyOf(model.getContactFile().getPersonList());
         int savesBeforeConfirmation = saveCount.get();
 
-        CommandResult result = logic.execute("undo --confirm");
+        CommandResult result = logic.execute("y");
 
         assertEquals(UndoManager.MESSAGE_UNDO_CONFLICT, result.getFeedbackToUser());
         assertFalse(result.shouldSaveContactFile());
