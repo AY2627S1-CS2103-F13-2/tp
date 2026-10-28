@@ -82,11 +82,19 @@ public class LogCommandParser implements Parser<LogCommand> {
             return today;
         }
 
-        String dateText = argMultimap.getValue(PREFIX_DATE).get().trim();
-        if (!Interaction.isValidDate(dateText)) {
+        return parsePastDate(argMultimap.getValue(PREFIX_DATE).get(), today);
+    }
+
+    /**
+     * Returns {@code dateText} as a date no later than {@code today}.
+     * @throws ParseException if the date is not a real date in the accepted format, or is after today
+     */
+    static LocalDate parsePastDate(String dateText, LocalDate today) throws ParseException {
+        String trimmedDate = dateText.trim();
+        if (!Interaction.isValidDate(trimmedDate)) {
             throw new ParseException(Interaction.MESSAGE_DATE_CONSTRAINTS);
         }
-        LocalDate date = LocalDate.parse(dateText);
+        LocalDate date = LocalDate.parse(trimmedDate);
         if (date.isAfter(today)) {
             throw new ParseException(String.format(MESSAGE_FUTURE_DATE, date));
         }
