@@ -86,6 +86,41 @@
     -fx-alignment: center-left;
 }
 
+.followup-row {
+    -fx-padding: 8 0;
+}
+
+.terminal-panel .followup-heading, .terminal-panel .followup-contact {
+    -fx-font-weight: bold;
+}
+
+.terminal-panel .followup-metadata, .terminal-panel .followup-hint {
+    -fx-text-fill: #8fa4ba;
+    -fx-font-size: 11px;
+}
+
+.terminal-panel .followup-overdue {
+    -fx-text-fill: #ffb39c;
+    -fx-font-size: 11px;
+}
+
+.terminal-panel .followup-completed {
+    -fx-text-fill: #8fd7b1;
+    -fx-font-size: 11px;
+}
+
+.selected-followup {
+    -fx-background-color: #e5eef5;
+    -fx-background-radius: 5;
+    -fx-padding: 12;
+    -fx-spacing: 7;
+}
+
+.contact-details .selected-followup-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: #245474;
+}
+
 .terminal-panel .list-view .placeholder .label {
     -fx-text-fill: #8191a6;
     -fx-font-size: 12px;

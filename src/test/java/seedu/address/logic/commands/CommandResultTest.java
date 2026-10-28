@@ -8,11 +8,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
+import seedu.address.model.FollowUpEntry;
 import seedu.address.model.person.FollowUp;
 
 public class CommandResultTest {
+    @Test
+    public void followUpListing_isImmutableAndSurvivesResultCopies() {
+        FollowUp action = new FollowUp(1, "Call", FollowUp.Status.PENDING);
+        FollowUpEntry entry = new FollowUpEntry(ALICE, action);
+        List<FollowUpEntry> entries = new ArrayList<>(List.of(entry));
+        FollowUpListing listing = new FollowUpListing("Pending follow-ups", entries);
+        CommandResult original = CommandResult.createPersonDetails("feedback", ALICE).withFollowUpListing(listing);
+        entries.clear();
+        assertEquals(List.of(entry), original.getFollowUpListing().orElseThrow().entries());
+        assertEquals(listing, original.withFeedbackPrefix("Note: ").getFollowUpListing().orElseThrow());
+        assertEquals(listing, original.withSelectedFollowUp(action).getFollowUpListing().orElseThrow());
+        assertEquals(original, CommandResult.createPersonDetails("feedback", ALICE).withFollowUpListing(listing));
+        assertNotEquals(original, CommandResult.createPersonDetails("feedback", ALICE));
+        assertThrows(UnsupportedOperationException.class, () -> listing.entries().clear());
+        assertThrows(NullPointerException.class, () -> original.withFollowUpListing(null));
+        assertThrows(NullPointerException.class, () -> new FollowUpListing(null, List.of()));
+    }
+
     @Test
     public void withSelectedFollowUp_retainsViewAndAddsActionContext() {
         FollowUp action = new FollowUp(1, "Call", FollowUp.Status.PENDING);

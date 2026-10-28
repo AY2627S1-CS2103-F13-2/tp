@@ -15,6 +15,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.Messages;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.FollowUpEntry;
 import seedu.address.model.person.Person;
 
 /**
@@ -86,6 +87,27 @@ public class PersonDetailsPanel extends UiPart<Region> {
                     .map(Object::toString).collect(Collectors.joining("\n"))));
         }
         fields.getChildren().setAll(ordered);
+    }
+
+    /**
+     * Keeps the selected action visible alongside its contact's details.
+     */
+    public void showFollowUp(FollowUpEntry entry, FieldOrder order) {
+        showPerson(entry.contact(), order);
+        Label title = new Label("Selected follow-up");
+        title.getStyleClass().add("selected-followup-title");
+        Label action = new Label(Messages.formatFollowUp(entry.followUp()));
+        action.setId("selectedFollowUpText");
+        action.setWrapText(true);
+        VBox context = new VBox(title, action);
+        context.setId("selectedFollowUp");
+        context.getStyleClass().add("selected-followup");
+        Node history = fields.lookup("#followUps");
+        if (history != null) {
+            history.setVisible(false);
+            history.setManaged(false);
+        }
+        fields.getChildren().add(fields.getChildren().indexOf(fields.lookup("#nameRow")) + 1, context);
     }
 
     private static HBox row(String id, String caption, String text) {
