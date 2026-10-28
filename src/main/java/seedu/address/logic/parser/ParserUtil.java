@@ -25,8 +25,7 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
-    public static final String MESSAGE_UNRECOGNIZED_PREFIX =
-            "Unrecognized prefix %1$s for this command. Check its spelling against the command format.";
+    public static final String MESSAGE_UNRECOGNIZED_PREFIX = "Unknown prefix \"%1$s\". Check it for typos.";
 
     /*
      * A word ending in a slash, such as "ph/", inside a value that can never contain a slash is a
