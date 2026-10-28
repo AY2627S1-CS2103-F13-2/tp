@@ -206,6 +206,7 @@ class FollowUpWorkflowTest {
         assertEquals(original.withStarred(true), model.getFilteredPersonList().getFirst());
         assertEquals(original.withStarred(true), storage.readContactFile().orElseThrow().getPersonList().getFirst());
         logic.execute("edit 1 p/76543210");
+        logic.execute("y");
         Person edited = new PersonBuilder(original).withStarred(true).withPhone("76543210").build();
         assertEquals(edited, model.getFilteredPersonList().getFirst());
         assertEquals(edited, storage.loadForStartup().contacts().getFirst());
@@ -266,6 +267,7 @@ class FollowUpWorkflowTest {
                 new FollowUp(1, "Call Alice", FollowUp.Status.PENDING));
         assertEquals(List.of(withAction), model.getFilteredPersonList());
         logic.execute("edit 1 p/76543210");
+        logic.execute("y");
         Person edited = new PersonBuilder(withAction).withPhone("76543210").build();
         logic.execute("starred");
         byte[] saved = Files.readAllBytes(file);
@@ -715,6 +717,7 @@ class FollowUpWorkflowTest {
         logic.execute("followup 1 a/Send portfolio");
         logic.execute("followup 1 a/Call");
         logic.execute("edit 1 n/Alice Changed p/87654321 c/ t/work");
+        logic.execute("y");
         Person edited = model.getFilteredPersonList().getFirst();
         assertEquals(2, edited.getFollowUps().size());
         assertTrue(edited.getCompany().isEmpty());

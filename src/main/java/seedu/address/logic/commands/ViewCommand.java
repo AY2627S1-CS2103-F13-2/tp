@@ -85,6 +85,8 @@ public class ViewCommand extends Command {
             }
         }
 
+        assert model.getContactFile().getPersonList().contains(personToView)
+                : "Viewed contact must belong to the active contact file";
         return CommandResult.createPersonDetails(Messages.format(personToView, model.getFieldOrder()), personToView);
     }
 

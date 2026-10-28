@@ -120,7 +120,7 @@ public class IntroduceCommand extends Command {
                 personToUpdate.getEvents(),
                 personToUpdate.getFollowUps(),
                 personToUpdate.isStarred(),
-                personToUpdate.getInteractions());
+                personToUpdate.getInteractions(), personToUpdate.getLastFollowUpId());
         model.setPerson(personToUpdate, updatedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_RECORDED, Messages.format(updatedPerson)));

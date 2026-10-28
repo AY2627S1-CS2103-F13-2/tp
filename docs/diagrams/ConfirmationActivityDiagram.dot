@@ -1,0 +1,26 @@
+digraph Confirmation {
+  graph [rankdir=TB, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.4];
+  node [shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#5271a3", fontname="Arial", fontsize=12];
+  edge [fontname="Arial", fontsize=11, color="#43536b"];
+  input [label="Edit / delete / clear / deletefollowup\nor duplicate follow-up request"];
+  resolve [label="Validate and retain resolved targets\nCapture original model and filter"];
+  panel [label="Show shared scrollable confirmation panel\nPreview only: no mutation or save"];
+  reply [shape=diamond, label="Typed reply or button"];
+  stale [label="Ignore events from an old panel revision"];
+  apply [label="y / Confirm: revalidate retained target\nApply operation; preserve action ID counter"];
+  save [label="Validate temporary file; replace atomically"];
+  success [label="Hide panel and clear pending state\nDisplay success; save once", fillcolor="#e6f4ea"];
+  cancel [label="n / cancel / Cancel button\nRestore original view; no save; hide panel", fillcolor="#fff4d9"];
+  fail [label="Restore model, counter and view; hide panel\nClear pending state; report failure", fillcolor="#fdecec"];
+  input -> resolve;
+  resolve -> panel [label="valid"];
+  panel -> reply;
+  reply -> panel [label="invalid / unrelated command"];
+  reply -> stale [label="old event"];
+  reply -> cancel [label="cancel"];
+  reply -> apply [label="confirm"];
+  apply -> save [label="valid"];
+  apply -> fail [label="target changed"];
+  save -> success [label="saved"];
+  save -> fail [label="I/O failure"];
+}

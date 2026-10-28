@@ -42,6 +42,7 @@ public class OrderCommand extends Command {
             return new CommandResult("Field order is unchanged. No changes needed.");
         }
         model.setFieldOrder(requestedOrder);
+        assert model.getFieldOrder().equals(requestedOrder) : "Requested field order must be applied";
         return new CommandResult("Field order updated: " + requestedOrder);
     }
 

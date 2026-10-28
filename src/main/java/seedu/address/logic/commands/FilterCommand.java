@@ -32,6 +32,8 @@ public class FilterCommand extends Command {
     public CommandResult execute(Model model) {
         requireNonNull(model);
         model.updateFilteredPersonList(predicate);
+        assert model.getFilteredPersonList().stream().allMatch(predicate)
+                : "Every displayed contact must satisfy the requested tag filter";
         int count = model.getFilteredPersonList().size();
         return new CommandResult(count == 0 ? MESSAGE_NO_MATCHES
                 : String.format(MESSAGE_MATCHES, count, predicate.getMode()));

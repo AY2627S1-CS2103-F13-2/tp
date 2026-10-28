@@ -1,0 +1,74 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "s:ModelSnapshot" as ModelSnapshot MODEL_COLOR
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("delete 1")
+activate LogicManager
+
+create ModelSnapshot
+LogicManager -> ModelSnapshot : ModelSnapshot(m)
+activate ModelSnapshot
+ModelSnapshot --> LogicManager
+deactivate ModelSnapshot
+
+ref over LogicManager, Model : create delete confirmation c
+
+[<-- LogicManager : preview and y/n prompt
+deactivate LogicManager
+
+alt y
+  [-> LogicManager : execute("y")
+  activate LogicManager
+
+  ref over LogicManager, Model : run confirmed delete
+
+  LogicManager -> ModelSnapshot : hasDataChanged(m)
+  activate ModelSnapshot
+  ModelSnapshot --> LogicManager : true
+  deactivate ModelSnapshot
+
+  LogicManager -> Storage : saveContactFile(contactFile)
+  activate Storage
+  Storage --> LogicManager
+  deactivate Storage
+
+  opt save failed
+    LogicManager -> ModelSnapshot : restore(m)
+    activate ModelSnapshot
+    ModelSnapshot -> Model : setContactFile(saved copy)
+    activate Model
+    Model --> ModelSnapshot
+    deactivate Model
+    ModelSnapshot --> LogicManager
+    deactivate ModelSnapshot
+  end
+
+  [<-- LogicManager : result
+  deactivate LogicManager
+
+else n or cancel
+  [-> LogicManager : execute("n")
+  activate LogicManager
+
+  LogicManager -> ModelSnapshot : restore(m)
+  activate ModelSnapshot
+  ModelSnapshot --> LogicManager
+  deactivate ModelSnapshot
+
+  [<-- LogicManager : request cancelled
+  deactivate LogicManager
+end
+@enduml
