@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -27,6 +28,14 @@ public class FindCommand extends Command {
 
     public FindCommand(Predicate<Person> predicate) {
         this.predicate = predicate;
+    }
+
+    /**
+     * Returns actual query matches across stored contacts without relying on the current displayed list.
+     */
+    public List<Person> findMatches(Model model) {
+        requireNonNull(model);
+        return model.getContactFile().getPersonList().stream().filter(predicate).toList();
     }
 
     @Override

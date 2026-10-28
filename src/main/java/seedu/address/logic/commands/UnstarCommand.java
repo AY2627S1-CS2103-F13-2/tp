@@ -57,7 +57,7 @@ public class UnstarCommand extends Command {
         Index resolvedIndex = targetIndex;
         if (findCommand != null) {
             CommandResult findResult = findCommand.execute(model);
-            int matchCount = model.getFilteredPersonList().size();
+            int matchCount = findCommand.findMatches(model).size();
             if (matchCount == 0) {
                 return findResult;
             }
