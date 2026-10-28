@@ -6,7 +6,9 @@ import java.util.Set;
 
 import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.Event;
 import seedu.address.model.person.FollowUp;
+import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Linkedin;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -36,6 +38,9 @@ public class PersonBuilder {
     private Name introducer;
     private Set<Tag> tags;
     private List<FollowUp> followUps = List.of();
+    private int lastFollowUpId;
+    private Set<Event> events = Set.of();
+    private List<Interaction> interactions = List.of();
     private boolean starred;
 
     /**
@@ -64,6 +69,9 @@ public class PersonBuilder {
         introducer = personToCopy.getIntroducer().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
         followUps = personToCopy.getFollowUps();
+        lastFollowUpId = personToCopy.getLastFollowUpId();
+        events = personToCopy.getEvents();
+        interactions = personToCopy.getInteractions();
         starred = personToCopy.isStarred();
     }
 
@@ -141,6 +149,7 @@ public class PersonBuilder {
      */
     public PersonBuilder withFollowUps(FollowUp... actions) {
         followUps = List.of(actions);
+        lastFollowUpId = Math.max(lastFollowUpId, followUps.stream().mapToInt(FollowUp::getId).max().orElse(0));
         return this;
     }
 
@@ -156,7 +165,8 @@ public class PersonBuilder {
      * Builds an immutable contact with the selected details and actions.
      */
     public Person build() {
-        return new Person(name, company, role, phone, email, linkedin, introducer, tags, followUps, starred);
+        return new Person(name, company, role, phone, email, linkedin, introducer, tags, events,
+                followUps, starred, interactions, lastFollowUpId);
     }
 
 }

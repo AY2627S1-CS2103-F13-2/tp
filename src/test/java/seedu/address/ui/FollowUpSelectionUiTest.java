@@ -61,6 +61,8 @@ class FollowUpSelectionUiTest {
                 window.show();
                 TextField input = (TextField) stage.getScene().lookup("#commandTextField");
                 TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
+                execute(input, "view Alice");
+                String viewFeedback = output.getText();
                 execute(input, "followups");
                 assertTrue(output.getText().contains("Enter a follow-up number"));
                 execute(input, "list");
@@ -71,22 +73,20 @@ class FollowUpSelectionUiTest {
                 execute(input, "99");
                 assertTrue(output.getText().contains("Enter a number from the displayed follow-ups."));
                 execute(input, "1");
-                assertTrue(output.getText().startsWith(
-                        "Selected follow-up:\n#7 [PENDING] Call | Due: 2000-02-29 [OVERDUE]\nContact:\n"));
+                assertEquals(viewFeedback, output.getText());
                 assertTrue(output.getText().contains(ALICE.getName().fullName));
                 assertTrue(output.getText().contains(ALICE.getPhone().orElseThrow().value));
                 assertEquals(List.of(BENSON), model.getFilteredPersonList());
                 FieldOrder custom = new FieldOrder(
                         List.of("followups", "phone", "name", "tags", "company", "role", "email", "linkedin"));
                 model.setFieldOrder(custom);
-                assertEquals(Messages.formatFollowUpDetails(alice, alice.getFollowUps().getFirst(), custom),
-                        output.getText());
+                assertEquals(Messages.format(alice, custom), output.getText());
                 execute(input, "not-a-command");
-                assertTrue(output.getText().contains("Selected follow-up:\n#7 [PENDING] Call"));
+                assertTrue(output.getText().contains(Messages.format(alice, custom)));
                 execute(input, "view Benson");
                 model.setFieldOrder(FieldOrder.DEFAULT);
                 assertEquals(Messages.format(BENSON), output.getText());
-                assertFalse(output.getText().contains("Selected follow-up:"));
+                assertFalse(output.getText().contains(alice.getName().fullName));
             } finally {
                 stage.hide();
             }

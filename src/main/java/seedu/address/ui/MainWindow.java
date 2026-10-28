@@ -19,7 +19,6 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FieldOrder;
-import seedu.address.model.person.FollowUp;
 import seedu.address.model.person.Person;
 
 /**
@@ -39,9 +38,9 @@ public class MainWindow extends UiPart<Stage> {
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
+    private ConfirmationPanel confirmationPanel;
     private HelpWindow helpWindow;
     private Person personForDetails;
-    private FollowUp followUpForDetails;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -57,6 +56,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private StackPane statusbarPlaceholder;
+
+    @FXML
+    private StackPane confirmationPanelPlaceholder;
 
     /**
      * Creates a {@code MainWindow} with the given {@code Stage}, {@code Logic},
@@ -138,6 +140,17 @@ public class MainWindow extends UiPart<Stage> {
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
 
+        confirmationPanel = new ConfirmationPanel(response -> {
+            try {
+                executeCommand(response);
+            } catch (CommandException | ParseException | RuntimeException e) {
+                // executeCommand has already displayed the failure and cleared the panel.
+            }
+            commandBox.getRoot().lookup("#commandTextField").requestFocus();
+        });
+        confirmationPanelPlaceholder.getChildren().add(confirmationPanel.getRoot());
+        confirmationPanelPlaceholder.managedProperty().bind(confirmationPanel.getRoot().managedProperty());
+        confirmationPanelPlaceholder.visibleProperty().bind(confirmationPanel.getRoot().visibleProperty());
         resultDisplay.setFeedbackToUser(startupFeedback);
     }
 
@@ -194,13 +207,13 @@ public class MainWindow extends UiPart<Stage> {
         try {
             FieldOrder previousOrder = logic.getFieldOrderProperty().get();
             CommandResult commandResult = logic.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
+            confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
             String feedback = commandResult.getFeedbackToUser();
             if (!previousOrder.equals(logic.getFieldOrderProperty().get()) && personForDetails != null) {
                 feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
             } else {
                 personForDetails = commandResult.getPersonForDetails().orElse(null);
-                followUpForDetails = commandResult.getFollowUpForDetails().orElse(null);
             }
             resultDisplay.setFeedbackToUser(feedback);
 
@@ -213,9 +226,10 @@ public class MainWindow extends UiPart<Stage> {
             }
 
             return commandResult;
-        } catch (CommandException | ParseException e) {
-            logger.info("An error occurred while executing command: " + commandText);
-            String feedback = e.getMessage();
+        } catch (CommandException | ParseException | RuntimeException e) {
+            logger.fine("Command failed: " + e.getClass().getSimpleName());
+            confirmationPanel.showRequest(null);
+            String feedback = e.getMessage() == null ? "Unexpected command failure." : e.getMessage();
             if (personForDetails != null) {
                 feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
             }
@@ -225,7 +239,6 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private String formatDetails(FieldOrder order) {
-        return followUpForDetails == null ? Messages.format(personForDetails, order)
-                : Messages.formatFollowUpDetails(personForDetails, followUpForDetails, order);
+        return Messages.format(personForDetails, order);
     }
 }

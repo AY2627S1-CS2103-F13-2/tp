@@ -34,7 +34,8 @@ public class InteractionHistoryKeptTest {
         new LogCommand(INDEX_FIRST_PERSON, OCT_1).execute(model);
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withCompany("Apple").build();
 
-        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model)
+                .getPendingRequest().orElseThrow().respond("y", model);
 
         Person editedAlice = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         assertEquals("Apple", editedAlice.getCompany().orElseThrow().toString());

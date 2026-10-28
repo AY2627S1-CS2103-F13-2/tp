@@ -100,10 +100,4 @@ public class Messages {
                 + (action.isOverdue() ? " [OVERDUE]" : "");
     }
 
-    /**
-     * Formats selected action details and the associated contact in the requested display order.
-     */
-    public static String formatFollowUpDetails(Person contact, FollowUp action, FieldOrder order) {
-        return "Selected follow-up:\n" + formatFollowUp(action) + "\nContact:\n" + format(contact, order);
-    }
 }

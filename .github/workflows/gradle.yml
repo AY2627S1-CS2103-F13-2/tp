@@ -6,7 +6,8 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
+        # Avoid the capacity-constrained macOS ARM64 pool selected by macos-latest.
+        platform: [ubuntu-latest, macos-15-intel, windows-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:

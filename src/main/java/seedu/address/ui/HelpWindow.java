@@ -19,7 +19,12 @@ public class HelpWindow extends UiPart<Stage> {
     public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL
             + "\nFollow-ups: followup INDEX a/DESCRIPTION [d/DATE]."
             + " Pending duplicates ask y/n; cancel stops the request."
-            + "\nReview pending follow-ups: followups. Then enter a displayed number to view its details/contact,"
+            + "\nDelete an action: deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID, then y or n/cancel."
+            + "\nContact edits, deletions, clear, and duplicate follow-ups show a shared confirmation panel."
+            + " Use its buttons or type y, n, or cancel."
+            + "\nReview follow-ups: followups [overdue|today|upcoming|completed|undated]."
+            + " Default: pending actions. Upcoming includes all dates after today; undated is pending-only."
+            + " Then enter a displayed number to view its details/contact,"
             + " or n/cancel to stop.";
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);

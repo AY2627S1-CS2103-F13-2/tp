@@ -230,6 +230,16 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_nullEventEntry_throwsIllegalValueException() {
+        List<JsonAdaptedEvent> events = new ArrayList<>();
+        events.add(null);
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
+                VALID_EMAIL, VALID_LINKEDIN, VALID_TAGS, events, null, false);
+
+        assertThrows(IllegalValueException.class, "Event entries must not be null.", person::toModelType);
+    }
+
+    @Test
     public void toModelType_withEvents_returnsEvents() throws Exception {
         List<JsonAdaptedEvent> events = List.of(
                 new JsonAdaptedEvent("NUS Career Fair", "2026-10-20"));
