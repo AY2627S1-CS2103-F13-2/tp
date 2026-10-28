@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Company;
@@ -42,6 +45,7 @@ class JsonAdaptedPerson {
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
     private final List<JsonAdaptedFollowUp> followUps = new ArrayList<>();
     private final boolean starred;
+    private final JsonNode lastFollowUpId;
     private final List<JsonAdaptedInteraction> interactions = new ArrayList<>();
 
     /**
@@ -93,6 +97,16 @@ class JsonAdaptedPerson {
     }
 
     /**
+     * Creates an adapted legacy contact whose allocated ID is inferred from its history.
+     */
+    public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
+            String introducer, List<JsonAdaptedTag> tags, List<JsonAdaptedEvent> events,
+            List<JsonAdaptedFollowUp> followUps, boolean starred, List<JsonAdaptedInteraction> interactions) {
+        this(name, company, role, phone, email, linkedin, introducer, tags, events, followUps, starred,
+                interactions, null);
+    }
+
+    /**
      * Jackson constructor containing all contact data. A contact file written before interactions were
      * recorded has no {@code interactions} field, which is read as an empty history.
      */
@@ -109,7 +123,8 @@ class JsonAdaptedPerson {
             @JsonProperty("events") List<JsonAdaptedEvent> events,
             @JsonProperty("followUps") List<JsonAdaptedFollowUp> followUps,
             @JsonProperty("starred") boolean starred,
-            @JsonProperty("interactions") List<JsonAdaptedInteraction> interactions) {
+            @JsonProperty("interactions") List<JsonAdaptedInteraction> interactions,
+            @JsonProperty("lastFollowUpId") JsonNode lastFollowUpId) {
         this.name = name;
         this.company = company;
         this.role = role;
@@ -118,6 +133,7 @@ class JsonAdaptedPerson {
         this.linkedin = linkedin;
         this.introducer = introducer;
         this.starred = starred;
+        this.lastFollowUpId = lastFollowUpId;
 
         if (tags != null) {
             this.tags.addAll(tags);
@@ -159,6 +175,7 @@ class JsonAdaptedPerson {
         linkedin = source.getLinkedin().map(value -> value.value).orElse(null);
         introducer = source.getIntroducer().map(value -> value.fullName).orElse(null);
         starred = source.isStarred();
+        lastFollowUpId = IntNode.valueOf(source.getLastFollowUpId());
 
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
@@ -183,84 +200,66 @@ class JsonAdaptedPerson {
      * @throws IllegalValueException if data constraints are violated
      */
     public Person toModelType() throws IllegalValueException {
+        Set<Tag> modelTags = toTags();
+        Set<Event> modelEvents = toEvents();
+        Name modelName = toName();
+        Company modelCompany = toOptionalField(company, ContactTextField.COMPANY, Company::new);
+        Role modelRole = toOptionalField(role, ContactTextField.ROLE, Role::new);
+        Phone modelPhone = toOptionalField(phone, ContactTextField.PHONE, Phone::new);
+        Email modelEmail = toOptionalField(email, ContactTextField.EMAIL, Email::new);
+        Linkedin modelLinkedin = toOptionalField(linkedin, ContactTextField.LINKEDIN, Linkedin::new);
+        Name modelIntroducer = toOptionalField(introducer, ContactTextField.NAME, Name::new);
+        List<FollowUp> modelFollowUps = toFollowUps();
+        int modelLastFollowUpId = toLastFollowUpId(modelFollowUps);
+        List<Interaction> modelInteractions = toInteractions();
+        return new Person(modelName, modelCompany, modelRole, modelPhone, modelEmail, modelLinkedin,
+                modelIntroducer, modelTags, modelEvents, modelFollowUps, starred, modelInteractions,
+                modelLastFollowUpId);
+    }
+
+    private Set<Tag> toTags() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
         for (JsonAdaptedTag tag : tags) {
             personTags.add(tag.toModelType());
         }
 
+        return new HashSet<>(personTags);
+    }
+
+    private Set<Event> toEvents() throws IllegalValueException {
         final List<Event> personEvents = new ArrayList<>();
         for (JsonAdaptedEvent event : events) {
+            if (event == null) {
+                throw new IllegalValueException("Event entries must not be null.");
+            }
             personEvents.add(event.toModelType());
         }
 
+        return new HashSet<>(personEvents);
+    }
+
+    private Name toName() throws IllegalValueException {
         if (name == null) {
             throw new IllegalValueException(
                     String.format(MISSING_FIELD_MESSAGE_FORMAT,
                             Name.class.getSimpleName()));
         }
 
-        if (!Name.isValidName(name)) {
-            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
+        ContactTextField.NAME.validate(name);
+
+        return new Name(name);
+    }
+
+    private <T> T toOptionalField(String value, ContactTextField field, Function<String, T> constructor)
+            throws IllegalValueException {
+        if (value == null) {
+            return null;
         }
+        field.validate(value);
+        return constructor.apply(value);
+    }
 
-        final Name modelName = new Name(name);
-
-        final Company modelCompany;
-        if (company == null) {
-            modelCompany = null;
-        } else if (!Company.isValidCompany(company)) {
-            throw new IllegalValueException(Company.MESSAGE_CONSTRAINTS);
-        } else {
-            modelCompany = new Company(company);
-        }
-
-        final Role modelRole;
-        if (role == null) {
-            modelRole = null;
-        } else if (!Role.isValidRole(role)) {
-            throw new IllegalValueException(Role.MESSAGE_CONSTRAINTS);
-        } else {
-            modelRole = new Role(role);
-        }
-
-        final Phone modelPhone;
-        if (phone == null) {
-            modelPhone = null;
-        } else if (!Phone.isValidPhone(phone)) {
-            throw new IllegalValueException(Phone.MESSAGE_CONSTRAINTS);
-        } else {
-            modelPhone = new Phone(phone);
-        }
-
-        final Email modelEmail;
-        if (email == null) {
-            modelEmail = null;
-        } else if (!Email.isValidEmail(email)) {
-            throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
-        } else {
-            modelEmail = new Email(email);
-        }
-
-        final Linkedin modelLinkedin;
-        if (linkedin == null) {
-            modelLinkedin = null;
-        } else if (!Linkedin.isValidLinkedin(linkedin)) {
-            throw new IllegalValueException(Linkedin.MESSAGE_CONSTRAINTS);
-        } else {
-            modelLinkedin = new Linkedin(linkedin);
-        }
-
-        final Name modelIntroducer;
-        if (introducer == null) {
-            modelIntroducer = null;
-        } else if (!Name.isValidName(introducer)) {
-            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
-        } else {
-            modelIntroducer = new Name(introducer);
-        }
-
-        final Set<Tag> modelTags = new HashSet<>(personTags);
-        final Set<Event> modelEventSet = new HashSet<>(personEvents);
+    private List<FollowUp> toFollowUps() throws IllegalValueException {
         final List<FollowUp> modelFollowUps = new ArrayList<>();
         final Set<Integer> actionIds = new HashSet<>();
 
@@ -280,6 +279,23 @@ class JsonAdaptedPerson {
             modelFollowUps.add(modelAction);
         }
 
+        return modelFollowUps;
+    }
+
+    private int toLastFollowUpId(List<FollowUp> actions) throws IllegalValueException {
+        int greatestId = actions.stream().mapToInt(FollowUp::getId).max().orElse(0);
+        int modelLastFollowUpId = greatestId;
+        if (lastFollowUpId != null && !lastFollowUpId.isNull()) {
+            if (!lastFollowUpId.isIntegralNumber() || !lastFollowUpId.canConvertToInt()
+                    || lastFollowUpId.intValue() < greatestId) {
+                throw new IllegalValueException("lastFollowUpId must be an integer at least " + greatestId + ".");
+            }
+            modelLastFollowUpId = lastFollowUpId.intValue();
+        }
+        return modelLastFollowUpId;
+    }
+
+    private List<Interaction> toInteractions() throws IllegalValueException {
         List<Interaction> modelInteractions = new ArrayList<>();
         for (JsonAdaptedInteraction interaction : interactions) {
             if (interaction == null) {
@@ -291,18 +307,6 @@ class JsonAdaptedPerson {
             }
             modelInteractions.add(modelInteraction);
         }
-        return new Person(
-                modelName,
-                modelCompany,
-                modelRole,
-                modelPhone,
-                modelEmail,
-                modelLinkedin,
-                modelIntroducer,
-                modelTags,
-                modelEventSet,
-                modelFollowUps,
-                starred,
-                modelInteractions);
+        return modelInteractions;
     }
 }

@@ -1,0 +1,61 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor #9D0012
+skinparam objectBackgroundColor #F97181
+skinparam objectFontColor #000000
+skinparam objectAttributeFontColor #000000
+skinparam objectBorderColor #9D0012
+skinparam rectangleFontColor #000000
+skinparam ArrowFontStyle plain
+show members
+
+rectangle "1. Before" as Before {
+  object "<u>p:Person</u>" as p1 {
+    lastFollowUpId = 2
+  }
+  object "<u>f1:FollowUp</u>" as f11 {
+    id = 1
+    status = COMPLETED
+  }
+  object "<u>f2:FollowUp</u>" as f12 {
+    id = 2
+    status = PENDING
+  }
+}
+
+rectangle "2. After deletefollowup 1 i/2" as AfterDelete {
+  object "<u>p2:Person</u>" as p2 {
+    lastFollowUpId = 2
+  }
+  object "<u>f1:FollowUp</u>" as f21 {
+    id = 1
+    status = COMPLETED
+  }
+}
+
+rectangle "3. After followup 1 a/Send thanks" as AfterAdd {
+  object "<u>p3:Person</u>" as p3 {
+    lastFollowUpId = 3
+  }
+  object "<u>f1:FollowUp</u>" as f31 {
+    id = 1
+    status = COMPLETED
+  }
+  object "<u>f3:FollowUp</u>" as f33 {
+    id = 3
+    status = PENDING
+  }
+}
+
+p1 -down-> f11
+p1 -down-> f12
+p2 -down-> f21
+p3 -down-> f31
+p3 -down-> f33
+
+Before -[hidden]right- AfterDelete
+AfterDelete -[hidden]right- AfterAdd
+f11 -[hidden]right- f12
+f31 -[hidden]right- f33
+@enduml

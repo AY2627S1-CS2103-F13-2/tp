@@ -202,6 +202,11 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public List<FollowUpEntry> getFollowUps() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public List<FollowUpEntry> getPendingFollowUps() {
             throw new AssertionError("This method should not be called.");
         }
