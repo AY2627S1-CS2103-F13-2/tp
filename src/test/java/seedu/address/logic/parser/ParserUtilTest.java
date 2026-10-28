@@ -66,6 +66,23 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseName_mistypedPrefixInValue_reportsUnrecognizedPrefix() {
+        String expectedMessage = String.format(ParserUtil.MESSAGE_UNRECOGNIZED_PREFIX, "ph/");
+        assertThrows(ParseException.class, expectedMessage, () -> ParserUtil.parseName("John ph/123"));
+    }
+
+    @Test
+    public void parseEmail_mistypedPrefixInValue_reportsUnrecognizedPrefix() {
+        String expectedMessage = String.format(ParserUtil.MESSAGE_UNRECOGNIZED_PREFIX, "tg/");
+        assertThrows(ParseException.class, expectedMessage, () -> ParserUtil.parseEmail("john@example.com tg/friend"));
+    }
+
+    @Test
+    public void parseName_invalidValueWithoutPrefix_reportsNameConstraints() {
+        assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName("John*"));
+    }
+
+    @Test
     public void parseName_validValueWithoutWhitespace_returnsName() throws Exception {
         Name expectedName = new Name(VALID_NAME);
         assertEquals(expectedName, ParserUtil.parseName(VALID_NAME));

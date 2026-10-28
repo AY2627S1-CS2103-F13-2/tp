@@ -23,7 +23,8 @@ public class FollowUpCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Records a pending follow-up for the contact at the displayed index.\n"
             + "Parameters: INDEX (positive integer) a/DESCRIPTION (not blank) [d/DATE]\n"
-            + "Date formats: yyyy-MM-dd, dd/MM/yyyy, d MMM yyyy (English month names).\n"
+            + "Date formats: yyyy-MM-dd, dd/MM/yyyy, d MMM yyyy (English month names); "
+            + "dates must be on or after 2000-01-01.\n"
             + "Example: followup 1 a/Send portfolio d/2026-10-25\n"
             + "An identical pending action asks Add another? Reply y, n, or cancel.";
     public static final String MESSAGE_CONTACT_CHANGED = "Contact changed. Start the follow-up request again.";
