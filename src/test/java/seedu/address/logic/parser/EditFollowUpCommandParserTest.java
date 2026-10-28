@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
@@ -63,10 +64,9 @@ public class EditFollowUpCommandParserTest {
                         LocalDate.of(2026, 11, 5),
                         true);
 
-        assertParseSuccess(
-                parser,
-                "1 i/2 d/2026-11-05",
-                expected);
+        for (String date : new String[] {"2026-11-05", "05/11/2026", "5 Nov 2026"}) {
+            assertParseSuccess(parser, "1 i/2 d/" + date, expected);
+        }
     }
 
     @Test
@@ -123,6 +123,8 @@ public class EditFollowUpCommandParserTest {
     @Test
     public void parse_invalidDate_failure() {
         assertThrows(ParseException.class, () -> parser.parse("1 i/2 d/2026-02-30"));
+        ParseException error = assertThrows(ParseException.class, () -> parser.parse("1 i/2 d/31/12/1999"));
+        assertEquals(DateParserUtil.MESSAGE_DATE_TOO_OLD, error.getMessage());
     }
 
     @Test
