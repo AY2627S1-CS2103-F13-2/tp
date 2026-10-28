@@ -120,6 +120,7 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
 * Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
+* `l/LINKEDIN` accepts a `linkedin.com` URL, such as `linkedin.com/in/johndoe` or `https://www.linkedin.com/in/johndoe`, or a profile handle of 3 to 100 letters, digits and hyphens, such as `john-doe`.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
