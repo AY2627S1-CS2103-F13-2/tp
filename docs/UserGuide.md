@@ -547,7 +547,8 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   another action with the requested date and leaves the existing action unchanged.
   Other replies repeat the prompt; cancel before entering another command.
 * A completed action with the same description does not require confirmation.
-  Completed history is retained. Use `editfollowup` to correct an action and
+  Completed history is retained. Use `completefollowup` and `reopenfollowup` to
+  change an action's status, `editfollowup` to correct an action, and
   `deletefollowup` to remove a mistaken action.
 * Action IDs are unique within each contact and are never renumbered or reused after deletion,
   including after restart. Older files infer the greatest allocated ID from their existing history.
@@ -644,6 +645,39 @@ editfollowup 1 i/2 d/2026-11-05
 editfollowup 1 i/2 a/Call client d/2026-11-05
 editfollowup 1 i/2 d/
 ```
+
+### Completing or reopening a follow-up: `completefollowup`, `reopenfollowup`
+
+Marks a pending follow-up as completed, or reopens a completed follow-up as pending.
+
+Format:
+
+`completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br>
+`reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`
+
+* `CONTACT_INDEX` is the contact number in the currently displayed list.
+* `FOLLOW_UP_ID` is the follow-up's stable ID, shown as `#ID` on the contact card,
+  in `view`, and in `followups`. It is not the row number of the `followups` list.
+* Only the status changes. The ID, description, due date and position in the
+  contact's history are kept.
+* A completed follow-up moves to `followups completed` and leaves the default,
+  `overdue`, `today`, `upcoming` and `undated` views. It is never shown as
+  `[OVERDUE]`. Reopening it moves it back to the views that match its due date.
+* Completing a follow-up that is already completed, or reopening one that is
+  already pending, is rejected and changes nothing.
+* A follow-up cannot be reopened while another pending follow-up of the same
+  contact has the same description. Complete or edit that follow-up first.
+* The change is saved immediately and survives restart.
+
+Examples:
+
+```text
+completefollowup 1 i/2
+reopenfollowup 1 i/2
+```
+
+The first command changes `#2 [PENDING] Call client | Due: 2026-11-05` to
+`#2 [COMPLETED] Call client | Due: 2026-11-05`. The second reverts it to pending.
 
 ### Deleting a follow-up: `deletefollowup`
 
@@ -828,6 +862,8 @@ Action | Format, Examples
 **Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/2`
 **Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
 e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
+**Complete follow-up** | `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `completefollowup 1 i/2`
+**Reopen follow-up** | `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `reopenfollowup 1 i/2`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
 **Follow-ups** | `followups [overdue|today|upcoming|completed|undated]`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
