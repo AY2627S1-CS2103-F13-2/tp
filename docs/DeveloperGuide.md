@@ -156,7 +156,7 @@ The `Model` component,
   Follow-ups, retired action IDs, events, interactions, and starred status do not change contact identity.
 * a `FollowUp` has an ID, a description, an optional due date and a `Status` (`PENDING` or `COMPLETED`). `FollowUp#isOverdue` is true for a pending follow-up whose due date has passed. `Model#getFollowUps` creates a `FollowUpEntry` for each follow-up, pairing it with its contact; `Model#getPendingFollowUps` retains only pending actions from that snapshot.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the nine `Field` values exactly once.
+* stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the ten `Field` values exactly once.
 * provides `ModelSnapshot`, which copies the contact file and preferences and keeps the current filter. `Logic` takes one before a command so that it can `restore` the model if the command fails or is cancelled (see [Pending requests and transactional commands](#pending-requests-and-transactional-commands)).
 * how a follow-up is added through an immutable `Person`, and why follow-up IDs are never reused, is shown in [Follow-up actions (UC16)](#follow-up-actions-uc16).
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
@@ -1623,16 +1623,16 @@ Use a fresh copy of sample data.
 
 ### Reordering displayed fields
 
-1. Run `order`: expect `name tags company role phone email linkedin followups interactions`
+1. Run `order`: expect `name tags company role phone email linkedin followups introducer interactions`
    on a default profile. Run the same complete order: expect "unchanged" and
    no preference-file write.
-2. Run `view 1`, then `order followups phone email name tags company role linkedin interactions`:
+2. Run `view 1`, then `order followups phone email name tags company role linkedin introducer interactions`:
    expect existing cards to reorder immediately and the viewed details to be
    redisplayed in that order. The displayed index moves with the name; contact
    order, active filter, and contact-file bytes remain unchanged.
 3. Test contacts with only a name and contacts with actions/tags/all optional
    fields. Missing values must have no visible/managed blank row in any order.
-4. Try missing `followups` or `interactions`, repeated `name`, an unknown field, and an extra
+4. Try a missing field, repeated `name`, an unknown field, and an extra
    token: expect the accepted fields with unchanged preferences and display.
    A complete upper-case order must succeed.
 5. Restart Astra: expect the saved order in cards and `view`. Load an old

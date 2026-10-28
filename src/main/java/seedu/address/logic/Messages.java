@@ -51,9 +51,12 @@ public class Messages {
     public static String format(Person person, FieldOrder order) {
         List<String> details = new ArrayList<>();
         for (FieldOrder.Field field : order.getFields()) {
+            if (field == FieldOrder.Field.INTRODUCER) {
+                continue;
+            }
             details.add(formatField(person, field));
             if (field == FieldOrder.Field.LINKEDIN) {
-                details.add(person.getIntroducer().map(value -> "Introduced by: " + value).orElse(""));
+                details.add(formatField(person, FieldOrder.Field.INTRODUCER));
             }
         }
         return details.stream().filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
@@ -70,6 +73,7 @@ public class Messages {
             case EMAIL -> person.getEmail().map(value -> "Email: " + value).orElse("");
             case LINKEDIN -> person.getLinkedin().map(value -> "LinkedIn: " + value).orElse("");
             case FOLLOWUPS -> person.getFollowUps().isEmpty() ? "" : "Follow-ups:\n" + formatFollowUps(person);
+            case INTRODUCER -> person.getIntroducer().map(value -> "Introduced by: " + value).orElse("");
             case INTERACTIONS -> person.getInteractions().isEmpty() ? ""
                     : "Interaction history:\n" + formatInteractions(person.getInteractions());
         };

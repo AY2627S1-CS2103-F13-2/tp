@@ -37,7 +37,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
    * `followups [overdue|today|upcoming|completed|undated]`: Reviews follow-ups across all contacts by date or status.
 
-   * `order name phone email company role tags linkedin followups interactions`: Changes the field order for every contact.
+   * `order name phone email company role tags linkedin followups introducer interactions`: Changes the field order for every contact.
 
    * `clear`, then `y`: Deletes all contacts.
 
@@ -785,16 +785,16 @@ Formats:
 
 ```text
 order
-order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
+order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 ```
 
 * `order` shows the current global field order.
-* To change it, supply each of these nine field names **exactly once**:
-  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`, `interactions`.
+* To change it, supply each of these ten field names **exactly once**:
+  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`, `introducer`, `interactions`.
   If you leave out only `interactions`, it is placed last. Field names ignore letter case. An unknown, repeated, or missing field is
   rejected with the accepted fields; your existing preference and view remain.
-* The default is `name tags company role phone email linkedin followups interactions`,
-  matching the original cards with follow-ups and then interaction history last. Interaction history
+* The default is `name tags company role phone email linkedin followups introducer interactions`,
+  placing the introducer before interaction history. Interaction history
   appears only in a contact's details (`view`, `log`), not on the contact cards. Contacts without optional
   values omit those rows, even when an absent field appears early in the order.
 * A successful change immediately refreshes existing cards. If you are viewing
@@ -812,11 +812,11 @@ order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 Examples:
 
 * `order` shows the active order.
-* `order name phone email company role tags linkedin followups interactions` puts phone and
+* `order name phone email company role tags linkedin followups introducer interactions` puts phone and
   email near the top while retaining all fields.
-* `order interactions name tags company role phone email linkedin followups` shows interaction
+* `order interactions name tags company role phone email linkedin followups introducer` shows interaction
   history first in a contact's details.
-* `order followups name tags company role phone email linkedin` puts follow-up
+* `order followups name tags company role phone email linkedin introducer interactions` puts follow-up
   history first on contacts that have it.
 
 ### Creating command shortcuts: `alias`
@@ -907,7 +907,7 @@ e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
-**Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change
+**Order** | `order` to query; `order name phone email company role tags linkedin followups introducer interactions` to change
 **Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
 **Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`

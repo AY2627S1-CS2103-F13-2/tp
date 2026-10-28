@@ -83,7 +83,8 @@ class FollowUpSelectionUiTest {
                 assertTrue(((Label) stage.getScene().lookup("#selectedFollowUpText")).getText().contains("Call"));
                 assertEquals(List.of(BENSON), model.getFilteredPersonList());
                 FieldOrder custom = new FieldOrder(
-                        List.of("followups", "phone", "name", "tags", "company", "role", "email", "linkedin"));
+                        List.of("followups", "introducer", "phone", "name", "tags", "company", "role", "email",
+                                "linkedin", "interactions"));
                 model.setFieldOrder(custom);
                 assertEquals("Viewing follow-up #7 for Alice Pauline.", output.getText());
                 assertTrue(((Label) stage.getScene().lookup("#selectedFollowUpText")).getText().contains("Call"));
