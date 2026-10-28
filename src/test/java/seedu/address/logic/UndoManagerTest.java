@@ -36,6 +36,19 @@ public class UndoManagerTest {
     }
 
     @Test
+    public void executeUndo_confirmationAfterUndo_reportsNothingToUndo() throws Exception {
+        UndoManager undoManager = new UndoManager();
+        undoManager.recordChange(new DeleteCommand(Index.fromOneBased(1)), List.of(ALICE), List.of(), "Deleted Alice");
+        Model model = createModel(List.of());
+        PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
+
+        request.respond("y", model);
+        assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO,
+                request.respond("y", model).getFeedbackToUser());
+        assertEquals(List.of(ALICE), model.getContactFile().getPersonList());
+    }
+
+    @Test
     public void executeUndo_missingRestoredPerson_reportsConflict() throws Exception {
         UndoManager undoManager = new UndoManager();
         List<Person> before = List.of(ALICE, BENSON);
