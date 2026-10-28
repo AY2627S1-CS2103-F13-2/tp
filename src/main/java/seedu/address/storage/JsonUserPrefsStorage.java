@@ -67,9 +67,11 @@ public class JsonUserPrefsStorage {
         Files.createDirectories(target.getParent());
         Path temporary = Files.createTempFile(target.getParent(), ".astra-prefs-", ".tmp");
         try {
+            logger.fine("Writing and validating temporary preferences");
             writeCandidate(expected, temporary);
             verifyCandidate(expected, temporary);
             replaceActiveFile(temporary, target);
+            logger.fine("Atomically replaced validated preferences");
         } finally {
             try {
                 Files.deleteIfExists(temporary);

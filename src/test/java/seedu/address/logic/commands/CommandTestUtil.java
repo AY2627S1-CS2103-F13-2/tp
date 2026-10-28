@@ -84,13 +84,19 @@ public class CommandTestUtil {
 
     /**
      * Executes the given {@code command}, confirms that <br>
+     * - edits are confirmed only after verifying that their preview preserved contact data <br>
      * - the returned {@link CommandResult} matches {@code expectedCommandResult} <br>
      * - the {@code actualModel} matches {@code expectedModel}
      */
     public static void assertCommandSuccess(Command command, Model actualModel, CommandResult expectedCommandResult,
             Model expectedModel) {
         try {
+            ContactFile original = new ContactFile(actualModel.getContactFile());
             CommandResult result = command.execute(actualModel);
+            if (command instanceof EditCommand && result.getPendingRequest().isPresent()) {
+                assertEquals(original, actualModel.getContactFile());
+                result = result.getPendingRequest().orElseThrow().respond("y", actualModel);
+            }
             assertEquals(expectedCommandResult, result);
             assertEquals(expectedModel, actualModel);
         } catch (CommandException ce) {
