@@ -93,6 +93,12 @@ Each contact is rendered by `PersonCard`. The card displays the contact's name, 
 
 The contact card layout is defined in `PersonListCard.fxml`, while common visual styling is defined in `DarkTheme.css`.
 
+`MainWindow` composes the main UI parts, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `StatusBarFooter`, `HelpWindow`, and `ConfirmationPanel`.
+
+`ConfirmationPanel` displays the active confirmation request and its preview. Users can confirm or cancel the request using the panel buttons, or enter `y`, `n`, or `cancel` in the command box. Button responses are passed back through `MainWindow` and use the same command execution path as typed responses.
+
+The panel is shown only while a confirmation request is active. It is hidden after the request is completed, cancelled, or replaced. A revision number is used to ignore delayed button events from an older confirmation request.
+
 The `UI` component,
 
 * executes user commands using the `Logic` component.
