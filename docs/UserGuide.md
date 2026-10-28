@@ -535,14 +535,14 @@ Examples:
 * Enter `y` after the preview to restore the previous phone number.
 * `delete John Lim`, followed by `undo` and `y`, restores John Lim.
 
-### Viewing edit and deletion history: `history`
+### Viewing data-change history: `history`
 
-Shows the edit and deletion history recorded during the current Astra session, including changes that have been undone.
+Shows successful changes made with `add`, `edit`, `delete`, `drop`, `clear`, and `introduce` during the current Astra session. Edits and deletions remain in the history even if they are undone. Entries are shown newest first.
 
 Format: `history`
 
 * The history is cleared when Astra closes.
-* Only edits and deletions are included.
+* Other command types, including viewing commands, are not included.
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Review the deletion preview before entering `y`. Undo is available only for the
 most recent edit or deletion and is cleared by any later contact data change.
