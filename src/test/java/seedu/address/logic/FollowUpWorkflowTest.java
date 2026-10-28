@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,74 @@ class FollowUpWorkflowTest {
         storage = new CountingStorage(file);
         logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(testFolder.resolve("prefs.json"))));
+    }
+
+    @Test
+    void execute_dateFilters_selectHiddenContactsWithoutSaving() throws Exception {
+        LocalDate today = LocalDate.now();
+        Person alice = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(7, "Past action", FollowUp.Status.PENDING, today.minusDays(1)),
+                new FollowUp(8, "Undated action", FollowUp.Status.PENDING)).build();
+        Person benson = new PersonBuilder(BENSON).withFollowUps(
+                new FollowUp(7, "Today action", FollowUp.Status.PENDING, today),
+                new FollowUp(9, "Future action", FollowUp.Status.PENDING, LocalDate.MAX),
+                new FollowUp(10, "Completed action", FollowUp.Status.COMPLETED, today)).build();
+        model.setPerson(ALICE, alice);
+        model.setPerson(BENSON, benson);
+        model.updateFilteredPersonList(person -> person.equals(alice));
+        storage.saveContactFile(model.getContactFile());
+        storage.saveCount = 0;
+        storage.shouldFail = true;
+        byte[] original = Files.readAllBytes(file);
+        ContactFile before = new ContactFile(model.getContactFile());
+        Map<String, Person> contacts = Map.of("overdue", alice, "today", benson, "upcoming", benson);
+        Map<String, Integer> ids = Map.of("overdue", 7, "today", 7, "upcoming", 9);
+
+        for (String selector : List.of("overdue", "today", "upcoming")) {
+            CommandResult listed = logic.execute("followups " + selector);
+            assertTrue(listed.getFeedbackToUser().contains(" (1):"));
+            CommandResult invalid = logic.execute("99");
+            assertTrue(invalid.getFeedbackToUser().contains(listed.getFeedbackToUser()));
+            CommandResult selected = logic.execute("1");
+            assertEquals(contacts.get(selector), selected.getPersonForDetails().orElseThrow());
+            assertEquals(ids.get(selector).intValue(), selected.getFollowUpForDetails().orElseThrow().getId());
+            logic.execute("followups " + selector);
+            logic.execute("cancel");
+        }
+        assertThrows(ParseException.class, () -> logic.execute("followups today extra"));
+        assertEquals(before, model.getContactFile());
+        assertEquals(List.of(alice), model.getFilteredPersonList());
+        assertArrayEquals(original, Files.readAllBytes(file));
+        assertEquals(0, storage.saveCount);
+    }
+
+    @Test
+    void execute_changedDateFilterTarget_rejectsStaleSelectionWithoutRollback() throws Exception {
+        Person alice = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(7, "Call", FollowUp.Status.PENDING, LocalDate.MAX)).build();
+        model.setPerson(ALICE, alice);
+        logic.execute("followups upcoming");
+        Person changed = new PersonBuilder(alice).withFollowUps(
+                new FollowUp(7, "Call", FollowUp.Status.PENDING, LocalDate.of(2000, 1, 1))).build();
+        model.setPerson(alice, changed);
+        storage.shouldFail = true;
+
+        assertThrows(CommandException.class, () -> logic.execute("1"));
+        assertEquals(changed, model.getContactFile().getPersonList().getFirst());
+        assertThrows(ParseException.class, () -> logic.execute("1"));
+        assertEquals(0, storage.saveCount);
+    }
+
+    @Test
+    void execute_emptyDateFilter_doesNotAskForSelectionOrSave() throws Exception {
+        byte[] original = Files.readAllBytes(file);
+        storage.shouldFail = true;
+        for (String selector : List.of("overdue", "today", "upcoming")) {
+            assertTrue(logic.execute("followups " + selector).getPendingRequest().isEmpty());
+            assertThrows(ParseException.class, () -> logic.execute("1"));
+        }
+        assertArrayEquals(original, Files.readAllBytes(file));
+        assertEquals(0, storage.saveCount);
     }
 
     @Test

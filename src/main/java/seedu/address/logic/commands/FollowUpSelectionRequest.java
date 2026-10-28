@@ -22,12 +22,18 @@ final class FollowUpSelectionRequest implements PendingRequest {
     static final String MESSAGE_CHANGED = "The selected contact or follow-up changed. Run followups again.";
 
     private final List<FollowUpEntry> entries;
+    private final String heading;
 
     /**
      * Copies a nonempty list of entries in the order displayed to the user.
      */
     FollowUpSelectionRequest(List<FollowUpEntry> entries) {
+        this(entries, "Pending follow-ups");
+    }
+
+    FollowUpSelectionRequest(List<FollowUpEntry> entries, String heading) {
         this.entries = List.copyOf(entries);
+        this.heading = requireNonNull(heading);
         checkArgument(!this.entries.isEmpty(), "A follow-up selection requires at least one entry.");
     }
 
@@ -47,7 +53,7 @@ final class FollowUpSelectionRequest implements PendingRequest {
             FollowUpEntry entry = entries.get(index);
             return (index + 1) + ". " + entry.contact().getName() + " | " + Messages.formatFollowUp(entry.followUp());
         }).collect(Collectors.joining("\n"));
-        return "Pending follow-ups (" + entries.size() + "):\n" + rows + "\n" + MESSAGE_SELECTION;
+        return heading + " (" + entries.size() + "):\n" + rows + "\n" + MESSAGE_SELECTION;
     }
 
     @Override
