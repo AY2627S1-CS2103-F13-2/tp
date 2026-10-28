@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -23,7 +22,7 @@ public class JsonContactFileStorage {
 
     private static final Logger logger = LogsCenter.getLogger(JsonContactFileStorage.class);
 
-    private Path filePath;
+    private final Path filePath;
 
     /**
      * Creates storage for the given active contact file.
@@ -88,20 +87,15 @@ public class JsonContactFileStorage {
         requireNonNull(contactFile);
         requireNonNull(filePath);
 
+        ContactFile expected = new ContactFile(contactFile);
         Path target = filePath.toAbsolutePath().normalize();
         Files.createDirectories(target.getParent());
-        Path temporary = Files.createTempFile(target.getParent(), ".astra-save-", ".tmp");
-        try {
-            writeCandidate(contactFile, temporary);
-            verifyCandidate(contactFile, temporary);
-            replaceActiveFile(temporary, target);
-        } finally {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException cleanupFailure) {
-                logger.warning("Could not remove temporary contact file: " + cleanupFailure.getMessage());
-            }
-        }
+        logger.fine("Writing and validating a temporary contact snapshot");
+        AtomicFileWriter.write(target, ".astra-save-",
+                temporary -> writeCandidate(expected, temporary),
+                temporary -> verifyCandidate(expected, temporary), this::replaceActiveFile);
+        logger.fine("Atomically replaced active contact file with " + expected.getPersonList().size()
+                + " validated contacts");
     }
 
     void writeCandidate(ReadOnlyContactFile contactFile, Path temporary) throws IOException {
@@ -121,7 +115,7 @@ public class JsonContactFileStorage {
     }
 
     void replaceActiveFile(Path temporary, Path target) throws IOException {
-        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        AtomicFileWriter.replace(temporary, target);
     }
 
     /**

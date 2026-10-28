@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -65,18 +64,11 @@ public class JsonUserPrefsStorage {
         UserPrefs expected = new UserPrefs(requireNonNull(userPrefs));
         Path target = requireNonNull(filePath).toAbsolutePath().normalize();
         Files.createDirectories(target.getParent());
-        Path temporary = Files.createTempFile(target.getParent(), ".astra-prefs-", ".tmp");
-        try {
-            writeCandidate(expected, temporary);
-            verifyCandidate(expected, temporary);
-            replaceActiveFile(temporary, target);
-        } finally {
-            try {
-                Files.deleteIfExists(temporary);
-            } catch (IOException cleanupFailure) {
-                logger.warning("Could not remove temporary preference file: " + cleanupFailure.getMessage());
-            }
-        }
+        logger.fine("Writing and validating temporary preferences");
+        AtomicFileWriter.write(target, ".astra-prefs-",
+                temporary -> writeCandidate(expected, temporary),
+                temporary -> verifyCandidate(expected, temporary), this::replaceActiveFile);
+        logger.fine("Atomically replaced validated preferences");
     }
 
     void writeCandidate(UserPrefs expected, Path temporary) throws IOException {
@@ -96,6 +88,6 @@ public class JsonUserPrefsStorage {
     }
 
     void replaceActiveFile(Path temporary, Path target) throws IOException {
-        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        AtomicFileWriter.replace(temporary, target);
     }
 }

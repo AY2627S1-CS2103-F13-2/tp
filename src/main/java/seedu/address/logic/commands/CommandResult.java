@@ -66,11 +66,6 @@ public class CommandResult {
         this(feedbackToUser, showHelp, exit, true, pendingRequest, personForDetails, null);
     }
 
-    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, PendingRequest pendingRequest,
-            Person personForDetails, FollowUp followUpForDetails) {
-        this(feedbackToUser, showHelp, exit, true, pendingRequest, personForDetails, followUpForDetails);
-    }
-
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
             PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
@@ -99,10 +94,12 @@ public class CommandResult {
     }
 
     /**
-     * Retains a selected action and contact so display-order changes preserve both sets of details.
+     * Adds selected-action context to a contact view without changing its feedback or presentation request.
      */
-    public static CommandResult createFollowUpDetails(String feedbackToUser, Person person, FollowUp action) {
-        return new CommandResult(feedbackToUser, false, false, null, requireNonNull(person), requireNonNull(action));
+    public CommandResult withSelectedFollowUp(FollowUp action) {
+        requireNonNull(personForDetails);
+        return new CommandResult(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                personForDetails, requireNonNull(action));
     }
 
     public Optional<FollowUp> getFollowUpForDetails() {

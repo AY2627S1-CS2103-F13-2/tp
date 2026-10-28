@@ -50,5 +50,10 @@ public final class ModelSnapshot {
             model.setCommandAliases(userPrefs.getCommandAliases());
         }
         model.updateFilteredPersonList(filter == null ? Model.PREDICATE_SHOW_ALL_PERSONS : filter);
+        assert !hasDataChanged(model) : "Rollback must restore contact data";
+        assert !hasPreferencesChanged(model) : "Rollback must restore preferences";
+        assert model.getFilteredPersonList().equals(contactFile.getPersonList().stream()
+                .filter(filter == null ? Model.PREDICATE_SHOW_ALL_PERSONS : filter).toList())
+                : "Rollback must restore the original filtered results";
     }
 }

@@ -14,22 +14,24 @@ import seedu.address.model.person.FollowUp;
 
 public class CommandResultTest {
     @Test
-    public void followUpDetails_retainsContextAndUsesItInEquality() {
+    public void withSelectedFollowUp_retainsViewAndAddsActionContext() {
         FollowUp action = new FollowUp(1, "Call", FollowUp.Status.PENDING);
-        CommandResult result = CommandResult.createFollowUpDetails("feedback", ALICE, action);
-        CommandResult same = CommandResult.createFollowUpDetails("feedback", ALICE, action);
+        CommandResult viewed = CommandResult.createPersonDetails("feedback", ALICE);
+        CommandResult result = viewed.withSelectedFollowUp(action);
+        CommandResult same = viewed.withSelectedFollowUp(action);
         assertEquals(ALICE, result.getPersonForDetails().orElseThrow());
         assertEquals(action, result.getFollowUpForDetails().orElseThrow());
+        assertEquals(viewed.getFeedbackToUser(), result.getFeedbackToUser());
+        assertEquals(viewed.shouldSaveContactFile(), result.shouldSaveContactFile());
+        assertTrue(viewed.getFollowUpForDetails().isEmpty());
         assertEquals(result, same);
         assertEquals(result.hashCode(), same.hashCode());
-        assertNotEquals(result, CommandResult.createPersonDetails("feedback", ALICE));
-        assertNotEquals(result, CommandResult.createFollowUpDetails("feedback", BENSON, action));
-        assertNotEquals(result, CommandResult.createFollowUpDetails("feedback", ALICE,
-                new FollowUp(2, "Other", FollowUp.Status.PENDING)));
-        assertTrue(new CommandResult("feedback").getFollowUpForDetails().isEmpty());
-        assertThrows(NullPointerException.class, () -> CommandResult.createFollowUpDetails(null, ALICE, action));
-        assertThrows(NullPointerException.class, () -> CommandResult.createFollowUpDetails("feedback", null, action));
-        assertThrows(NullPointerException.class, () -> CommandResult.createFollowUpDetails("feedback", ALICE, null));
+        assertNotEquals(result, viewed);
+        assertNotEquals(result, CommandResult.createPersonDetails("feedback", BENSON).withSelectedFollowUp(action));
+        assertNotEquals(result, viewed.withSelectedFollowUp(new FollowUp(2, "Other", FollowUp.Status.PENDING)));
+        assertEquals(action, result.withFeedbackPrefix("Note: ").getFollowUpForDetails().orElseThrow());
+        assertThrows(NullPointerException.class, () -> viewed.withSelectedFollowUp(null));
+        assertThrows(NullPointerException.class, () -> new CommandResult("feedback").withSelectedFollowUp(action));
     }
 
     @Test

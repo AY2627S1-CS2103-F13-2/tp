@@ -104,12 +104,13 @@ public class FollowUpCommand extends Command {
             if (!model.getContactFile().getPersonList().contains(target)) {
                 throw new CommandException(MESSAGE_CONTACT_CHANGED);
             }
-            int greatestId = target.getFollowUps().stream().mapToInt(FollowUp::getId).max().orElse(0);
+            int greatestId = target.getLastFollowUpId();
             if (greatestId == Integer.MAX_VALUE) {
                 throw new CommandException(MESSAGE_IDS_EXHAUSTED);
             }
             Person updated = target.appendFollowUp(
                     new FollowUp(greatestId + 1, description, FollowUp.Status.PENDING, dueDate));
+            assert updated.getLastFollowUpId() > target.getLastFollowUpId() : "Action IDs must increase";
             model.setPerson(target, updated);
             return new CommandResult("Updated follow-ups for " + updated.getName() + ":\n"
                     + Messages.formatFollowUps(updated));

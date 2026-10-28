@@ -36,6 +36,8 @@ public class ClearCommand extends Command {
                         }
                         confirmedModel.setContactFile(new ContactFile());
                         confirmedModel.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+                        assert confirmedModel.getContactFile().getPersonList().isEmpty()
+                                : "Confirmed clear must remove all stored contacts";
                         return new CommandResult(String.format(MESSAGE_SUCCESS, clearedCount));
                     }
                 });

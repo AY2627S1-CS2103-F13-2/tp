@@ -3,6 +3,7 @@ package seedu.address.logic;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -60,7 +61,8 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
+        assertPendingState();
+        logger.fine("Executing input; pending=" + (pendingRequest != null));
 
         ModelSnapshot snapshot = pendingRequest == null || pendingRequest.isReadOnly()
                 ? new ModelSnapshot(model) : pendingSnapshot;
@@ -74,12 +76,14 @@ public class LogicManager implements Logic {
                 if (response.equalsIgnoreCase("n") || response.equalsIgnoreCase("cancel")) {
                     snapshot.restore(model);
                     clearPendingRequest();
+                    logger.info("Pending request cancelled; model and view restored");
                     return new CommandResult("Request cancelled. No contacts changed.");
                 }
                 if (pendingRequest.shouldRunAsCommand(response)) {
                     clearPendingRequest();
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
                     personsBeforeCommand = List.copyOf(model.getContactFile().getPersonList());
+                    logger.fine("Executing " + command.getClass().getSimpleName());
                     commandResult = command.execute(model);
                 } else {
                     commandResult = pendingRequest.respond(response, model);
@@ -88,6 +92,7 @@ public class LogicManager implements Logic {
                 String shortcutNote = shortcutNote(commandText);
                 try {
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
+                    logger.fine("Executing " + command.getClass().getSimpleName());
                     commandResult = command.execute(model).withFeedbackPrefix(shortcutNote);
                 } catch (ParseException pe) {
                     throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
@@ -97,34 +102,46 @@ public class LogicManager implements Logic {
             }
 
             if (commandResult.getPendingRequest().isPresent()) {
+                assert !snapshot.hasDataChanged(model) : "Pending requests must not mutate contact data";
+                assert !snapshot.hasPreferencesChanged(model) : "Pending requests must not mutate preferences";
                 pendingRequest = commandResult.getPendingRequest().orElseThrow();
                 pendingSnapshot = snapshot;
                 pendingCommand = command;
                 pendingPersonsBeforeCommand = personsBeforeCommand;
+                logger.fine("Awaiting " + pendingRequest.getClass().getSimpleName());
             } else {
                 if (commandResult.shouldSaveContactFile() && snapshot.hasDataChanged(model)) {
                     storage.saveContactFile(model.getContactFile());
+                    logger.info("Contact transaction saved for " + command.getClass().getSimpleName() + ": "
+                            + personsBeforeCommand.size() + " -> "
+                            + model.getContactFile().getPersonList().size() + " contacts");
                 }
                 // Shortcuts and the field order live in the preferences file; save them now rather than
                 // only when the app closes. A failed save restores the snapshot, so nothing is half-applied.
                 if (snapshot.hasPreferencesChanged(model)) {
                     storage.saveUserPrefs(model.getUserPrefs());
+                    logger.info("Preference transaction saved");
                 }
                 undoManager.recordChange(command, personsBeforeCommand, model.getContactFile().getPersonList(),
                         commandResult.getFeedbackToUser());
                 clearPendingRequest();
             }
+            assertPendingState();
             return commandResult;
         } catch (AccessDeniedException e) {
+            logger.log(Level.WARNING, "Save permission denied; rolling back transaction", e);
             restoreFailedRequest(snapshot);
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
         } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Save failed; rolling back transaction", ioe);
             restoreFailedRequest(snapshot);
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
         } catch (CommandException | ParseException e) {
+            logger.fine("Request rejected; restoring model and clearing pending state");
             restoreFailedRequest(snapshot);
             throw e;
         } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "Unexpected command failure; rolling back transaction", e);
             restoreFailedRequest(snapshot);
             throw e;
         }
@@ -143,6 +160,12 @@ public class LogicManager implements Logic {
     private void restoreFailedRequest(ModelSnapshot snapshot) {
         snapshot.restore(model);
         clearPendingRequest();
+    }
+
+    private void assertPendingState() {
+        assert (pendingRequest == null) == (pendingSnapshot == null) : "Pending request needs its snapshot";
+        assert (pendingRequest == null) == (pendingPersonsBeforeCommand == null)
+                : "Pending request needs its original contact list";
     }
 
     private void clearPendingRequest() {
