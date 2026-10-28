@@ -56,7 +56,7 @@ public class Messages {
             }
             details.add(formatField(person, field));
             if (field == FieldOrder.Field.LINKEDIN) {
-                details.add(person.getIntroducer().map(value -> "Introduced by: " + value).orElse(""));
+                details.add(formatField(person, FieldOrder.Field.INTRODUCER));
             }
         }
         return details.stream().filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));

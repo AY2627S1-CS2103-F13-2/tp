@@ -7,9 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,6 +50,42 @@ class FieldOrderTest {
                         "INTERACTIONS"));
         assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
                 "introducer", "interactions"), order.getFieldNames());
+    }
+
+    @Test
+    void constructor_orderSavedWithIntroducer_addsInteractionsAtEnd() {
+        FieldOrder order = new FieldOrder(
+                List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                        "introducer"));
+        assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                "introducer", "interactions"), order.getFieldNames());
+    }
+
+    @Test
+    void constructor_legacyListChangesDuringLookup_rejectsMissingInteraction() {
+        List<String> names = new AbstractList<>() {
+            private boolean firstStream = true;
+
+            @Override
+            public String get(int index) {
+                return "name";
+            }
+
+            @Override
+            public int size() {
+                return FieldOrder.Field.values().length - 1;
+            }
+
+            @Override
+            public Stream<String> stream() {
+                if (firstStream) {
+                    firstStream = false;
+                    return Stream.concat(super.stream(), Stream.of("interactions"));
+                }
+                return super.stream();
+            }
+        };
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(names));
     }
 
     @Test
