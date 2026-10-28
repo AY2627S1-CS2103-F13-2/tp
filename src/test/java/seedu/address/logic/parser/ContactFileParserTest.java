@@ -30,6 +30,7 @@ import seedu.address.logic.commands.IntroduceCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.LogCommand;
 import seedu.address.logic.commands.PendingFollowUpsCommand;
+import seedu.address.logic.commands.PendingRequest;
 import seedu.address.logic.commands.StarCommand;
 import seedu.address.logic.commands.StarredCommand;
 import seedu.address.logic.commands.UndoCommand;
@@ -229,7 +230,7 @@ public class ContactFileParserTest {
     }
 
     @Test
-    public void parseCommand_undoWithoutArgumentsAndWithConfirmOption() throws Exception {
+    public void parseCommand_undoPreviewsAndWaitsForConfirmation() throws Exception {
         UndoManager undoManager = new UndoManager();
         ContactFileParser parserWithUndoManager = new ContactFileParser(undoManager);
         Person person = new PersonBuilder().build();
@@ -238,23 +239,23 @@ public class ContactFileParserTest {
         Model model = new ModelManager(new ContactFile(), new UserPrefs());
 
         UndoCommand previewCommand = (UndoCommand) parserWithUndoManager.parseCommand(UndoCommand.COMMAND_WORD);
-        assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "deletion", feedback),
-                previewCommand.execute(model).getFeedbackToUser());
+        var preview = previewCommand.execute(model);
+        assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "deletion", feedback)
+                + "\nConfirm? (y/n; cancel to stop)", preview.getFeedbackToUser());
+        assertTrue(preview.getPendingRequest().isPresent());
 
-        UndoCommand confirmCommand = (UndoCommand) parserWithUndoManager.parseCommand(
-                UndoCommand.COMMAND_WORD + " " + UndoCommand.CONFIRM_OPTION);
+        PendingRequest request = preview.getPendingRequest().orElseThrow();
         assertEquals(String.format(UndoManager.MESSAGE_UNDO_SUCCESS, Messages.format(person)),
-                confirmCommand.execute(model).getFeedbackToUser());
+                request.respond("y", model).getFeedbackToUser());
     }
 
     @Test
     public void parseCommand_undoWithInvalidArguments_throwsParseException() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE);
         Executable invalidUndoOption = () -> parser.parseCommand(UndoCommand.COMMAND_WORD + " invalid");
-        Executable extraUndoArgument = () -> parser.parseCommand(
-                UndoCommand.COMMAND_WORD + " " + UndoCommand.CONFIRM_OPTION + " extra");
+        Executable obsoleteConfirmOption = () -> parser.parseCommand(UndoCommand.COMMAND_WORD + " --confirm");
         assertThrows(ParseException.class, expectedMessage, invalidUndoOption);
-        assertThrows(ParseException.class, expectedMessage, extraUndoArgument);
+        assertThrows(ParseException.class, expectedMessage, obsoleteConfirmOption);
     }
 
     @Test

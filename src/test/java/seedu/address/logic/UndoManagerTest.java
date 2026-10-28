@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
+import seedu.address.logic.commands.PendingRequest;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -25,12 +26,13 @@ public class UndoManagerTest {
         UndoManager undoManager = new UndoManager();
         DeleteCommand deleteAlice = new DeleteCommand(Index.fromOneBased(1));
         undoManager.recordChange(deleteAlice, List.of(ALICE), List.of(), "Deleted Alice");
-        undoManager.executeUndo(new ModelManager(), false);
+        Model model = new ModelManager();
+        PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
         DeleteCommand deleteBenson = new DeleteCommand(Index.fromOneBased(1));
         undoManager.recordChange(deleteBenson, List.of(BENSON), List.of(), "Deleted Benson");
 
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO,
-                undoManager.executeUndo(new ModelManager(), true).getFeedbackToUser());
+                request.respond("y", model).getFeedbackToUser());
     }
 
     @Test
@@ -41,10 +43,10 @@ public class UndoManagerTest {
         undoManager.recordChange(new EditCommand(Index.fromOneBased(1), new EditCommand.EditPersonDescriptor()),
                 before, after, "Reordered contacts");
         Model model = createModel(after);
-        undoManager.executeUndo(model, false);
+        PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
 
         assertEquals(UndoManager.MESSAGE_UNDO_CONFLICT,
-                undoManager.executeUndo(model, true).getFeedbackToUser());
+                request.respond("y", model).getFeedbackToUser());
     }
 
     @Test
@@ -53,10 +55,10 @@ public class UndoManagerTest {
         undoManager.recordChange(new EditCommand(Index.fromOneBased(1), new EditCommand.EditPersonDescriptor()),
                 List.of(ALICE), List.of(BENSON), "Replaced Alice");
         Model model = createModel(List.of(CARL));
-        undoManager.executeUndo(model, false);
+        PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
 
         assertEquals(UndoManager.MESSAGE_UNDO_CONFLICT,
-                undoManager.executeUndo(model, true).getFeedbackToUser());
+                request.respond("y", model).getFeedbackToUser());
     }
 
     @Test
@@ -66,9 +68,9 @@ public class UndoManagerTest {
         List<Person> after = List.of(CARL);
         undoManager.recordChange(new DeleteCommand(Index.fromOneBased(1)), before, after, "Deleted Alice and Benson");
         Model model = createModel(after);
-        undoManager.executeUndo(model, false);
+        PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
 
-        undoManager.executeUndo(model, true);
+        request.respond("y", model);
         assertEquals(List.of(ALICE, BENSON, CARL), model.getContactFile().getPersonList());
     }
 
