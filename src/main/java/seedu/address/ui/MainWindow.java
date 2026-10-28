@@ -3,6 +3,7 @@ package seedu.address.ui;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -15,11 +16,11 @@ import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
-import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ConfirmationRequest;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.FieldOrder;
+import seedu.address.model.FollowUpEntry;
 import seedu.address.model.person.Person;
 
 /**
@@ -41,9 +42,10 @@ public class MainWindow extends UiPart<Stage> {
     private ResultDisplay resultDisplay;
     private ConfirmationPanel confirmationPanel;
     private HelpWindow helpWindow;
-    private Person personForDetails;
     private PersonDetailsPanel personDetailsPanel;
     private Person selectedContact;
+    private FollowUpEntry selectedFollowUp;
+    private FollowUpListPanel followUpListPanel;
 
     @FXML
     private StackPane personDetailsPlaceholder;
@@ -138,18 +140,26 @@ public class MainWindow extends UiPart<Stage> {
         personDetailsPanel = new PersonDetailsPanel();
         personDetailsPlaceholder.getChildren().add(personDetailsPanel.getRoot());
         personListPanel.selectedPersonProperty().addListener((observable, previous, current) -> showContact(current));
-        logic.getFilteredPersonList().addListener((javafx.collections.ListChangeListener<Person>) change -> {
+        logic.getFilteredPersonList().addListener((ListChangeListener<Person>) change -> {
+            showContactList();
             personListPanel.selectFirstIfNeeded();
             showContact(personListPanel.selectedPersonProperty().get());
         });
         personListPanel.selectFirstIfNeeded();
 
+        followUpListPanel = new FollowUpListPanel();
+        followUpListPanel.getRoot().setVisible(false);
+        followUpListPanel.getRoot().setManaged(false);
+        personListPanelPlaceholder.getChildren().add(followUpListPanel.getRoot());
+        followUpListPanel.selectedEntryProperty().addListener((observable, previous, current) -> {
+            if (followUpListPanel.getRoot().isVisible()) {
+                showFollowUp(current);
+            }
+        });
+
         resultDisplay = new ResultDisplay();
         logic.getFieldOrderProperty().addListener((observable, previous, current) -> {
-            personDetailsPanel.showPerson(selectedContact, current);
-            if (personForDetails != null) {
-                resultDisplay.setFeedbackToUser(formatDetails(current));
-            }
+            refreshDetails();
         });
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
@@ -225,21 +235,10 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         lastCommand.setText(commandText);
         try {
-            FieldOrder previousOrder = logic.getFieldOrderProperty().get();
             CommandResult commandResult = logic.execute(commandText);
             logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
             confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
-            String feedback = commandResult.getFeedbackToUser();
-            if (!previousOrder.equals(logic.getFieldOrderProperty().get()) && personForDetails != null) {
-                feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
-            } else {
-                personForDetails = commandResult.getPersonForDetails().orElse(null);
-            }
-            resultDisplay.setFeedbackToUser(feedback);
-            commandResult.getPersonForDetails().ifPresent(person -> {
-                personListPanel.selectPerson(person);
-                showContact(person);
-            });
+            displayResult(commandResult);
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -253,21 +252,75 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException | RuntimeException e) {
             logger.fine("Command failed: " + e.getClass().getSimpleName());
             confirmationPanel.showRequest(null);
-            String feedback = e.getMessage() == null ? "Unexpected command failure." : e.getMessage();
-            if (personForDetails != null) {
-                feedback += "\n" + formatDetails(logic.getFieldOrderProperty().get());
-            }
-            resultDisplay.setFeedbackToUser(feedback);
+            showContactList();
+            showContact(personListPanel.selectedPersonProperty().get());
+            resultDisplay.setFeedbackToUser(e.getMessage() == null ? "Unexpected command failure." : e.getMessage());
             throw e;
         }
     }
 
-    private String formatDetails(FieldOrder order) {
-        return Messages.format(personForDetails, order);
+    private void displayResult(CommandResult result) {
+        if (result.getFollowUpListing().isPresent()) {
+            personListPanel.getRoot().setVisible(false);
+            personListPanel.getRoot().setManaged(false);
+            followUpListPanel.getRoot().setVisible(true);
+            followUpListPanel.getRoot().setManaged(true);
+            followUpListPanel.showListing(result.getFollowUpListing().orElseThrow());
+            showFollowUp(followUpListPanel.selectedEntryProperty().get());
+            resultDisplay.setFeedbackToUser(result.getFeedbackToUser().lines().findFirst().orElse(""));
+        } else if (result.getFollowUpForDetails().isPresent()) {
+            FollowUpEntry entry = new FollowUpEntry(result.getPersonForDetails().orElseThrow(),
+                    result.getFollowUpForDetails().orElseThrow());
+            followUpListPanel.selectEntry(entry);
+            showFollowUp(entry);
+            resultDisplay.setFeedbackToUser("Viewing follow-up #" + entry.followUp().getId()
+                    + " for " + entry.contact().getName().fullName + ".");
+        } else {
+            showContactList();
+            result.getPersonForDetails().ifPresent(person -> {
+                personListPanel.selectPerson(person);
+                showContact(person);
+            });
+            if (result.getPersonForDetails().isPresent()) {
+                resultDisplay.setFeedbackToUser("Viewing " + result.getPersonForDetails().orElseThrow().getName()
+                        + ".");
+            } else if (result.getPendingRequest().orElse(null) instanceof ConfirmationRequest) {
+                resultDisplay.setFeedbackToUser("Awaiting confirmation. Review the preview before continuing.");
+            } else {
+                resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
+            }
+        }
+    }
+
+    private void showContactList() {
+        personListPanel.getRoot().setVisible(true);
+        personListPanel.getRoot().setManaged(true);
+        if (followUpListPanel != null) {
+            followUpListPanel.getRoot().setVisible(false);
+            followUpListPanel.getRoot().setManaged(false);
+        }
+        selectedFollowUp = null;
+        selectedContact = personListPanel.selectedPersonProperty().get();
+        refreshDetails();
     }
 
     private void showContact(Person person) {
         selectedContact = person;
-        personDetailsPanel.showPerson(person, logic.getFieldOrderProperty().get());
+        selectedFollowUp = null;
+        refreshDetails();
+    }
+
+    private void showFollowUp(FollowUpEntry entry) {
+        selectedFollowUp = entry;
+        selectedContact = entry == null ? null : entry.contact();
+        refreshDetails();
+    }
+
+    private void refreshDetails() {
+        if (selectedFollowUp == null) {
+            personDetailsPanel.showPerson(selectedContact, logic.getFieldOrderProperty().get());
+        } else {
+            personDetailsPanel.showFollowUp(selectedFollowUp, logic.getFieldOrderProperty().get());
+        }
     }
 }
