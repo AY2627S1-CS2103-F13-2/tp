@@ -171,6 +171,13 @@
     -fx-line-spacing: 6;
 }
 
+.contact-details .tag-chip {
+    -fx-padding: 3 9;
+    -fx-background-radius: 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
 .astra-shell .status-bar {
     -fx-background-color: transparent;
 }
