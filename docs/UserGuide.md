@@ -209,6 +209,8 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
 * Use `ev/EVENT` to add one event to the contact. Existing events are retained. An event the contact already has is rejected, and `ev/` without an event name is not accepted. Events cannot be removed in this version.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * To remove a person's company, role, phone, email or LinkedIn, enter its prefix with nothing after it, e.g. `c/`. The name cannot be removed.
+* To change an introducer, use `introduce NAME i/INTRODUCER`. `edit` does not accept `i/`;
+  unsupported prefixes are identified in the error message.
 * After confirmation, each updated field is listed, e.g. `Updated John Lim's phone to 91234567.`
 * After confirmation, the full contact list is shown again.
 
