@@ -12,6 +12,7 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.PendingRequest;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AliasCommandParser;
@@ -79,7 +80,8 @@ public class LogicManager implements Logic {
                     logger.info("Pending request cancelled; model and view restored");
                     return new CommandResult("Request cancelled. No contacts changed.");
                 }
-                if (pendingRequest.shouldRunAsCommand(response)) {
+                if (response.equalsIgnoreCase(ExitCommand.COMMAND_WORD)
+                        || pendingRequest.shouldRunAsCommand(response)) {
                     clearPendingRequest();
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
                     personsBeforeCommand = List.copyOf(model.getContactFile().getPersonList());
