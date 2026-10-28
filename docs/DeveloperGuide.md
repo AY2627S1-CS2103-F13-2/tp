@@ -148,7 +148,16 @@ The `Model` component,
 The `Storage` component,
 * can save both contact file data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonContactFileStorage` and `JsonUserPrefsStorage` (one class per data file).
+  Both use `AtomicFileWriter` for candidate writing, verification, atomic replacement and cleanup.
+  Callers retain data-specific validation. `ContactStartupLoader` also retains recovery archiving and
+  the original-file change check.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+`JsonAdaptedPerson` uses one optional-scalar helper for absent-value handling, validation and construction.
+Required-name validation and collection-specific rules remain in separate conversion helpers.
+`ContactTextField` holds the shared text-field constraints used by conversion and startup recovery.
+Recovery still checks raw JSON types and collects field-specific errors before conversion; it owns
+the decision to skip a record and retains the original record positions in its report.
 
 ### Common classes
 

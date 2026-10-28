@@ -3,7 +3,6 @@ package seedu.address.storage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -12,13 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
-import seedu.address.model.person.Company;
-import seedu.address.model.person.Email;
-import seedu.address.model.person.Linkedin;
-import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
-import seedu.address.model.person.Phone;
-import seedu.address.model.person.Role;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -108,39 +101,33 @@ final class ContactRecoveryParser {
             return errors;
         }
 
-        validateText(record, "name", true,
-                Name::isValidName, Name.MESSAGE_CONSTRAINTS, errors);
-        validateText(record, "company", false,
-                Company::isValidCompany, Company.MESSAGE_CONSTRAINTS, errors);
-        validateText(record, "role", false,
-                Role::isValidRole, Role.MESSAGE_CONSTRAINTS, errors);
-        validateText(record, "phone", false,
-                Phone::isValidPhone, Phone.MESSAGE_CONSTRAINTS, errors);
-        validateText(record, "email", false,
-                Email::isValidEmail, Email.MESSAGE_CONSTRAINTS, errors);
-        validateText(record, "linkedin", false,
-                Linkedin::isValidLinkedin, Linkedin.MESSAGE_CONSTRAINTS, errors);
+        for (ContactTextField field : ContactTextField.values()) {
+            validateText(record, field, errors);
+        }
 
         validateTags(record.get("tags"), errors);
         return errors;
     }
 
-    private void validateText(JsonNode record, String field, boolean required,
-                              Predicate<String> validator, String constraints,
-                              List<String> errors) {
-        JsonNode value = record.get(field);
+    private void validateText(JsonNode record, ContactTextField field, List<String> errors) {
+        String label = field.getJsonName();
+        JsonNode value = record.get(label);
 
         if (value == null || value.isNull()) {
-            if (required) {
-                errors.add(field + ": field is missing.");
+            if (field == ContactTextField.NAME) {
+                errors.add(label + ": field is missing.");
             }
             return;
         }
 
         if (!value.isTextual()) {
-            errors.add(field + ": must be a string.");
-        } else if (!validator.test(value.textValue())) {
-            errors.add(field + ": " + constraints);
+            errors.add(label + ": must be a string.");
+        } else {
+            try {
+                field.validate(value.textValue());
+            } catch (IllegalValueException e) {
+                errors.add(label + ": " + e.getMessage());
+            }
         }
     }
 
