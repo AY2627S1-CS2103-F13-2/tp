@@ -421,7 +421,10 @@ Records a conversation or meeting with a person, so you can look back at what yo
 Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
 
 * Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`. If several people match the name, they are listed with numbers and nothing is logged; enter the command again with the person's number in place of the name.
-* `DATE` is when the interaction happened, in the format `YYYY-MM-DD`. If you leave it out, today's date is used.
+* `DATE` is when the interaction happened. It can use `yyyy-MM-dd` (for example
+  `2026-10-01`), `dd/MM/yyyy` (`01/10/2026`), or `d MMM yyyy` (`1 Oct 2026`).
+  Month names use English three-letter abbreviations and are case-insensitive.
+  Dates before `2000-01-01` are not accepted. If omitted, today's date is used.
 * The date cannot be in the future, since the interaction has already happened.
 * `NOTE` is what was discussed, and cannot be blank.
 * Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
@@ -460,7 +463,9 @@ Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/D
 * Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `log`.
 * `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
 * Give at least one of `d/DATE` and `nt/NOTE`. A part you leave out keeps its current value.
-* `DATE` and `NOTE` follow the same rules as in `log`: the date uses `YYYY-MM-DD` and cannot be in the future, and the note cannot be blank.
+* `DATE` and `NOTE` follow the same rules as in `log`: the date must use one of
+  the supported date formats, be on or after `2000-01-01`, and cannot be in the
+  future; the note cannot be blank.
 * Interactions stay in date order, so changing the date can move the interaction to a different number. Astra shows its new number and the full history after the edit.
 * An edit that leaves the interaction exactly as it was, or that makes it the same as another of the person's interactions (same date and note, ignoring letter case), is rejected and nothing changes.
 * When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
@@ -558,6 +563,7 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
   `d MMM yyyy` (`25 Oct 2026`). Month names use English three-letter abbreviations
   and are case-insensitive. Slash-separated dates use day/month/year.
+  Dates before `2000-01-01` are rejected.
   Omitting `d/` creates an action with no due date. Empty or repeated `d/`
   parameters and impossible dates are rejected without saving an action;
   date errors show the supported formats.
@@ -668,7 +674,7 @@ Format:
 * A pending follow-up cannot be changed to a description that duplicates another
   pending follow-up for the same contact.
 * Use `d/` without a value to remove the due date.
-* The same date formats supported by `followup` are accepted.
+* The same date formats and `2000-01-01` minimum supported by `followup` apply.
 
 Examples:
 
