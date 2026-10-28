@@ -533,6 +533,21 @@ file written before this feature has no `interactions` field, which loads as an 
 the same rules as `log`: a future date, a blank note or a repeated interaction makes that contact invalid, and it
 goes through the usual recovery path.
 
+A name target goes through `PersonNameResolver#resolveTarget`, which filters the displayed list to the
+contacts matching the name. `log`, `unlog` and `editlog` leave that filter in place, so after a name target the list shows
+those matches; after an index target the list is unchanged.
+
+`unlog` (`UnlogCommand`) removes one entry, addressed by its number in the date-ordered history. Because a
+removal cannot be undone and later entries are renumbered, the command returns a `ConfirmationRequest` that
+shows the entry, and only the confirmed inner command changes the contact. That inner command first checks that
+the contact is still stored unchanged, so a reply cannot remove an entry from a history that changed in between.
+
+`find /notes KEYWORDS` is parsed by `FindCommandParser` into a `FindNotesCommand` with a
+`NoteContainsKeywordsPredicate`. A contact matches when any of its notes contains any keyword as a substring,
+ignoring letter case. The command filters the displayed list like `find`, and its result groups the matching
+notes under each contact, shortening notes longer than 60 characters to an excerpt around the first match. When
+nothing matches, the displayed list is left as it was.
+
 `editlog` (`EditLogCommand`) corrects one entry in place. `EditLogCommandParser` accepts the same target
 forms as `log` and `unlog`, a required `i/ENTRY`, and at least one of `d/` and `nt/`; it reuses
 `LogCommandParser#parsePastDate`, so an edited date follows the same rules as a logged one. The command resolves
@@ -554,6 +569,23 @@ Design considerations:
 * **Correcting an entry:** an `editlog` command (chosen), or only `unlog` followed by `log`. Editing keeps
   the other part of the entry, needs one command instead of two and no confirmation, and cannot lose the
   entry if the second command fails.
+
+### Command shortcuts
+
+`alias` (`AliasCommand`, parsed by `AliasCommandParser`) defines, replaces, removes and lists shortcuts. Shortcuts
+are a `Map<String, String>` from a lower-case shortcut to the command text it stands for, held in `UserPrefs` and
+saved to `preferences.json`. `LogicManager` saves the preferences straight after a command changes them, and a
+failed save restores the previous shortcuts.
+
+`ContactFileParser` keeps the only list of built-in command words. `ContactFileParser#expandShortcut` replaces a
+leading shortcut with its command text and keeps the rest of the input, and is skipped when the first word is a
+built-in command word, so a shortcut can never hide a command. `AliasCommandParser` uses the same list to reject a
+shortcut named after a command, and a target that does not start with a built-in command word other than `alias`,
+which also rules out a shortcut standing for another shortcut. When Logic
+starts, `AliasCommandParser#validAliases` drops any entry in a hand-edited preferences file that breaks these rules.
+
+`LogicManager` expands the input before parsing. When a shortcut was used, it prefixes the result, and any
+error, with `Ran: <expanded command>`, so the user sees exactly what was run.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -893,6 +925,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2f. Every new value is identical to the current one.
     * 2f1. Astra shows that there are no changes to apply and does not save.
+
+      Use case ends.
+
+* 2g. The event to add is already associated with the contact.
+    * 2g1. Astra shows that the contact already has that event and changes nothing.
 
       Use case ends.
 
@@ -1431,16 +1468,16 @@ Use a fresh copy of sample data.
 
 ### Reordering displayed fields
 
-1. Run `order`: expect `name tags company role phone email linkedin followups`
+1. Run `order`: expect `name tags company role phone email linkedin followups interactions`
    on a default profile. Run the same complete order: expect "unchanged" and
    no preference-file write.
-2. Run `view 1`, then `order followups phone email name tags company role linkedin`:
+2. Run `view 1`, then `order followups phone email name tags company role linkedin interactions`:
    expect existing cards to reorder immediately and the viewed details to be
    redisplayed in that order. The displayed index moves with the name; contact
    order, active filter, and contact-file bytes remain unchanged.
 3. Test contacts with only a name and contacts with actions/tags/all optional
    fields. Missing values must have no visible/managed blank row in any order.
-4. Try missing `followups`, repeated `name`, an unknown field, and an extra
+4. Try missing `followups` or `interactions`, repeated `name`, an unknown field, and an extra
    token: expect the accepted fields with unchanged preferences and display.
    A complete upper-case order must succeed.
 5. Restart Astra: expect the saved order in cards and `view`. Load an old
