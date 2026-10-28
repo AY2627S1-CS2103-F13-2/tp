@@ -210,13 +210,16 @@ The following predicates support the implemented search modes:
 
 * `NameContainsKeywordsPredicate` performs case-insensitive contiguous and
   partial name matching.
-* `FuzzyNamePredicate` normalises the query and compares it with contact names
-  using Levenshtein distance. Names with a distance of at most two are treated
-  as matches.
+* `FuzzyNamePredicate` normalises the query and compares it with each individual
+  word in a contact's name using Levenshtein distance. A contact matches when at
+  least one name word is within a distance of two from the query.
 * `ContactFieldPredicate` searches fields such as phone number, email, company,
   and role.
 * `EventContainsKeywordsPredicate` searches the names of events associated with
   each contact.
+* `NoteContainsKeywordsPredicate` performs case-insensitive partial matching
+  against the notes in a contact's interaction history. `FindNotesCommand`
+  executes the `/notes` search and displays contacts with matching notes.
 
 When both `/company` and `/role` are provided, the parser combines the two
 predicates. A contact must satisfy both criteria to be included in the results.
