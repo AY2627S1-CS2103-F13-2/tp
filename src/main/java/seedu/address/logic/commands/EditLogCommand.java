@@ -36,6 +36,8 @@ public class EditLogCommand extends Command {
             + PREFIX_ENTRY + "ENTRY "
             + "[" + PREFIX_DATE + "DATE] "
             + "[" + PREFIX_NOTE + "NOTE]\n"
+            + "Date formats: yyyy-MM-dd, dd/MM/yyyy or d MMM yyyy (English month names); "
+            + "dates must be on or after 2000-01-01.\n"
             + "Example: " + COMMAND_WORD + " John Lim " + PREFIX_ENTRY + "2 "
             + PREFIX_NOTE + "Discussed frontend internships";
 

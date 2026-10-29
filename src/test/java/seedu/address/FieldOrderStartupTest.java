@@ -25,7 +25,8 @@ class FieldOrderStartupTest {
         Files.writeString(contacts, "{\"persons\":[{\"name\":\"Alice\"}]}");
         byte[] original = Files.readAllBytes(contacts);
         FieldOrder order = new FieldOrder(
-                List.of("phone", "email", "name", "tags", "company", "role", "linkedin", "followups"));
+                List.of("phone", "email", "introducer", "name", "tags", "company", "role", "linkedin", "followups",
+                        "interactions"));
         UserPrefs settings = new UserPrefs();
         settings.setFieldOrder(order);
         new JsonUserPrefsStorage(prefs).saveUserPrefs(settings);

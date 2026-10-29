@@ -15,7 +15,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 1. Ensure that Java `25` or later is installed on your computer.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
+1. Download the latest `.jar` file from [here](https://github.com/AY2627S1-CS2103-F13-2/tp/releases).
 
 1. Copy the file to the folder you want to use as the _home folder_ for Astra.
 
@@ -37,7 +37,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
    * `followups [overdue|today|upcoming|completed|undated]`: Reviews follow-ups across all contacts by date or status.
 
-   * `order name phone email company role tags linkedin followups interactions`: Changes the field order for every contact.
+   * `order name phone email company role tags linkedin followups introducer interactions`: Changes the field order for every contact.
 
    * `clear`, then `y`: Deletes all contacts.
 
@@ -125,6 +125,8 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
 * Only the contact's name is required. Add whichever details you managed to collect and fill in the rest later with `edit`.
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
+* `l/LINKEDIN` accepts a `linkedin.com` URL, such as `linkedin.com/in/johndoe` or `https://www.linkedin.com/in/johndoe`, or a profile handle of 3 to 100 letters, digits and hyphens, such as `john-doe`.
+* The phone number and email must not already belong to another contact. Two contacts may share a name only if they have different emails; names are compared without regard to letter case, so `John Doe` and `john doe` without emails are the same contact.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -228,12 +230,14 @@ Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…�
 * Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
 * Astra first displays the proposed removal in the confirmation panel. Reply `y` to apply it,
   or `n`/`cancel` to stop. Until confirmed, the contact file is unchanged and not saved.
-  A command submitted initially with `--confirm` still applies immediately for compatibility.
+  You do not need to type the command again with `--confirm`.
+* Ending the command with `--confirm` skips the preview and removes the values immediately,
+  without asking. Use it only when you are sure of the values.
 * Repeating `t/TAG` removes only those selected tags; all other tags and contact details are retained.
 
 Examples:
 * `drop 1 t/outdated` Shows the selected tag removal for the 1st contact.
-* `drop 1 t/outdated --confirm` Removes that tag while keeping the contact's other tags.
+* `drop 1 t/outdated --confirm` Removes that tag immediately, without a preview, while keeping the contact's other tags.
 * `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
 * `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
 
@@ -241,8 +245,9 @@ Examples:
 
 Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
 
-Format: `introduce NAME i/INTRODUCER [--confirm]`
+Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`
 
+* `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
 * `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * If an introducer is already recorded, Astra displays that name in the confirmation panel.
@@ -252,6 +257,7 @@ Format: `introduce NAME i/INTRODUCER [--confirm]`
 
 Examples:
 * `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
+* `introduce 1 i/Jane Smith` Records Jane Smith as the introducer of the 1st contact in the displayed list.
 * `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
 ### Locating persons: `find`
@@ -420,7 +426,10 @@ Records a conversation or meeting with a person, so you can look back at what yo
 Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
 
 * Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `edit`. If several people match the name, they are listed with numbers and nothing is logged; enter the command again with the person's number in place of the name.
-* `DATE` is when the interaction happened, in the format `YYYY-MM-DD`. If you leave it out, today's date is used.
+* `DATE` is when the interaction happened. It can use `yyyy-MM-dd` (for example
+  `2026-10-01`), `dd/MM/yyyy` (`01/10/2026`), or `d MMM yyyy` (`1 Oct 2026`).
+  Month names use English three-letter abbreviations and are case-insensitive.
+  Dates before `2000-01-01` are not accepted. If omitted, today's date is used.
 * The date cannot be in the future, since the interaction has already happened.
 * `NOTE` is what was discussed, and cannot be blank.
 * Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
@@ -461,7 +470,9 @@ Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/D
 * Identifies the person by `INDEX` or by all or part of their `NAME`, the same way as `log`.
 * `ENTRY` is the interaction's number in the person's interaction history, as shown by `view` and after `log`. It must be a positive whole number.
 * Give at least one of `d/DATE` and `nt/NOTE`. A part you leave out keeps its current value.
-* `DATE` and `NOTE` follow the same rules as in `log`: the date uses `YYYY-MM-DD` and cannot be in the future, and the note cannot be blank.
+* `DATE` and `NOTE` follow the same rules as in `log`: the date must use one of
+  the supported date formats, be on or after `2000-01-01`, and cannot be in the
+  future; the note cannot be blank.
 * Interactions stay in date order, so changing the date can move the interaction to a different number. Astra shows its new number and the full history after the edit.
 * An edit that leaves the interaction exactly as it was, or that makes it the same as another of the person's interactions (same date and note, ignoring letter case), is rejected and nothing changes.
 * When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
@@ -517,27 +528,28 @@ Examples:
 
 Reverses the most recent successful edit or deletion in the current Astra session.
 
-Format: `undo [--confirm]`
+Format: `undo`
 
-* Run `undo` to see which edit or deletion will be reversed. Nothing changes until you confirm.
-* Run `undo --confirm` to restore the contact information. Astra displays the restored contact and saves the contact file.
+* Run `undo` to see which edit or deletion will be reversed.
+* Enter `y` to restore the contact information; Astra displays the restored contact and saves the contact file.
+* Enter `n` or `cancel` to keep the current contact information.
 * Only edits and deletions can be undone. Adding, clearing, or otherwise changing contact data after an edit or deletion makes that earlier change unavailable to undo.
 * If restoring the information would violate contact uniqueness rules, Astra reports the conflict and makes no changes.
 * Undo history is kept only for the current session and is cleared when Astra closes.
 
 Examples:
 * `edit 1 p/91234567`, followed by `undo`, previews the edit that would be reversed.
-* `undo --confirm` restores the previous phone number after the preview.
-* `delete John Lim`, followed by `undo` and `undo --confirm`, restores John Lim.
+* Enter `y` after the preview to restore the previous phone number.
+* `delete John Lim`, followed by `undo` and `y`, restores John Lim.
 
-### Viewing edit and deletion history: `history`
+### Viewing data-change history: `history`
 
-Shows the edit and deletion history recorded during the current Astra session, including changes that have been undone.
+Shows successful changes made with `add`, `edit`, `delete`, `drop`, `clear`, and `introduce` during the current Astra session. Edits and deletions remain in the history even if they are undone. Entries are shown newest first.
 
 Format: `history`
 
 * The history is cleared when Astra closes.
-* Only edits and deletions are included.
+* Other command types, including viewing commands, are not included.
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Review the deletion preview before entering `y`. Undo is available only for the
 most recent edit or deletion and is cleared by any later contact data change.
@@ -560,6 +572,7 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
   `d MMM yyyy` (`25 Oct 2026`). Month names use English three-letter abbreviations
   and are case-insensitive. Slash-separated dates use day/month/year.
+  Dates before `2000-01-01` are rejected.
   Omitting `d/` creates an action with no due date. Empty or repeated `d/`
   parameters and impossible dates are rejected without saving an action;
   date errors show the supported formats.
@@ -670,7 +683,7 @@ Format:
 * A pending follow-up cannot be changed to a description that duplicates another
   pending follow-up for the same contact.
 * Use `d/` without a value to remove the due date.
-* The same date formats supported by `followup` are accepted.
+* The same date formats and `2000-01-01` minimum supported by `followup` apply.
 
 Examples:
 
@@ -779,16 +792,16 @@ Formats:
 
 ```text
 order
-order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
+order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 ```
 
 * `order` shows the current global field order.
-* To change it, supply each of these nine field names **exactly once**:
-  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`, `interactions`.
+* To change it, supply each of these ten field names **exactly once**:
+  `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`, `introducer`, `interactions`.
   If you leave out only `interactions`, it is placed last. Field names ignore letter case. An unknown, repeated, or missing field is
   rejected with the accepted fields; your existing preference and view remain.
-* The default is `name tags company role phone email linkedin followups interactions`,
-  matching the original cards with follow-ups and then interaction history last. Interaction history
+* The default is `name tags company role phone email linkedin followups introducer interactions`,
+  placing the introducer before interaction history. Interaction history
   appears only in a contact's details (`view`, `log`), not on the contact cards. Contacts without optional
   values omit those rows, even when an absent field appears early in the order.
 * A successful change immediately refreshes existing cards. If you are viewing
@@ -806,11 +819,11 @@ order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 Examples:
 
 * `order` shows the active order.
-* `order name phone email company role tags linkedin followups interactions` puts phone and
+* `order name phone email company role tags linkedin followups introducer interactions` puts phone and
   email near the top while retaining all fields.
-* `order interactions name tags company role phone email linkedin followups` shows interaction
+* `order interactions name tags company role phone email linkedin followups introducer` shows interaction
   history first in a contact's details.
-* `order followups name tags company role phone email linkedin` puts follow-up
+* `order followups name tags company role phone email linkedin introducer interactions` puts follow-up
   history first on contacts that have it.
 
 ### Creating command shortcuts: `alias`
@@ -858,10 +871,6 @@ Back up the file before editing it. On the next launch, Astra may recover valid 
 Furthermore, certain edits can cause Astra to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
@@ -888,8 +897,8 @@ Action | Format, Examples
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields), then `y` to confirm or `n`/`cancel` to stop<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
-**Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
-**Undo** | `undo` to preview the most recent edit or deletion; `undo --confirm` to restore it
+**Introduce** | `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`, `introduce 1 i/Jane Smith`
+**Undo** | `undo` to preview the most recent edit or deletion; enter `y` to restore it or `n`/`cancel` to stop
 **History** | `history`
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
@@ -905,7 +914,7 @@ e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
 **View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
-**Order** | `order` to query; `order name phone email company role tags linkedin followups interactions` to change
+**Order** | `order` to query; `order name phone email company role tags linkedin followups introducer interactions` to change
 **Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
 **Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`

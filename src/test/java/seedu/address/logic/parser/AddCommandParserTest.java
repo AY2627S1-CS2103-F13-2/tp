@@ -146,6 +146,26 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_mistypedPrefix_reportsUnknownPrefix() {
+        // the mistyped ph/ makes the name invalid, but the message names ph/ as the cause
+        assertParseFailure(parser, " n/John ph/123",
+                String.format(AddCommandParser.MESSAGE_UNKNOWN_PREFIX, "ph/", AddCommand.MESSAGE_USAGE));
+
+        // a mistyped name prefix is reported instead of the missing name
+        assertParseFailure(parser, " nm/John" + PHONE_DESC_BOB,
+                String.format(AddCommandParser.MESSAGE_UNKNOWN_PREFIX, "nm/", AddCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_slashInsideValue_notReportedAsUnknownPrefix() {
+        // a slash inside a LinkedIn URL is not preceded by a space, so the input still parses
+        Person expectedPerson = new PersonBuilder().withName(VALID_NAME_BOB).withCompany(null).withRole(null)
+                .withPhone(null).withEmail(null).withLinkedin("linkedin.com/in/bob").withTags().build();
+        assertParseSuccess(parser, NAME_DESC_BOB + " " + PREFIX_LINKEDIN + "linkedin.com/in/bob",
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_repeatedEvent_failure() {
         String expectedMessage =
                 Messages.getErrorMessageForDuplicatePrefixes(

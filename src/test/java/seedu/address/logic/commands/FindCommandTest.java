@@ -58,9 +58,9 @@ public class FindCommandTest {
         String expectedMessage = FindCommand.MESSAGE_CONTACT_NOT_FOUND;
         NameContainsKeywordsPredicate predicate = preparePredicate(" ");
         FindCommand command = new FindCommand(predicate);
-        expectedModel.updateFilteredPersonList(predicate);
+        List<?> displayedPersons = List.copyOf(model.getFilteredPersonList());
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
-        assertEquals(List.of(), model.getFilteredPersonList());
+        assertEquals(displayedPersons, model.getFilteredPersonList());
     }
 
     @Test

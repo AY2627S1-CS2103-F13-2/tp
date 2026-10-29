@@ -3,7 +3,6 @@ package seedu.address.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
@@ -53,7 +52,7 @@ class TerminalWorkspaceUiTest {
     }
 
     @Test
-    void selectionAndFiltering_updateDetailsAndClearStaleContact() throws Exception {
+    void selectionAndFiltering_noMatchPreservesDisplayedContact() throws Exception {
         ModelManager model = new ModelManager();
         model.addPerson(ALICE);
         model.addPerson(BENSON);
@@ -66,8 +65,8 @@ class TerminalWorkspaceUiTest {
             execute(stage, "find Alice");
             assertEquals(ALICE.getName().fullName, label(stage, "detailName").getText());
             execute(stage, "find NoSuchContact");
-            assertTrue(model.getFilteredPersonList().isEmpty());
-            assertNull(stage.getScene().lookup("#detailName"));
+            assertEquals(List.of(ALICE), model.getFilteredPersonList());
+            assertEquals(ALICE.getName().fullName, label(stage, "detailName").getText());
             execute(stage, "list");
             assertEquals(ALICE.getName().fullName, label(stage, "detailName").getText());
         });

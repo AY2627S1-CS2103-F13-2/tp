@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -238,20 +239,28 @@ public class DropCommand extends Command {
     }
 
     private boolean containsValue(Person person, FieldValue selected) {
-        return switch (selected.field()) {
-            case COMPANY -> selected.value() instanceof Company value && person.getCompany().filter(value::equals)
-                    .isPresent();
-            case ROLE -> selected.value() instanceof Role value
-                    && person.getRole().filter(value::equals).isPresent();
-            case PHONE -> selected.value() instanceof Phone value
-                    && person.getPhone().filter(value::equals).isPresent();
-            case EMAIL -> selected.value() instanceof Email value
-                    && person.getEmail().filter(value::equals).isPresent();
-            case LINKEDIN -> selected.value() instanceof Linkedin value
-                    && person.getLinkedin().filter(value::equals).isPresent();
-            case TAG -> selected.value() instanceof Tag value && person.getTags().contains(value);
-            case INTRODUCER -> selected.value() instanceof Name value
-                    && person.getIntroducer().filter(value::equals).isPresent();
+        Stream<?> saved = switch (selected.field()) {
+            case COMPANY -> person.getCompany().stream();
+            case ROLE -> person.getRole().stream();
+            case PHONE -> person.getPhone().stream();
+            case EMAIL -> person.getEmail().stream();
+            case LINKEDIN -> person.getLinkedin().stream();
+            case TAG -> person.getTags().stream();
+            case INTRODUCER -> person.getIntroducer().stream();
+        };
+        return saved.anyMatch(value -> isSameValue(selected.field(), selected.value(), value));
+    }
+
+    /**
+     * Returns true if {@code selected} names the {@code saved} value. Letter case is ignored, as it is
+     * when emails are compared elsewhere, except for tags, which are case-sensitive. Phone numbers are
+     * compared without their grouping characters.
+     */
+    private static boolean isSameValue(Field field, Object selected, Object saved) {
+        return switch (field) {
+            case TAG, PHONE -> selected.equals(saved);
+            default -> selected.getClass().equals(saved.getClass())
+                    && selected.toString().equalsIgnoreCase(saved.toString());
         };
     }
 
@@ -277,7 +286,7 @@ public class DropCommand extends Command {
 
     private static boolean contains(List<FieldValue> selections, Field field, Object value) {
         return selections.stream().anyMatch(selection -> selection.field() == field
-                && selection.value().equals(value));
+                && isSameValue(field, selection.value(), value));
     }
 
     private static String formatValues(List<FieldValue> values) {
