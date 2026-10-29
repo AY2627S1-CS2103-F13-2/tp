@@ -20,6 +20,9 @@ import seedu.address.model.person.Name;
  */
 public class LogCommandParser implements Parser<LogCommand> {
 
+    public static final String MESSAGE_DATE_FORMAT =
+            "Interaction date must be a valid date in yyyy-MM-dd, dd/MM/yyyy or d MMM yyyy format "
+                    + "(English month names).";
     public static final String MESSAGE_FUTURE_DATE =
             "An interaction that has already happened cannot have a future date (%1$s).";
 
@@ -91,10 +94,7 @@ public class LogCommandParser implements Parser<LogCommand> {
      */
     static LocalDate parsePastDate(String dateText, LocalDate today) throws ParseException {
         String trimmedDate = dateText.trim();
-        if (!Interaction.isValidDate(trimmedDate)) {
-            throw new ParseException(Interaction.MESSAGE_DATE_CONSTRAINTS);
-        }
-        LocalDate date = LocalDate.parse(trimmedDate);
+        LocalDate date = DateParserUtil.parseDate(trimmedDate, MESSAGE_DATE_FORMAT);
         if (date.isAfter(today)) {
             throw new ParseException(String.format(MESSAGE_FUTURE_DATE, date));
         }

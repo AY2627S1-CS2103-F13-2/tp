@@ -31,6 +31,17 @@ public class DropCommandParserTest {
     }
 
     @Test
+    public void parse_repeatedTag_keptOnce() {
+        assertParseSuccess(parser, "2 t/careerfair t/careerfair",
+                new DropCommand(Index.fromOneBased(2), List.of(
+                        new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("careerfair"))), false));
+        assertParseSuccess(parser, "2 t/old t/stale t/old",
+                new DropCommand(Index.fromOneBased(2), List.of(
+                        new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("old")),
+                        new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("stale"))), false));
+    }
+
+    @Test
     public void parse_validNameWithEmail_returnsDropCommand() {
         assertParseSuccess(parser, "Jane Doe e/jane@example.com",
                 new DropCommand("Jane Doe", List.of(
