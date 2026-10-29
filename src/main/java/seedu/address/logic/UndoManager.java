@@ -4,11 +4,13 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ConfirmationRequest;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -23,8 +25,7 @@ import seedu.address.model.person.Person;
  */
 public class UndoManager {
     public static final String MESSAGE_NOTHING_TO_UNDO = "There is nothing to undo.";
-    public static final String MESSAGE_CONFIRM_UNDO = "Undo the following %1$s?\n%2$s\n"
-            + "To confirm, run: undo --confirm";
+    public static final String MESSAGE_CONFIRM_UNDO = "Undo the following %1$s?\n%2$s";
     public static final String MESSAGE_UNDO_SUCCESS = "Restored contact:\n%1$s";
     public static final String MESSAGE_UNDO_CONFLICT =
             "The contact cannot be restored because it would violate contact uniqueness rules. No changes were made.";
@@ -72,40 +73,46 @@ public class UndoManager {
     }
 
     /**
-     * Starts or confirms an undo operation.
+     * Starts an undo operation and waits for confirmation.
      */
-    public CommandResult executeUndo(Model model, boolean confirmed) throws CommandException {
+    public CommandResult executeUndo() {
         if (undoableEntry == null) {
             pendingEntry = null;
             return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
         }
-        if (!confirmed) {
-            return previewUndo();
-        }
-        if (pendingEntry != undoableEntry) {
-            return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
-        }
-
-        return confirmUndo(model);
+        pendingEntry = undoableEntry;
+        ConfirmationRequest request = new ConfirmationRequest(String.format(MESSAGE_CONFIRM_UNDO,
+                undoableEntry.action, getDisplayFeedback(undoableEntry)), new Command() {
+                    @Override
+                    public CommandResult execute(Model model) throws CommandException {
+                        return confirmUndo(model);
+                    }
+                });
+        return new CommandResult(request.getPrompt(), request);
     }
 
-    private CommandResult previewUndo() {
-        pendingEntry = undoableEntry;
-        return new CommandResult(String.format(MESSAGE_CONFIRM_UNDO,
-                undoableEntry.action, undoableEntry.feedback), false, false, false);
+    private String getDisplayFeedback(HistoryEntry entry) {
+        if (!"deletion".equals(entry.action)) {
+            return entry.feedback;
+        }
+        int lastLineStart = entry.feedback.lastIndexOf('\n');
+        return lastLineStart < 0 ? entry.feedback : entry.feedback.substring(0, lastLineStart);
     }
 
     private CommandResult confirmUndo(Model model) {
-        Person restored = undoableEntry.getRestoredPerson();
-        Person personToReplace = undoableEntry.getPersonToReplace();
+        if (pendingEntry != undoableEntry || undoableEntry == null) {
+            return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
+        }
+        List<Person> restoredPersons = undoableEntry.getRestoredPersons();
+        List<Person> personsToReplace = undoableEntry.getPersonsToReplace();
         List<Person> currentPersons = new ArrayList<>(model.getContactFile().getPersonList());
-        int replaceIndex = personToReplace == null ? -1 : currentPersons.indexOf(personToReplace);
-        if (restored == null || (personToReplace != null && replaceIndex < 0)) {
+        if (restoredPersons.isEmpty() || !personsToReplace.stream().allMatch(currentPersons::contains)) {
             pendingEntry = null;
             return new CommandResult(MESSAGE_UNDO_CONFLICT, false, false, false);
         }
 
-        restorePerson(currentPersons, restored, replaceIndex);
+        removeReplacedPersons(currentPersons, personsToReplace);
+        restorePersons(currentPersons, restoredPersons);
         if (violatesUniqueness(currentPersons)) {
             pendingEntry = null;
             return new CommandResult(MESSAGE_UNDO_CONFLICT, false, false, false);
@@ -116,15 +123,24 @@ public class UndoManager {
         pendingEntry = null;
         undoableEntry = null;
         undoneEntry.isUndone = true;
-        return new CommandResult(String.format(MESSAGE_UNDO_SUCCESS, Messages.format(restored)));
+        return new CommandResult(String.format(MESSAGE_UNDO_SUCCESS, formatRestoredPersons(restoredPersons)));
     }
 
-    private void restorePerson(List<Person> currentPersons, Person restored, int replaceIndex) {
-        if (replaceIndex < 0) {
-            currentPersons.add(Math.min(undoableEntry.getOriginalIndex(), currentPersons.size()), restored);
-        } else {
-            currentPersons.set(replaceIndex, restored);
+    private void restorePersons(List<Person> currentPersons, List<Person> restoredPersons) {
+        for (Person restored : restoredPersons) {
+            int originalIndex = undoableEntry.getOriginalIndex(restored);
+            currentPersons.add(Math.min(originalIndex, currentPersons.size()), restored);
         }
+    }
+
+    private void removeReplacedPersons(List<Person> currentPersons, List<Person> personsToReplace) {
+        for (Person personToReplace : personsToReplace) {
+            currentPersons.remove(personToReplace);
+        }
+    }
+
+    private String formatRestoredPersons(List<Person> restoredPersons) {
+        return restoredPersons.stream().map(Messages::format).collect(Collectors.joining("\n"));
     }
 
     private void updateModel(Model model, List<Person> persons) {
@@ -145,7 +161,7 @@ public class UndoManager {
         for (int i = history.size() - 1; i >= 0; i--) {
             HistoryEntry entry = history.get(i);
             lines.add(String.format("%d. %s%s: %s", history.size() - i, entry.action,
-                    entry.isUndone ? " (undone)" : "", entry.feedback.replace("\n", " ")));
+                    entry.isUndone ? " (undone)" : "", getDisplayFeedback(entry).replace("\n", " ")));
         }
         return String.join("\n", lines);
     }
@@ -179,16 +195,16 @@ public class UndoManager {
             this.after = List.copyOf(after);
         }
 
-        private Person getRestoredPerson() {
-            return before.stream().filter(person -> !after.contains(person)).findFirst().orElse(null);
+        private List<Person> getRestoredPersons() {
+            return before.stream().filter(person -> !after.contains(person)).toList();
         }
 
-        private Person getPersonToReplace() {
-            return after.stream().filter(person -> !before.contains(person)).findFirst().orElse(null);
+        private List<Person> getPersonsToReplace() {
+            return after.stream().filter(person -> !before.contains(person)).toList();
         }
 
-        private int getOriginalIndex() {
-            return before.indexOf(getRestoredPerson());
+        private int getOriginalIndex(Person restored) {
+            return before.indexOf(restored);
         }
     }
 }

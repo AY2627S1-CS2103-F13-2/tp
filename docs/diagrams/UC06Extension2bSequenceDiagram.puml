@@ -1,0 +1,54 @@
+@startuml
+actor App
+participant Storage
+participant RecoveryModel
+database Files
+
+App -> Storage : load contacts
+activate Storage
+Storage -> RecoveryModel : recover(source)
+activate RecoveryModel
+
+RecoveryModel -> Files : read original file
+Files --> RecoveryModel : original bytes
+
+loop Each record in stored order
+    RecoveryModel -> RecoveryModel : validate and check conflicts
+    alt Valid and non-conflicting
+        RecoveryModel -> RecoveryModel : retain contact
+    else Invalid or conflicting
+        RecoveryModel -> RecoveryModel : record skipped position and reason
+    end
+end
+
+RecoveryModel -> Files : archive unchanged original\nand recovery report
+note right of RecoveryModel
+    Archiving applies to extensions 2b and 2c.
+    It is skipped in the MSS.
+end note
+
+alt Contacts recovered
+    RecoveryModel -> Files : write and verify recovered file
+    RecoveryModel -> Files : replace active file\nif original is unchanged
+    RecoveryModel --> Storage : recovered result
+    Storage --> App : startup result
+    App -> App : display recovered/skipped counts\nand backup/report locations
+else No contacts recovered
+    note right of RecoveryModel
+        Active file remains unchanged.
+        Backup and report are preserved.
+    end note
+    RecoveryModel --> Storage : throws IOException
+    Storage --> App : propagates IOException
+    ref over App, Files
+        Extension 2c: safe fresh-start choice
+    end ref
+end
+
+deactivate RecoveryModel
+deactivate Storage
+
+note over RecoveryModel, Files
+    Archive or replacement failure also routes to extension 2c.
+end note
+@enduml

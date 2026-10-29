@@ -1,0 +1,43 @@
+@startuml
+!include style.puml
+!pragma layout smetana
+
+skinparam arrowThickness 1.1
+skinparam arrowColor LOGIC_COLOR_T4
+skinparam classBackgroundColor LOGIC_COLOR
+
+package "Find logic" {
+    Class FindCommandParser
+    Class FindCommand
+    Class FindNotesCommand
+    Class "Predicate<Person>" as PersonPredicate
+    Class NameContainsKeywordsPredicate
+    Class FuzzyNamePredicate
+    Class ContactFieldPredicate
+    Class EventContainsKeywordsPredicate
+    Class NoteContainsKeywordsPredicate
+}
+
+package Model {
+    Class Person
+    Class Model
+}
+
+FindCommandParser ..> FindCommand : <<create>>
+FindCommandParser ..> FindNotesCommand : <<create>>
+
+FindCommand --> PersonPredicate : stores
+FindNotesCommand --> PersonPredicate : stores
+
+PersonPredicate <|.. NameContainsKeywordsPredicate
+PersonPredicate <|.. FuzzyNamePredicate
+PersonPredicate <|.. ContactFieldPredicate
+PersonPredicate <|.. EventContainsKeywordsPredicate
+PersonPredicate <|.. NoteContainsKeywordsPredicate
+
+FindCommand ..> Model : updates filtered list
+FindNotesCommand ..> Model : updates filtered list
+
+PersonPredicate ..> Person : tests
+
+@enduml

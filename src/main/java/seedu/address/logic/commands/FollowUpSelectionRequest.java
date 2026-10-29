@@ -71,6 +71,7 @@ final class FollowUpSelectionRequest implements PendingRequest {
                         .withSelectedFollowUp(selected.followUp());
             }
         }
-        return new CommandResult(MESSAGE_INVALID + "\n" + getPrompt(), this);
+        return new CommandResult(MESSAGE_INVALID + "\n" + getPrompt(), this)
+                .withFollowUpListing(new FollowUpListing(heading, entries));
     }
 }

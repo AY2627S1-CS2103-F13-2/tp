@@ -7,9 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +20,8 @@ import seedu.address.commons.util.JsonUtil;
 
 class FieldOrderTest {
     private static final FieldOrder CUSTOM = new FieldOrder(
-            List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name"));
+            List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                    "introducer", "interactions"));
 
     @Test
     void constructor_validFields_copiesAndCanonicalizesNames() {
@@ -27,17 +30,75 @@ class FieldOrderTest {
         FieldOrder order = new FieldOrder(input);
         input.clear();
         assertEquals(FieldOrder.DEFAULT, order);
-        assertEquals("name tags company role phone email linkedin followups interactions", order.toString());
+        assertEquals("name tags company role phone email linkedin followups introducer interactions", order.toString());
         assertThrows(UnsupportedOperationException.class, () -> order.getFields().clear());
         assertThrows(UnsupportedOperationException.class, () -> order.getFieldNames().clear());
     }
 
     @Test
-    void constructor_orderSavedBeforeInteractions_placesInteractionsLast() {
+    void constructor_orderSavedBeforeInteractions_addsIntroducerBeforeInteractions() {
         FieldOrder order = new FieldOrder(
                 List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name"));
         assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
-                "interactions"), order.getFieldNames());
+                "introducer", "interactions"), order.getFieldNames());
+    }
+
+    @Test
+    void constructor_orderSavedWithInteractions_addsIntroducerBeforeInteractions() {
+        FieldOrder order = new FieldOrder(
+                List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                        "INTERACTIONS"));
+        assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                "introducer", "interactions"), order.getFieldNames());
+    }
+
+    @Test
+    void constructor_orderSavedWithIntroducer_addsInteractionsAtEnd() {
+        FieldOrder order = new FieldOrder(
+                List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                        "introducer"));
+        assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                "introducer", "interactions"), order.getFieldNames());
+    }
+
+    @Test
+    void constructor_incompleteLegacyOrdersWithUnexpectedFields_rejectsOrders() {
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "interactions")));
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "introducer")));
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "introducer",
+                        "interactions")));
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(
+                List.of("name", "tags", "company", "role", "phone", "email", "linkedin", "followups", "name")));
+    }
+
+    @Test
+    void constructor_legacyListChangesDuringLookup_rejectsMissingInteraction() {
+        List<String> names = new AbstractList<>() {
+            private boolean firstStream = true;
+
+            @Override
+            public String get(int index) {
+                return "name";
+            }
+
+            @Override
+            public int size() {
+                return FieldOrder.Field.values().length - 1;
+            }
+
+            @Override
+            public Stream<String> stream() {
+                if (firstStream) {
+                    firstStream = false;
+                    return Stream.concat(super.stream(), Stream.of("interactions"));
+                }
+                return super.stream();
+            }
+        };
+        assertThrows(IllegalArgumentException.class, () -> new FieldOrder(names));
     }
 
     @Test

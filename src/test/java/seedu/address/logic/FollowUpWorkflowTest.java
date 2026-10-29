@@ -391,7 +391,7 @@ class FollowUpWorkflowTest {
             assertThrows(ParseException.class, () -> logic.execute("1"));
             assertArrayEquals(bytes, Files.readAllBytes(file));
         }
-        logic.execute("followup 2 a/Portfolio d/01 Jan 1900");
+        logic.execute("followup 2 a/Portfolio d/01 Jan 2000");
         logic.execute("followups");
         CommandResult selected = logic.execute("1");
         assertEquals(BENSON.getName(), selected.getPersonForDetails().orElseThrow().getName());

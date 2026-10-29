@@ -70,7 +70,7 @@ public class EditLogCommandParserTest {
     public void parse_invalidDateOrNote_failure() {
         assertParseFailure(parser, "1 i/1 d/2026-10-16",
                 String.format(LogCommandParser.MESSAGE_FUTURE_DATE, "2026-10-16"));
-        assertParseFailure(parser, "1 i/1 d/2026-02-30", Interaction.MESSAGE_DATE_CONSTRAINTS);
+        assertParseFailure(parser, "1 i/1 d/2026-02-30", LogCommandParser.MESSAGE_DATE_FORMAT);
         assertParseFailure(parser, "1 i/1 nt/   ", Interaction.MESSAGE_NOTE_CONSTRAINTS);
     }
 

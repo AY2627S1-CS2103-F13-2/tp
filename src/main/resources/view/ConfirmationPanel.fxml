@@ -12,7 +12,8 @@
   <TextArea fx:id="confirmationPreview" editable="false" wrapText="true" prefRowCount="5"
             minHeight="90" prefHeight="130" maxHeight="180" accessibleText="Confirmation preview" />
   <HBox spacing="10">
-    <Button fx:id="confirmButton" text="Confirm (y)" accessibleText="Confirm the previewed action" />
+    <Button fx:id="confirmButton" text="Confirm (y)" styleClass="button, confirmation-primary"
+            accessibleText="Confirm the previewed action" />
     <Button fx:id="cancelButton" text="Cancel (n)" accessibleText="Cancel without changes" />
   </HBox>
   <Label text="Reply y, n, or cancel. Tab moves to the buttons."

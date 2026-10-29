@@ -1,0 +1,26 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor LOGIC_COLOR_T4
+
+actor User
+participant LogicManager
+participant ContactFileParser
+participant FindCommandParser
+participant FindCommand
+participant Model
+participant UI
+
+User -> LogicManager: execute("find /event Career Fair")
+LogicManager -> ContactFileParser: parseCommand(input)
+ContactFileParser -> FindCommandParser: parse(arguments)
+FindCommandParser -> FindCommand: create predicate
+FindCommandParser --> ContactFileParser: FindCommand
+ContactFileParser --> LogicManager: FindCommand
+LogicManager -> FindCommand: execute(Model)
+FindCommand -> Model: updateFilteredPersonList(predicate)
+Model --> UI: filtered contact list changes
+UI -> UI: refresh PersonCard objects
+UI --> User: display matching contacts
+
+@enduml
