@@ -43,6 +43,13 @@ public class Name {
         return StringUtil.normalise(test).matches(VALIDATION_REGEX);
     }
 
+    /**
+     * Returns true if {@code otherName} spells the same name, ignoring letter case.
+     * Contact identity uses this so that "John Doe" and "john doe" are not kept as two people.
+     */
+    public boolean isSameName(Name otherName) {
+        return otherName != null && fullName.equalsIgnoreCase(otherName.fullName);
+    }
 
     @Override
     public String toString() {

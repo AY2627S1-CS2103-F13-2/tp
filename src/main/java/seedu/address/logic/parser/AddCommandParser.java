@@ -13,7 +13,10 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import seedu.address.logic.commands.AddCommand;
@@ -33,6 +36,17 @@ import seedu.address.model.tag.Tag;
  */
 public class AddCommandParser implements Parser<AddCommand> {
 
+    public static final String MESSAGE_UNKNOWN_PREFIX =
+            "Unknown prefix \"%1$s\". Check it for typos.\n%2$s";
+
+    private static final Prefix[] ADD_PREFIXES = {
+        PREFIX_NAME, PREFIX_COMPANY, PREFIX_ROLE, PREFIX_PHONE, PREFIX_EMAIL,
+        PREFIX_LINKEDIN, PREFIX_INTRODUCER, PREFIX_TAG, PREFIX_EVENT_NAME
+    };
+
+    /** A word ending in a slash after a space, such as {@code ph/}, which looks like a prefix. */
+    private static final Pattern PREFIX_LIKE_WORD = Pattern.compile("(?<=\\s)[A-Za-z]+/");
+
     /**
      * Parses the given arguments in the context of the AddCommand.
      *
@@ -41,17 +55,22 @@ public class AddCommandParser implements Parser<AddCommand> {
     public AddCommand parse(String args) throws ParseException {
         requireNonNull(args);
 
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(
-                args,
-                PREFIX_NAME,
-                PREFIX_COMPANY,
-                PREFIX_ROLE,
-                PREFIX_PHONE,
-                PREFIX_EMAIL,
-                PREFIX_LINKEDIN,
-                PREFIX_INTRODUCER,
-                PREFIX_TAG,
-                PREFIX_EVENT_NAME);
+        try {
+            return parseWithKnownPrefixes(args);
+        } catch (ParseException pe) {
+            // A mistyped prefix such as ph/ is read as part of the previous field's value, so that
+            // field is reported as invalid. Name the mistyped prefix instead, as it is the real cause.
+            Optional<String> unknownPrefix = findUnknownPrefix(args);
+            if (unknownPrefix.isPresent()) {
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, unknownPrefix.get(),
+                        AddCommand.MESSAGE_USAGE), pe);
+            }
+            throw pe;
+        }
+    }
+
+    private AddCommand parseWithKnownPrefixes(String args) throws ParseException {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, ADD_PREFIXES);
 
         if (!arePrefixesPresent(argMultimap, PREFIX_NAME)
                 || !argMultimap.getPreamble().isEmpty()) {
@@ -140,6 +159,20 @@ public class AddCommandParser implements Parser<AddCommand> {
                 List.of());
 
         return new AddCommand(person);
+    }
+
+    /**
+     * Returns the first word in {@code args} that looks like a prefix but is not one of {@code add}'s prefixes.
+     */
+    private static Optional<String> findUnknownPrefix(String args) {
+        Matcher matcher = PREFIX_LIKE_WORD.matcher(args);
+        while (matcher.find()) {
+            String word = matcher.group();
+            if (Stream.of(ADD_PREFIXES).noneMatch(prefix -> prefix.getPrefix().equals(word))) {
+                return Optional.of(word);
+            }
+        }
+        return Optional.empty();
     }
 
     /**

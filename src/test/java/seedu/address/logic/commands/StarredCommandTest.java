@@ -42,7 +42,7 @@ public class StarredCommandTest {
 
         CommandResult result = new StarredCommand().execute(model);
 
-        assertEquals(String.format(StarredCommand.MESSAGE_SUCCESS, 2), result.getFeedbackToUser());
+        assertEquals(String.format(StarredCommand.MESSAGE_SUCCESS, 2, "contacts"), result.getFeedbackToUser());
         assertEquals(List.of(starredAlice, starredNameOnly), model.getFilteredPersonList());
         assertEquals(original, model.getContactFile());
         assertSame(starredAlice, model.getFilteredPersonList().getFirst());
@@ -98,7 +98,7 @@ public class StarredCommandTest {
 
         assertEquals(List.of(starredAlice), model.getFilteredPersonList());
         assertEquals(List.of(starredAlice, BENSON, NAME_ONLY), model.getContactFile().getPersonList());
-        assertEquals(String.format(StarredCommand.MESSAGE_SUCCESS, 1),
+        assertEquals(String.format(StarredCommand.MESSAGE_SUCCESS, 1, "contact"),
                 new StarredCommand().execute(model).getFeedbackToUser());
 
         new UnstarCommand(INDEX_FIRST_PERSON).execute(model);
@@ -125,7 +125,7 @@ public class StarredCommandTest {
 
         CommandResult result = new StarredCommand().execute(model);
 
-        assertEquals(String.format(StarredCommand.MESSAGE_SUCCESS, 3), result.getFeedbackToUser());
+        assertEquals(String.format(StarredCommand.MESSAGE_SUCCESS, 3, "contacts"), result.getFeedbackToUser());
         assertEquals(List.of(starredAlice, starredBenson, starredNameOnly), model.getFilteredPersonList());
     }
 

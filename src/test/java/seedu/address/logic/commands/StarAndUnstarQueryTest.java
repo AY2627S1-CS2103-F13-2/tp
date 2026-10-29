@@ -123,7 +123,7 @@ public class StarAndUnstarQueryTest {
                 }
                 CommandResult result = parser.parseCommand(word + " Nobody").execute(model);
                 assertEquals(FindCommand.MESSAGE_CONTACT_NOT_FOUND, result.getFeedbackToUser());
-                assertEquals(List.of(), model.getFilteredPersonList());
+                assertEquals(empty ? List.of() : List.of(ALICE), model.getFilteredPersonList());
                 assertEquals(empty ? List.of() : List.of(ALICE), model.getContactFile().getPersonList());
             }
         }

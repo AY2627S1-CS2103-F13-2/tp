@@ -146,12 +146,12 @@ public class EditCommand extends Command {
             throw new CommandException(MESSAGE_NO_CHANGES);
         }
 
+        checkPhoneAndEmailNotTaken(model, personToEdit, editedPerson);
+
         if (!personToEdit.isSamePerson(editedPerson)
                 && model.hasPerson(editedPerson)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
-
-        checkPhoneAndEmailNotTaken(model, personToEdit, editedPerson);
 
         PendingRequest request = new ConfirmationRequest("Preview contact edit:\n"
                 + formatUpdatedFields(personToEdit, editedPerson) + "\nResulting contact:\n"
@@ -161,10 +161,10 @@ public class EditCommand extends Command {
                         if (!confirmedModel.getContactFile().getPersonList().contains(personToEdit)) {
                             throw new CommandException("Contact changed. Start the edit request again.");
                         }
+                        checkPhoneAndEmailNotTaken(confirmedModel, personToEdit, editedPerson);
                         if (!personToEdit.isSamePerson(editedPerson) && confirmedModel.hasPerson(editedPerson)) {
                             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
                         }
-                        checkPhoneAndEmailNotTaken(confirmedModel, personToEdit, editedPerson);
                         confirmedModel.setPerson(personToEdit, editedPerson);
                         confirmedModel.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
                         assert editedPerson.getLastFollowUpId() == personToEdit.getLastFollowUpId()

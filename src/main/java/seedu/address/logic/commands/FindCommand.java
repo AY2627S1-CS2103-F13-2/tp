@@ -41,12 +41,11 @@ public class FindCommand extends Command {
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
-        model.updateFilteredPersonList(predicate);
-
-        if (model.getFilteredPersonList().isEmpty()) {
+        if (model.getContactFile().getPersonList().stream().noneMatch(predicate)) {
             return new CommandResult(MESSAGE_CONTACT_NOT_FOUND);
         }
 
+        model.updateFilteredPersonList(predicate);
         return new CommandResult(
                 String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW,
                         model.getFilteredPersonList().size()));

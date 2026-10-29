@@ -10,6 +10,7 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ConfirmationRequest;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DropCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -24,8 +25,7 @@ import seedu.address.model.person.Person;
  */
 public class UndoManager {
     public static final String MESSAGE_NOTHING_TO_UNDO = "There is nothing to undo.";
-    public static final String MESSAGE_CONFIRM_UNDO = "Undo the following %1$s?\n%2$s\n"
-            + "To confirm, run: undo --confirm";
+    public static final String MESSAGE_CONFIRM_UNDO = "Undo the following %1$s?\n%2$s";
     public static final String MESSAGE_UNDO_SUCCESS = "Restored contact:\n%1$s";
     public static final String MESSAGE_UNDO_CONFLICT =
             "The contact cannot be restored because it would violate contact uniqueness rules. No changes were made.";
@@ -73,30 +73,36 @@ public class UndoManager {
     }
 
     /**
-     * Starts or confirms an undo operation.
+     * Starts an undo operation and waits for confirmation.
      */
-    public CommandResult executeUndo(Model model, boolean confirmed) throws CommandException {
+    public CommandResult executeUndo() {
         if (undoableEntry == null) {
             pendingEntry = null;
             return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
         }
-        if (!confirmed) {
-            return previewUndo();
-        }
-        if (pendingEntry != undoableEntry) {
-            return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
-        }
-
-        return confirmUndo(model);
+        pendingEntry = undoableEntry;
+        ConfirmationRequest request = new ConfirmationRequest(String.format(MESSAGE_CONFIRM_UNDO,
+                undoableEntry.action, getDisplayFeedback(undoableEntry)), new Command() {
+                    @Override
+                    public CommandResult execute(Model model) throws CommandException {
+                        return confirmUndo(model);
+                    }
+                });
+        return new CommandResult(request.getPrompt(), request);
     }
 
-    private CommandResult previewUndo() {
-        pendingEntry = undoableEntry;
-        return new CommandResult(String.format(MESSAGE_CONFIRM_UNDO,
-                undoableEntry.action, undoableEntry.feedback), false, false, false);
+    private String getDisplayFeedback(HistoryEntry entry) {
+        if (!"deletion".equals(entry.action)) {
+            return entry.feedback;
+        }
+        int lastLineStart = entry.feedback.lastIndexOf('\n');
+        return lastLineStart < 0 ? entry.feedback : entry.feedback.substring(0, lastLineStart);
     }
 
     private CommandResult confirmUndo(Model model) {
+        if (pendingEntry != undoableEntry || undoableEntry == null) {
+            return new CommandResult(MESSAGE_NOTHING_TO_UNDO, false, false, false);
+        }
         List<Person> restoredPersons = undoableEntry.getRestoredPersons();
         List<Person> personsToReplace = undoableEntry.getPersonsToReplace();
         List<Person> currentPersons = new ArrayList<>(model.getContactFile().getPersonList());
@@ -155,7 +161,7 @@ public class UndoManager {
         for (int i = history.size() - 1; i >= 0; i--) {
             HistoryEntry entry = history.get(i);
             lines.add(String.format("%d. %s%s: %s", history.size() - i, entry.action,
-                    entry.isUndone ? " (undone)" : "", entry.feedback.replace("\n", " ")));
+                    entry.isUndone ? " (undone)" : "", getDisplayFeedback(entry).replace("\n", " ")));
         }
         return String.join("\n", lines);
     }

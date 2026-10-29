@@ -46,6 +46,16 @@ class FollowUpCommandParserTest {
     }
 
     @Test
+    void parse_dateBeforeMinimum_rejectsDate() throws Exception {
+        for (String date : List.of("1999-12-31", "31/12/1999", "31 Dec 1999")) {
+            ParseException error = assertThrows(ParseException.class, () -> parser.parse("1 a/Call d/" + date));
+            assertEquals(DateParserUtil.MESSAGE_DATE_TOO_OLD, error.getMessage());
+        }
+        assertEquals(new FollowUpCommand(Index.fromOneBased(1), "Call", LocalDate.of(2000, 1, 1)),
+                parser.parse("1 a/Call d/1 Jan 2000"));
+    }
+
+    @Test
     void parse_malformedDatedArguments_rejectsRequest() {
         for (String input : List.of("1 a/Call d/2026-10-25 d/2026-11-01", "1 d/2026-10-25 a/Call d/2026-11-01",
                 "1 d/2026-10-25 d/2026-11-01 a/Call", "1 d/2026-10-25 a/Call a/Other",

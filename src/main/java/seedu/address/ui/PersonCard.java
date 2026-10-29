@@ -119,20 +119,14 @@ public class PersonCard extends UiPart<Region> {
                 FieldOrder.Field.PHONE, phone,
                 FieldOrder.Field.EMAIL, email,
                 FieldOrder.Field.LINKEDIN, linkedin,
-                FieldOrder.Field.FOLLOWUPS, followUps);
+                FieldOrder.Field.FOLLOWUPS, followUps,
+                FieldOrder.Field.INTRODUCER, introducer);
 
         List<Node> orderedRows = new ArrayList<>();
 
         order.getFields().stream()
                 .filter(rows::containsKey)
-                .forEach(field -> {
-                    orderedRows.add(rows.get(field));
-
-                    if (field == FieldOrder.Field.LINKEDIN
-                            && person.getIntroducer().isPresent()) {
-                        orderedRows.add(introducer);
-                    }
-                });
+                .forEach(field -> orderedRows.add(rows.get(field)));
 
         if (!person.getEvents().isEmpty()) {
             orderedRows.add(events);

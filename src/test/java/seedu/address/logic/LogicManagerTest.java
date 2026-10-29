@@ -314,6 +314,9 @@ public class LogicManagerTest {
         assertTrue(history.contains("edit:"));
         assertTrue(history.contains("introduce:"));
         assertFalse(history.contains("view:"));
+        String deletionHistory = history.lines().filter(line -> line.contains("deletion:")).findFirst().orElseThrow();
+        assertTrue(deletionHistory.contains("deletion: Deleted person: Alice Smith"));
+        assertFalse(deletionHistory.contains("contact(s) remaining."));
     }
 
     @Test
@@ -331,13 +334,19 @@ public class LogicManagerTest {
 
         CommandResult preview = logic.execute("undo");
         assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "edit",
-                "Updated Alice Smith's phone to 87654321."), preview.getFeedbackToUser());
+                "Updated Alice Smith's phone to 87654321.") + "\nConfirm? (y/n; cancel to stop)",
+                preview.getFeedbackToUser());
         assertFalse(preview.shouldSaveContactFile());
+        assertTrue(preview.getPendingRequest().isPresent());
         assertEquals(edited, model.getContactFile().getPersonList().getFirst());
         assertEquals(savesAfterEdit, saveCount.get());
-        assertTrue(logic.execute("history").getFeedbackToUser().contains("edit:"));
 
-        CommandResult undoResult = logic.execute("undo --confirm");
+        assertEquals("Request cancelled. No contacts changed.", logic.execute("n").getFeedbackToUser());
+        assertEquals(edited, model.getContactFile().getPersonList().getFirst());
+        assertEquals(savesAfterEdit, saveCount.get());
+
+        logic.execute("undo");
+        CommandResult undoResult = logic.execute("y");
         assertEquals("Restored contact:\n" + Messages.format(original),
                 undoResult.getFeedbackToUser());
         assertEquals(original, model.getContactFile().getPersonList().getFirst());
@@ -352,11 +361,15 @@ public class LogicManagerTest {
         AtomicInteger saveCount = useCountingStorage();
 
         logic.execute("delete 1");
-        logic.execute("y");
+        CommandResult deleteResult = logic.execute("y");
+        assertTrue(deleteResult.getFeedbackToUser().contains("0 contact(s) remaining."));
         assertTrue(model.getContactFile().getPersonList().isEmpty());
-        logic.execute("undo");
+        CommandResult undoPreview = logic.execute("undo");
+        assertEquals(String.format(UndoManager.MESSAGE_CONFIRM_UNDO, "deletion",
+                "Deleted person: " + Messages.format(original)) + "\nConfirm? (y/n; cancel to stop)",
+                undoPreview.getFeedbackToUser());
 
-        CommandResult undoResult = logic.execute("undo --confirm");
+        CommandResult undoResult = logic.execute("y");
         assertEquals("Restored contact:\n" + Messages.format(original),
                 undoResult.getFeedbackToUser());
         assertEquals(original, model.getContactFile().getPersonList().getFirst());
@@ -408,7 +421,7 @@ public class LogicManagerTest {
         var stateBeforeConfirmation = List.copyOf(model.getContactFile().getPersonList());
         int savesBeforeConfirmation = saveCount.get();
 
-        CommandResult result = logic.execute("undo --confirm");
+        CommandResult result = logic.execute("y");
 
         assertEquals(UndoManager.MESSAGE_UNDO_CONFLICT, result.getFeedbackToUser());
         assertFalse(result.shouldSaveContactFile());

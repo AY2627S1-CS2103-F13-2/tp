@@ -57,6 +57,9 @@ public class StarCommand extends Command {
         Index resolvedIndex = targetIndex;
         if (findCommand != null) {
             CommandResult findResult = findCommand.execute(model);
+            if (FindCommand.MESSAGE_CONTACT_NOT_FOUND.equals(findResult.getFeedbackToUser())) {
+                return findResult;
+            }
             int matchCount = findCommand.findMatches(model).size();
             if (matchCount == 0) {
                 return findResult;

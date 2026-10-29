@@ -12,13 +12,15 @@ import seedu.address.commons.util.StringUtil;
 public class Linkedin {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "LinkedIn profiles should be a URL or handle without spaces, and should not be blank.";
+            "LinkedIn profiles should be a linkedin.com URL (e.g. linkedin.com/in/johndoe) or a handle of "
+            + "3 to 100 letters, digits and hyphens (e.g. john-doe), without spaces.";
 
     /*
-     * A LinkedIn profile is accepted as either a full URL or a bare handle, so the only
-     * requirement is a non-blank value with no whitespace in it.
+     * A LinkedIn profile is accepted as either a linkedin.com URL, with or without the scheme and a
+     * subdomain such as www, or a bare handle, which LinkedIn limits to letters, digits and hyphens.
      */
-    public static final String VALIDATION_REGEX = "\\S+";
+    public static final String VALIDATION_REGEX =
+            "(?i)(https?://)?([a-z0-9-]+\\.)?linkedin\\.com/\\S+|[a-z0-9-]{3,100}";
 
     public final String value;
 

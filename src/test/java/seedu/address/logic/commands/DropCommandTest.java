@@ -191,6 +191,35 @@ public class DropCommandTest {
     }
 
     @Test
+    public void execute_valuesInDifferentLetterCase_removesSavedValues() {
+        Person person = new PersonBuilder(original).withCompany("Acme Pte Ltd").withIntroducer("Jane Smith").build();
+        ContactFile file = new ContactFileBuilder().withPerson(person).build();
+        Model model = new ModelManager(new ContactFile(file), new UserPrefs());
+        Person expectedPerson = new PersonBuilder(person).withEmail(null).withCompany(null).withIntroducer(null)
+                .build();
+        Model expectedModel = new ModelManager(new ContactFile(file), new UserPrefs());
+        expectedModel.setPerson(person, expectedPerson);
+
+        DropCommand command = new DropCommand(Index.fromOneBased(1), List.of(
+                new FieldValue(Field.EMAIL, new Email("JANE@EXAMPLE.COM")),
+                new FieldValue(Field.COMPANY, new Company("acme pte ltd")),
+                new FieldValue(Field.INTRODUCER, new Name("jane smith"))), true);
+
+        assertCommandSuccess(command, model,
+                String.format(DropCommand.MESSAGE_REMOVED, seedu.address.logic.Messages.format(expectedPerson)),
+                expectedModel);
+    }
+
+    @Test
+    public void execute_tagInDifferentLetterCase_isReportedAsNotFound() {
+        // tags are case-sensitive, so Old does not select the saved tag old
+        Model model = new ModelManager(new ContactFile(contactFile), new UserPrefs());
+        assertCommandFailure(new DropCommand(Index.fromOneBased(1),
+                        List.of(new FieldValue(Field.TAG, new Tag("Old"))), true),
+                model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND, "tag", "Old", "Jane Doe"));
+    }
+
+    @Test
     public void execute_valueWithWrongModelType_isReportedAsNotFound() {
         List<FieldValue> selections = List.of(
                 new FieldValue(Field.COMPANY, new Email("wrong@example.com")),

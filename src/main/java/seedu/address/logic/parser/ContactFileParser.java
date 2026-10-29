@@ -194,10 +194,10 @@ public class ContactFileParser {
 
     private UndoCommand parseUndoCommand(String arguments) throws ParseException {
         String trimmedArguments = arguments.trim();
-        if (!trimmedArguments.isEmpty() && !UndoCommand.CONFIRM_OPTION.equals(trimmedArguments)) {
+        if (!trimmedArguments.isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE));
         }
-        return new UndoCommand(undoManager, UndoCommand.CONFIRM_OPTION.equals(trimmedArguments));
+        return new UndoCommand(undoManager);
     }
 
     private HistoryCommand parseHistoryCommand(String arguments) throws ParseException {
