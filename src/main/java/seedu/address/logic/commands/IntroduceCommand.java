@@ -27,9 +27,10 @@ public class IntroduceCommand extends Command {
             "The existing introducer for %1$s is %2$s. Replace it with %3$s?";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Records who introduced a contact.\n"
-            + "Parameters: NAME " + PREFIX_INTRODUCER + "INTRODUCER\n"
-            + "Use a displayed index in place of NAME to select one of several matching contacts.\n"
-            + "Example: " + COMMAND_WORD + " John Doe " + PREFIX_INTRODUCER + "Jane Smith";
+            + "Parameters: INDEX or NAME " + PREFIX_INTRODUCER + "INTRODUCER\n"
+            + "INDEX is the contact's number in the displayed list.\n"
+            + "Example: " + COMMAND_WORD + " John Doe " + PREFIX_INTRODUCER + "Jane Smith\n"
+            + "Example: " + COMMAND_WORD + " 1 " + PREFIX_INTRODUCER + "Jane Smith";
 
     private final Index targetIndex;
     private final String targetName;

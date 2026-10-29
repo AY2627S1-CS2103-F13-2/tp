@@ -245,8 +245,9 @@ Examples:
 
 Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
 
-Format: `introduce NAME i/INTRODUCER [--confirm]`
+Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`
 
+* `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
 * `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * If an introducer is already recorded, Astra displays that name in the confirmation panel.
@@ -256,6 +257,7 @@ Format: `introduce NAME i/INTRODUCER [--confirm]`
 
 Examples:
 * `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
+* `introduce 1 i/Jane Smith` Records Jane Smith as the introducer of the 1st contact in the displayed list.
 * `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
 ### Locating persons: `find`
@@ -891,7 +893,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields), then `y` to confirm or `n`/`cancel` to stop<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
-**Introduce** | `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`
+**Introduce** | `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`, `introduce 1 i/Jane Smith`
 **Undo** | `undo` to preview the most recent edit or deletion; enter `y` to restore it or `n`/`cancel` to stop
 **History** | `history`
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
