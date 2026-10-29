@@ -29,6 +29,8 @@ public class LogCommand extends Command {
             + "Parameters: INDEX (must be a positive integer) or NAME "
             + "[" + PREFIX_DATE + "DATE] "
             + PREFIX_NOTE + "NOTE\n"
+            + "Date formats: yyyy-MM-dd, dd/MM/yyyy or d MMM yyyy (English month names); "
+            + "dates must be on or after 2000-01-01.\n"
             + "Example: " + COMMAND_WORD + " John Lim " + PREFIX_DATE + "2026-10-15 "
             + PREFIX_NOTE + "Discussed backend internships";
 

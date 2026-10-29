@@ -70,6 +70,8 @@ public class PersonDetailsPanel extends UiPart<Region> {
                 FieldOrder.Field.LINKEDIN, row("linkedin", "LinkedIn",
                         person.getLinkedin().map(value -> value.value).orElse("")),
                 FieldOrder.Field.FOLLOWUPS, row("followUps", "Follow-ups", Messages.formatFollowUps(person)),
+                FieldOrder.Field.INTRODUCER, row("introducer", "Introduced by",
+                        person.getIntroducer().map(value -> value.fullName).orElse("")),
                 FieldOrder.Field.INTERACTIONS, row("interactions", "Notes",
                         Messages.formatInteractions(person.getInteractions())));
 
@@ -77,9 +79,6 @@ public class PersonDetailsPanel extends UiPart<Region> {
         for (FieldOrder.Field field : order.getFields()) {
             if (field != FieldOrder.Field.INTERACTIONS || !person.getInteractions().isEmpty()) {
                 ordered.add(rows.get(field));
-            }
-            if (field == FieldOrder.Field.LINKEDIN && person.getIntroducer().isPresent()) {
-                ordered.add(row("introducer", "Introduced by", person.getIntroducer().orElseThrow().fullName));
             }
         }
         if (!person.getEvents().isEmpty()) {

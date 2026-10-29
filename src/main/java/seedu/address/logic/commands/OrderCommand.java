@@ -14,7 +14,7 @@ public class OrderCommand extends Command {
     public static final String COMMAND_WORD = "order";
     public static final String MESSAGE_USAGE = "order: Shows or changes the global contact field order.\n"
             + "Parameters: no arguments, or every field exactly once.\n" + FieldOrder.MESSAGE_CONSTRAINTS + "\n"
-            + "Example: order name phone email company role tags linkedin followups interactions";
+            + "Example: order name phone email company role tags linkedin followups introducer interactions";
 
     private final FieldOrder requestedOrder;
 

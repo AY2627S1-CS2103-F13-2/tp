@@ -30,11 +30,19 @@ public class LinkedinTest {
         assertFalse(Linkedin.isValidLinkedin("")); // empty string
         assertFalse(Linkedin.isValidLinkedin(" ")); // spaces only
         assertFalse(Linkedin.isValidLinkedin("linkedin.com/in/john doe")); // contains a space
+        assertFalse(Linkedin.isValidLinkedin("google.com/in/johndoe")); // not a LinkedIn URL
+        assertFalse(Linkedin.isValidLinkedin("linkedin.com")); // URL without a profile path
+        assertFalse(Linkedin.isValidLinkedin("john@doe")); // handle with a symbol
+        assertFalse(Linkedin.isValidLinkedin("jo")); // handle shorter than 3 characters
+        assertFalse(Linkedin.isValidLinkedin("a".repeat(101))); // handle longer than 100 characters
 
         // valid linkedins
         assertTrue(Linkedin.isValidLinkedin("linkedin.com/in/johndoe")); // bare profile path
         assertTrue(Linkedin.isValidLinkedin("https://www.linkedin.com/in/johndoe")); // full URL
         assertTrue(Linkedin.isValidLinkedin("johndoe")); // bare handle
+        assertTrue(Linkedin.isValidLinkedin("john-doe-123")); // handle with hyphens and digits
+        assertTrue(Linkedin.isValidLinkedin("http://sg.linkedin.com/in/johndoe")); // country subdomain
+        assertTrue(Linkedin.isValidLinkedin("LinkedIn.com/in/JohnDoe")); // letter case ignored
     }
 
     @Test

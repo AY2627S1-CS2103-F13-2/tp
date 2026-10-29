@@ -49,9 +49,10 @@ import seedu.address.testutil.FxTestUtil;
 @Timeout(20)
 class FieldOrderUiTest {
     private static final FieldOrder CUSTOM = new FieldOrder(
-            List.of("followups", "phone", "email", "name", "tags", "company", "role", "linkedin"));
+            List.of("followups", "phone", "email", "introducer", "name", "tags", "company", "role", "linkedin",
+                    "interactions"));
     private static final List<String> CUSTOM_ROWS =
-            List.of("followUps", "phone", "email", "nameRow", "tags", "company", "role", "linkedin");
+            List.of("followUps", "phone", "email", "introducer", "nameRow", "tags", "company", "role", "linkedin");
     private static final Person WITH_ACTION = ALICE.appendFollowUp(
             new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING));
 
