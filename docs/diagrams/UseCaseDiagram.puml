@@ -14,9 +14,12 @@ rectangle Astra {
         usecase "UC04\nEdit contact" as UC04
         usecase "UC05\nClear contacts" as UC05
         usecase "UC06\nStart Astra and restore saved contacts" as UC06
+        usecase "UC07\nFind contacts by company or role" as UC07
+        usecase "UC09\nRecord and retrieve contacts by event" as UC09
     }
 
     package "Interaction and follow-up" {
+        usecase "UC10\nLog and manage interaction history" as UC10
         usecase "UC11\nEdit logged interaction" as UC11
         usecase "UC12\nReview follow-ups" as UC12
         usecase "UC16\nRecord follow-up" as UC16
@@ -36,6 +39,9 @@ user --> UC03
 user --> UC04
 user --> UC05
 user --> UC06
+user --> UC07
+user --> UC09
+user --> UC10
 user --> UC11
 user --> UC12
 user --> UC16
