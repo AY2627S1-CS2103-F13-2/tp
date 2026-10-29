@@ -1,0 +1,85 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+participant User
+participant UI
+participant LogicManager
+participant ContactFileParser
+participant DeleteCommand
+participant UndoCommand
+participant UndoManager
+participant Model
+
+User -> UI: delete 1
+activate UI
+UI -> LogicManager: execute("delete 1")
+activate LogicManager
+LogicManager -> ContactFileParser: parseCommand("delete 1")
+activate ContactFileParser
+ContactFileParser -> DeleteCommand: create delete command
+activate DeleteCommand
+DeleteCommand --> ContactFileParser: command
+Deactivate DeleteCommand
+ContactFileParser --> LogicManager: DeleteCommand
+Deactivate ContactFileParser
+LogicManager -> DeleteCommand: execute(model)
+activate DeleteCommand
+DeleteCommand -> Model: remove selected contact
+activate Model
+Model --> DeleteCommand: updated list
+Deactivate Model
+DeleteCommand --> LogicManager: result
+Deactivate DeleteCommand
+LogicManager -> UndoManager: recordChange(deleteCommand, before, after, feedback)
+activate UndoManager
+UndoManager --> LogicManager: deletion stored as undoable entry
+Deactivate UndoManager
+LogicManager --> UI: delete success result
+Deactivate LogicManager
+Deactivate UI
+
+User -> UI: undo
+activate UI
+UI -> LogicManager: execute("undo")
+activate LogicManager
+LogicManager -> ContactFileParser: parseCommand("undo")
+activate ContactFileParser
+ContactFileParser -> UndoCommand: create UndoCommand(false)
+activate UndoCommand
+UndoCommand --> ContactFileParser: command
+Deactivate ContactFileParser
+ContactFileParser --> LogicManager: UndoCommand
+LogicManager -> UndoCommand: execute(model, false)
+UndoCommand -> UndoManager: executeUndo(model, false)
+UndoManager --> UndoCommand: preview confirmation
+UndoCommand --> LogicManager: preview result
+LogicManager --> UI: "Undo the following deletion?"
+Deactivate LogicManager
+
+User -> UI: undo --confirm
+UI -> LogicManager: execute("undo --confirm")
+activate LogicManager
+LogicManager -> ContactFileParser: parseCommand("undo --confirm")
+activate ContactFileParser
+ContactFileParser -> UndoCommand: create UndoCommand(true)
+UndoCommand --> ContactFileParser: command
+Deactivate ContactFileParser
+ContactFileParser --> LogicManager: UndoCommand
+LogicManager -> UndoCommand: execute(model, true)
+UndoCommand -> UndoManager: executeUndo(model, true)
+UndoManager -> Model: restore deleted person at original index
+activate Model
+Model --> UndoManager: restored
+Deactivate Model
+UndoManager -> Model: updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS)
+UndoManager --> UndoCommand: success result
+UndoCommand --> LogicManager: success result
+LogicManager --> UI: "Restored contact: ..."
+Deactivate LogicManager
+
+note over UndoManager, Model
+  `history` records the deletion and marks it as `(undone)`
+  if it is later inspected; uniqueness validation blocks invalid restores.
+end note
+@enduml
