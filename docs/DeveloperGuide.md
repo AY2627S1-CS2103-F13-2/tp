@@ -649,89 +649,29 @@ starts, `AliasCommandParser#validAliases` drops any entry in a hand-edited prefe
 `LogicManager` expands the input before parsing. When a shortcut was used, it prefixes the result, and any
 error, with `Ran: <expanded command>`, so the user sees exactly what was run.
 
-### \[Proposed\] Undo/redo feature
+### Undo and session history
 
-#### Proposed Implementation
+Astra does not use the AB3 `VersionedContactFile` redo stack. The implemented undo feature is session-scoped and command-driven: `UndoManager` keeps a list of successful data-changing commands and remembers the latest undoable `edit` or `delete` entry. This is intentionally limited to the current app session; when Astra closes, the undo history is cleared.
 
-The proposed undo/redo mechanism is facilitated by `VersionedContactFile`. It extends `ContactFile` with an undo/redo history, stored internally as a `contactFileStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+`UndoCommand` previews the most recent change before confirmation. A preview does not mutate the model or save the contact file. If the user enters `undo --confirm`, `UndoManager#executeUndo` restores the previous person version by replacing the changed contact or re-inserting the deleted contact at its original index. It also validates the resulting list against contact uniqueness rules before accepting the undo, so a restored person cannot introduce duplicate names, emails or phone numbers. Only edit and deletion actions are tracked for undo; other commands either do not modify contact data or are explicitly not undoable.
 
-* `VersionedContactFile#commit()` — Saves the current contact file state in its history.
-* `VersionedContactFile#undo()` — Restores the previous contact file state from its history.
-* `VersionedContactFile#redo()` — Restores a previously undone contact file state from its history.
+`history` shows the session's edit/deletion log and marks each undone item as `(undone)`. This gives the user a concise record of restore actions without exposing the AB3 redo model or stale state diagrams.
 
-These operations are exposed in the `Model` interface as `Model#commitContactFile()`, `Model#undoContactFile()` and `Model#redoContactFile()` respectively.
+The sequence diagram below shows a batch-style delete undo flow: the user deletes a contact, reviews the undo preview, then confirms restoration. The same pattern is used for edit undo, with the restore step replacing the changed person rather than re-adding it.
 
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
+![Batch delete undo flow](images/BatchDeleteUndoSequenceDiagram.png)
 
-Step 1. The user launches the application for the first time. The `VersionedContactFile` will be initialized with the initial contact file state, and the `currentStatePointer` pointing to that single contact file state.
+#### Design considerations
 
-![UndoRedoState0](images/UndoRedoState0.png)
+**Aspect: How undo is implemented**
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the contact file. The `delete` command calls `Model#commitContactFile()`, causing the modified state of the contact file after the `delete 5` command executes to be saved in the `contactFileStateList`, and the `currentStatePointer` is shifted to the newly inserted contact file state.
+* **Alternative 1 (current choice):** Keep a session list of successful edit/delete snapshots in `UndoManager`.
+  * Pros: Undo is centralized, easy to reason about, and fits the app's confirmation workflow. The preview and confirm steps are handled in one place, and the data model need not implement its own rollback logic.
+  * Cons: Undo is limited to the current session and only tracks the latest undoable change, which is deliberate for the app's current user flow.
 
-![UndoRedoState1](images/UndoRedoState1.png)
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitContactFile()`, causing another modified contact file state to be saved into the `contactFileStateList`.
-
-![UndoRedoState2](images/UndoRedoState2.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitContactFile()`, so the contact file state will not be saved into the `contactFileStateList`.
-
-</div>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoContactFile()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous contact file state, and restores the contact file to that state.
-
-![UndoRedoState3](images/UndoRedoState3.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial ContactFile state, then there are no previous ContactFile states to restore. The `undo` command uses `Model#canUndoContactFile()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-
-</div>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Logic.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-
-</div>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Model.png)
-
-The `redo` command does the opposite — it calls `Model#redoContactFile()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the contact file to that state.
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `contactFileStateList.size() - 1`, pointing to the latest contact file state, then there are no undone ContactFile states to restore. The `redo` command uses `Model#canRedoContactFile()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-
-</div>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the contact file, such as `list`, will usually not call `Model#commitContactFile()`, `Model#undoContactFile()` or `Model#redoContactFile()`. Thus, the `contactFileStateList` remains unchanged.
-
-![UndoRedoState4](images/UndoRedoState4.png)
-
-Step 6. The user executes `clear`, which calls `Model#commitContactFile()`. Since the `currentStatePointer` is not pointing at the end of the `contactFileStateList`, all contact file states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
-
-![UndoRedoState5](images/UndoRedoState5.png)
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<img src="images/CommitActivityDiagram.png" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire contact file.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
+* **Alternative 2:** Store a full undo/redo stack in the model.
+  * Pros: Keeps a longer history of state changes.
+  * Cons: It is more complex than the app needs, and it does not match the implemented confirmation-first undo workflow or the existing session history design.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -804,6 +744,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 *{More to be added}*
 
 ### Use cases
+
+The following use case diagram summarizes the main interactions supported by Astra.
+
+<img src="images/UseCaseDiagram.png" width="700" />
 
 (For all use cases below, the **System** is `Astra` and the **Actor** is the `user`, unless specified otherwise)
 
