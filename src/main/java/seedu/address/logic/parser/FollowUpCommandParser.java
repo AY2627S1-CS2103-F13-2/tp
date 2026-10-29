@@ -4,12 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
@@ -24,12 +19,6 @@ public class FollowUpCommandParser implements Parser<FollowUpCommand> {
     public static final String MESSAGE_DATE_FORMAT =
             "Due date must be a valid date in yyyy-MM-dd, dd/MM/yyyy or d MMM yyyy format (English month names).";
     private static final Pattern PREFIX = Pattern.compile("(?<!\\S)[A-Za-z][A-Za-z0-9_-]*/");
-    private static final List<DateTimeFormatter> DATE_FORMATS = List.of(
-            DateTimeFormatter.ISO_LOCAL_DATE,
-            DateTimeFormatter.ofPattern("dd/MM/uuuu", Locale.ENGLISH).withResolverStyle(ResolverStyle.STRICT),
-            new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("d MMM uuuu")
-                    .toFormatter(Locale.ENGLISH).withResolverStyle(ResolverStyle.STRICT));
-
     @Override
     public FollowUpCommand parse(String args) throws ParseException {
         requireNonNull(args);
@@ -63,14 +52,7 @@ public class FollowUpCommandParser implements Parser<FollowUpCommand> {
     }
 
     private static LocalDate parseDueDate(String value) throws ParseException {
-        for (DateTimeFormatter format : DATE_FORMATS) {
-            try {
-                return LocalDate.parse(value, format);
-            } catch (DateTimeParseException e) {
-                // Try the next supported format; strict parsing rejects impossible dates.
-            }
-        }
-        throw new ParseException(MESSAGE_DATE_FORMAT);
+        return DateParserUtil.parseDate(value, MESSAGE_DATE_FORMAT);
     }
 
     private static ParseException invalidFormat() {

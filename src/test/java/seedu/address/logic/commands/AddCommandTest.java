@@ -114,6 +114,26 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_sameNameWithoutEmail_throwsCommandException() {
+        Model model = new ModelManager();
+        model.addPerson(new PersonBuilder().withName("Test").withPhone("81111111").withEmail(null).build());
+        Person toAdd = new PersonBuilder().withName("Test").withPhone("82222222").withEmail(null).build();
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () ->
+                new AddCommand(toAdd).execute(model));
+    }
+
+    @Test
+    public void execute_nameDiffersOnlyInCaseWithoutEmail_throwsCommandException() {
+        Model model = new ModelManager();
+        model.addPerson(new PersonBuilder().withName("Test").withPhone("81111111").withEmail(null).build());
+        Person toAdd = new PersonBuilder().withName("test").withPhone("82222222").withEmail(null).build();
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () ->
+                new AddCommand(toAdd).execute(model));
+    }
+
+    @Test
     public void execute_duplicateEmail_throwsCommandException() {
         Person existing = new PersonBuilder().withName("Alice").withPhone("91111111")
                 .withEmail("shared@example.com").build();

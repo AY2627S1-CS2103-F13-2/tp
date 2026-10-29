@@ -20,7 +20,8 @@ import seedu.address.model.UserPrefs;
 
 class FieldOrderPreferenceStorageTest {
     private static final FieldOrder CUSTOM = new FieldOrder(
-            List.of("email", "phone", "name", "tags", "company", "role", "linkedin", "followups"));
+            List.of("email", "phone", "introducer", "name", "tags", "company", "role", "linkedin", "followups",
+                    "interactions"));
 
     @TempDir
     public Path testFolder;

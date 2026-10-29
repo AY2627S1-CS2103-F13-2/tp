@@ -361,14 +361,14 @@ public class Person {
     }
 
     /**
-     * Returns true if names match and emails are both absent or match ignoring case.
+     * Returns true if names match ignoring case and emails are both absent or match ignoring case.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
             return true;
         }
 
-        if (otherPerson == null || !otherPerson.getName().equals(getName())) {
+        if (otherPerson == null || !otherPerson.getName().isSameName(getName())) {
             return false;
         }
 

@@ -101,6 +101,18 @@ public class PendingWorkflowTest {
     }
 
     @Test
+    public void execute_exitWhileConfirmationPending_exitsWithoutConfirming() throws Exception {
+        ContactFile original = new ContactFile(model.getContactFile());
+        logic.execute("clear");
+
+        CommandResult result = logic.execute("exit");
+
+        assertTrue(result.isExit());
+        assertEquals(original, model.getContactFile());
+        assertEquals(0, contactStorage.saveCount);
+    }
+
+    @Test
     public void execute_ambiguousDelete_selectsThenConfirmsAndRestoresOnCancel() throws Exception {
         logic.execute("find Alice");
         ContactFile original = new ContactFile(model.getContactFile());
