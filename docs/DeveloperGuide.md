@@ -751,6 +751,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
+The following use case diagram summarizes the main interactions supported by Astra.
+
+<img src="images/UseCaseDiagram.png" width="700" />
+
 (For all use cases below, the **System** is `Astra` and the **Actor** is the `user`, unless specified otherwise)
 
 **Use case: UC01 - Add a contact**
