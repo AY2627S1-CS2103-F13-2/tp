@@ -31,6 +31,7 @@ public class CommandResult {
     private final PendingRequest pendingRequest;
     private final Person personForDetails;
     private final FollowUp followUpForDetails;
+    private final FollowUpListing followUpListing;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
@@ -68,6 +69,13 @@ public class CommandResult {
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
             PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails) {
+        this(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                personForDetails, followUpForDetails, null);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
+            PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails,
+            FollowUpListing followUpListing) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
@@ -75,6 +83,7 @@ public class CommandResult {
         this.pendingRequest = pendingRequest;
         this.personForDetails = personForDetails;
         this.followUpForDetails = followUpForDetails;
+        this.followUpListing = followUpListing;
     }
 
     /**
@@ -90,7 +99,7 @@ public class CommandResult {
     public CommandResult withFeedbackPrefix(String prefix) {
         requireNonNull(prefix);
         return new CommandResult(prefix + feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
-                personForDetails, followUpForDetails);
+                personForDetails, followUpForDetails, followUpListing);
     }
 
     /**
@@ -99,7 +108,19 @@ public class CommandResult {
     public CommandResult withSelectedFollowUp(FollowUp action) {
         requireNonNull(personForDetails);
         return new CommandResult(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
-                personForDetails, requireNonNull(action));
+                personForDetails, requireNonNull(action), followUpListing);
+    }
+
+    /**
+     * Attaches structured results without changing command feedback or pending selection semantics.
+     */
+    public CommandResult withFollowUpListing(FollowUpListing listing) {
+        return new CommandResult(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                personForDetails, followUpForDetails, requireNonNull(listing));
+    }
+
+    public Optional<FollowUpListing> getFollowUpListing() {
+        return Optional.ofNullable(followUpListing);
     }
 
     public Optional<FollowUp> getFollowUpForDetails() {
@@ -147,13 +168,14 @@ public class CommandResult {
                 && saveContactFile == otherCommandResult.saveContactFile
                 && Objects.equals(pendingRequest, otherCommandResult.pendingRequest)
                 && Objects.equals(personForDetails, otherCommandResult.personForDetails)
-                && Objects.equals(followUpForDetails, otherCommandResult.followUpForDetails);
+                && Objects.equals(followUpForDetails, otherCommandResult.followUpForDetails)
+                && Objects.equals(followUpListing, otherCommandResult.followUpListing);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest, personForDetails,
-                followUpForDetails);
+                followUpForDetails, followUpListing);
     }
 
     @Override

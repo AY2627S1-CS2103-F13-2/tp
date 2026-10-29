@@ -71,6 +71,15 @@ class FilterCommandParserTest {
         }
     }
 
+    @Test
+    void parse_unrecognizedPrefix_reportsTheIncorrectPrefix() {
+        ParseException error = assertThrows(ParseException.class, () -> parser.parse("t/careerfair p/123"));
+
+        assertEquals(
+                String.format(ParserUtil.MESSAGE_UNRECOGNIZED_PREFIX, "p/"),
+                error.getMessage());
+    }
+
     private static FilterCommand command(Mode mode) {
         return new FilterCommand(new TagFilterPredicate(Set.of(new Tag("work"), new Tag("friend")), mode));
     }

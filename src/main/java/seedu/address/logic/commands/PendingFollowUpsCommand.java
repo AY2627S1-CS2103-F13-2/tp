@@ -43,6 +43,15 @@ public class PendingFollowUpsCommand extends Command {
     public CommandResult execute(Model model) {
         requireNonNull(model);
         List<FollowUpEntry> entries = filter.apply(model.getFollowUps(), LocalDate.now(clock));
+        String heading = switch (filter) {
+            case PENDING -> "Pending follow-ups";
+            case OVERDUE -> "Overdue follow-ups";
+            case TODAY -> "Follow-ups due today";
+            case UPCOMING -> "Upcoming follow-ups";
+            case COMPLETED -> "Completed follow-ups";
+            case UNDATED -> "Undated pending follow-ups";
+        };
+        FollowUpListing listing = new FollowUpListing(heading, entries);
         if (entries.isEmpty()) {
             String message = switch (filter) {
                 case PENDING -> MESSAGE_EMPTY;
@@ -52,17 +61,9 @@ public class PendingFollowUpsCommand extends Command {
                 case COMPLETED -> "No completed follow-ups found.";
                 case UNDATED -> "No undated pending follow-ups remain.";
             };
-            return new CommandResult(message, false, false, false);
+            return new CommandResult(message, false, false, false).withFollowUpListing(listing);
         }
-        String heading = switch (filter) {
-            case PENDING -> "Pending follow-ups";
-            case OVERDUE -> "Overdue follow-ups";
-            case TODAY -> "Follow-ups due today";
-            case UPCOMING -> "Upcoming follow-ups";
-            case COMPLETED -> "Completed follow-ups";
-            case UNDATED -> "Undated pending follow-ups";
-        };
         PendingRequest request = new FollowUpSelectionRequest(entries, heading);
-        return new CommandResult(request.getPrompt(), request);
+        return new CommandResult(request.getPrompt(), request).withFollowUpListing(listing);
     }
 }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.event.ActionEvent;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -62,9 +63,10 @@ class FollowUpSelectionUiTest {
                 TextField input = (TextField) stage.getScene().lookup("#commandTextField");
                 TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
                 execute(input, "view Alice");
-                String viewFeedback = output.getText();
+                assertEquals("Viewing Alice Pauline.", output.getText());
                 execute(input, "followups");
-                assertTrue(output.getText().contains("Enter a follow-up number"));
+                assertTrue(stage.getScene().lookup("#followUpListPanel").isVisible());
+                assertEquals("Pending follow-ups (1):", output.getText());
                 execute(input, "list");
                 assertEquals("Listed all persons.", output.getText());
                 assertEquals(2, model.getFilteredPersonList().size());
@@ -73,19 +75,24 @@ class FollowUpSelectionUiTest {
                 execute(input, "99");
                 assertTrue(output.getText().contains("Enter a number from the displayed follow-ups."));
                 execute(input, "1");
-                assertEquals(viewFeedback, output.getText());
+                assertEquals("Viewing follow-up #7 for Alice Pauline.", output.getText());
                 assertTrue(output.getText().contains(ALICE.getName().fullName));
-                assertTrue(output.getText().contains(ALICE.getPhone().orElseThrow().value));
+                assertFalse(output.getText().contains(ALICE.getPhone().orElseThrow().value));
+                Label phone = (Label) stage.getScene().lookup("#phoneValue");
+                assertEquals(ALICE.getPhone().orElseThrow().value, phone.getText());
+                assertTrue(((Label) stage.getScene().lookup("#selectedFollowUpText")).getText().contains("Call"));
                 assertEquals(List.of(BENSON), model.getFilteredPersonList());
                 FieldOrder custom = new FieldOrder(
-                        List.of("followups", "phone", "name", "tags", "company", "role", "email", "linkedin"));
+                        List.of("followups", "introducer", "phone", "name", "tags", "company", "role", "email",
+                                "linkedin", "interactions"));
                 model.setFieldOrder(custom);
-                assertEquals(Messages.format(alice, custom), output.getText());
+                assertEquals("Viewing follow-up #7 for Alice Pauline.", output.getText());
+                assertTrue(((Label) stage.getScene().lookup("#selectedFollowUpText")).getText().contains("Call"));
                 execute(input, "not-a-command");
-                assertTrue(output.getText().contains(Messages.format(alice, custom)));
+                assertFalse(output.getText().contains(Messages.format(alice, custom)));
                 execute(input, "view Benson");
                 model.setFieldOrder(FieldOrder.DEFAULT);
-                assertEquals(Messages.format(BENSON), output.getText());
+                assertEquals("Viewing Benson Meier.", output.getText());
                 assertFalse(output.getText().contains(alice.getName().fullName));
             } finally {
                 stage.hide();

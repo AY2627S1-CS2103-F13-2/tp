@@ -49,9 +49,10 @@ import seedu.address.testutil.FxTestUtil;
 @Timeout(20)
 class FieldOrderUiTest {
     private static final FieldOrder CUSTOM = new FieldOrder(
-            List.of("followups", "phone", "email", "name", "tags", "company", "role", "linkedin"));
+            List.of("followups", "phone", "email", "introducer", "name", "tags", "company", "role", "linkedin",
+                    "interactions"));
     private static final List<String> CUSTOM_ROWS =
-            List.of("followUps", "phone", "email", "nameRow", "tags", "company", "role", "linkedin");
+            List.of("followUps", "phone", "email", "introducer", "nameRow", "tags", "company", "role", "linkedin");
     private static final Person WITH_ACTION = ALICE.appendFollowUp(
             new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING));
 
@@ -138,11 +139,13 @@ class FieldOrderUiTest {
             TextField input = (TextField) stage.getScene().lookup("#commandTextField");
             TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
             execute(input, "view 1");
-            assertEquals(Messages.format(WITH_ACTION), output.getText());
+            assertEquals("Viewing Alice Pauline.", output.getText());
             execute(input, "order " + CUSTOM);
             stage.getScene().getRoot().layout();
             assertEquals(CUSTOM, model.getFieldOrder());
-            assertTrue(output.getText().contains(Messages.format(WITH_ACTION, CUSTOM)));
+            assertFalse(output.getText().contains(Messages.format(WITH_ACTION, CUSTOM)));
+            Label detailName = (Label) stage.getScene().lookup("#detailName");
+            assertEquals(ALICE.getName().fullName, detailName.getText());
             assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
             assertEquals(1, prefs.saveCount);
             prefs.shouldFail = true;
@@ -151,7 +154,7 @@ class FieldOrderUiTest {
             assertEquals(CUSTOM, model.getFieldOrder());
             assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
             assertTrue(output.getText().contains("Could not save data"));
-            assertTrue(output.getText().contains(Messages.format(WITH_ACTION, CUSTOM)));
+            assertFalse(output.getText().contains(Messages.format(WITH_ACTION, CUSTOM)));
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertEquals(2, prefs.saveCount);
         });
@@ -177,7 +180,8 @@ class FieldOrderUiTest {
             execute(input, "view 1");
             ObservableList<Person> binding = model.getFilteredPersonList();
             model.setFieldOrder(CUSTOM);
-            assertEquals(Messages.format(WITH_ACTION, CUSTOM), output.getText());
+            assertEquals("Viewing Alice Pauline.", output.getText());
+            assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
             assertSame(binding, model.getFilteredPersonList());
             assertEquals(List.of(WITH_ACTION), binding);
         });
@@ -199,10 +203,11 @@ class FieldOrderUiTest {
             TextField input = (TextField) stage.getScene().lookup("#commandTextField");
             TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
             execute(input, "view Alice Pauline");
-            assertEquals(Messages.format(WITH_ACTION), output.getText());
+            assertEquals("Viewing Alice Pauline.", output.getText());
             ObservableList<Person> binding = model.getFilteredPersonList();
             model.setFieldOrder(CUSTOM);
-            assertEquals(Messages.format(WITH_ACTION, CUSTOM), output.getText());
+            assertEquals("Viewing Alice Pauline.", output.getText());
+            assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
             assertSame(binding, model.getFilteredPersonList());
             assertEquals(List.of(WITH_ACTION), binding);
         });
