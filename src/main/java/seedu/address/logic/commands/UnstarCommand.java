@@ -60,7 +60,7 @@ public class UnstarCommand extends Command {
             if (FindCommand.MESSAGE_CONTACT_NOT_FOUND.equals(findResult.getFeedbackToUser())) {
                 return findResult;
             }
-            int matchCount = model.getFilteredPersonList().size();
+            int matchCount = findCommand.findMatches(model).size();
             if (matchCount == 0) {
                 return findResult;
             }
