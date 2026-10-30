@@ -458,6 +458,8 @@ Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
 * Astra first shows the interaction and asks you to confirm. Enter `y` to remove it, or `n` or `cancel` to keep it.
 * After removing it, Astra shows what was removed and the person's remaining history, renumbered.
 * When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
+  This also applies when removing the last note matching a `find /notes` search. Run the search again
+  to refresh its results.
 * If the person has fewer interactions than `ENTRY`, nothing is removed.
 * To correct an interaction's date or note instead of removing it, use `editlog`.
 
@@ -480,6 +482,8 @@ Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/D
 * Interactions stay in date order, so changing the date can move the interaction to a different number. Astra shows its new number and the full history after the edit.
 * An edit that leaves the interaction exactly as it was, or that makes it the same as another of the person's interactions (same date and note, ignoring letter case), is rejected and nothing changes.
 * When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
+  This also applies when an edited note no longer matches a `find /notes` search. Run the search again
+  to refresh its results.
 
 Examples:
 * `editlog John Lim i/2 nt/Discussed frontend internships` corrects the note of the 2nd interaction in John Lim's history.

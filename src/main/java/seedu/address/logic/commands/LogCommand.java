@@ -83,9 +83,7 @@ public class LogCommand extends Command {
         }
 
         Person updatedPerson = person.withInteraction(interaction);
-        model.setPerson(person, updatedPerson);
-        // Logging does not change who matches the current filter, so the displayed list and its
-        // indexes are left as they are.
+        InteractionCommandUtil.setPersonPreservingView(model, person, updatedPerson);
         logger.fine("Logged interaction for " + person.getName() + ": " + interaction);
 
         return new CommandResult(String.format(MESSAGE_SUCCESS, person.getName(), interaction.getDate(),

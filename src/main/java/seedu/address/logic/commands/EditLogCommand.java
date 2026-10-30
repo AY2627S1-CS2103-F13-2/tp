@@ -120,9 +120,7 @@ public class EditLogCommand extends Command {
         List<Interaction> updatedInteractions = new ArrayList<>(interactions);
         updatedInteractions.set(entry.getZeroBased(), edited);
         Person updatedPerson = person.withInteractions(updatedInteractions);
-        // Editing an interaction does not change who matches the current filter, so the displayed list and
-        // its indexes are left as they are.
-        model.setPerson(person, updatedPerson);
+        InteractionCommandUtil.setPersonPreservingView(model, person, updatedPerson);
         logger.fine("Edited interaction of " + person.getName() + ": " + existing + " -> " + edited);
 
         // The history is kept in date order, so a new date can move the interaction to another number.
