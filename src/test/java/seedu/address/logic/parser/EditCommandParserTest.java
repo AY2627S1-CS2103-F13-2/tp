@@ -39,6 +39,7 @@ import seedu.address.logic.Messages;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.EditCommand.RemovableField;
+import seedu.address.model.person.Company;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
@@ -78,10 +79,30 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1 some random string", MESSAGE_INVALID_FORMAT);
 
         // invalid prefix being parsed as preamble
-        assertParseFailure(parser, "1 i/ string", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 i/ string", EditCommandParser.MESSAGE_INTRODUCER_PREFIX);
 
         // preamble that is neither an index nor a valid name
         assertParseFailure(parser, "Amy*" + PHONE_DESC_BOB, MESSAGE_INVALID_FORMAT);
+    }
+
+    @Test
+    public void parse_unsupportedPrefix_identifiesPrefixBeforeParsingFields() {
+        assertParseFailure(parser, "1 i/Jane Smith", EditCommandParser.MESSAGE_INTRODUCER_PREFIX);
+        assertParseFailure(parser, "Amy i/Jane Smith", EditCommandParser.MESSAGE_INTRODUCER_PREFIX);
+        assertParseFailure(parser, "1 x/abc",
+                String.format(EditCommandParser.MESSAGE_UNSUPPORTED_PREFIX, "x/"));
+        assertParseFailure(parser, "1 c/Acme x/abc",
+                String.format(EditCommandParser.MESSAGE_UNSUPPORTED_PREFIX, "x/"));
+        assertParseFailure(parser, "1 ph/123",
+                String.format(EditCommandParser.MESSAGE_UNSUPPORTED_PREFIX, "ph/"));
+    }
+
+    @Test
+    public void parse_urlInsideCompany_keepsValue() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.setCompany(new Company("See https://example.com/about"));
+        assertParseSuccess(parser, "1 c/See https://example.com/about",
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
     }
 
     @Test

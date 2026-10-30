@@ -11,10 +11,13 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.EditCommand;
@@ -30,6 +33,16 @@ import seedu.address.model.tag.Tag;
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
+    public static final String MESSAGE_UNSUPPORTED_PREFIX = "Unsupported prefix for edit: %1$s.";
+    public static final String MESSAGE_INTRODUCER_PREFIX =
+            "The i/ prefix is not supported by edit. Use introduce NAME i/INTRODUCER to change an introducer.";
+
+    private static final Pattern FIELD_PREFIX = Pattern.compile("(?<!\\S)[A-Za-z][A-Za-z0-9_-]*/");
+    private static final Prefix[] SUPPORTED_PREFIXES = {
+        PREFIX_NAME, PREFIX_COMPANY, PREFIX_ROLE, PREFIX_PHONE,
+        PREFIX_EMAIL, PREFIX_LINKEDIN, PREFIX_TAG, PREFIX_EVENT_NAME
+    };
+
     /**
      * Parses the given arguments in the context of the EditCommand.
      *
@@ -37,17 +50,9 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
+        rejectUnsupportedPrefixes(args);
 
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(
-                args,
-                PREFIX_NAME,
-                PREFIX_COMPANY,
-                PREFIX_ROLE,
-                PREFIX_PHONE,
-                PREFIX_EMAIL,
-                PREFIX_LINKEDIN,
-                PREFIX_TAG,
-                PREFIX_EVENT_NAME);
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, SUPPORTED_PREFIXES);
 
         String preamble = argMultimap.getPreamble().trim();
         Index index = null;
@@ -143,6 +148,20 @@ public class EditCommandParser implements Parser<EditCommand> {
         return index != null
                 ? new EditCommand(index, descriptor)
                 : new EditCommand(targetName, descriptor);
+    }
+
+    /**
+     * Identifies unsupported prefixes before they can be mistaken for a selector or a field value.
+     */
+    private static void rejectUnsupportedPrefixes(String args) throws ParseException {
+        Matcher matcher = FIELD_PREFIX.matcher(args);
+        while (matcher.find()) {
+            String prefix = matcher.group();
+            if (Arrays.stream(SUPPORTED_PREFIXES).noneMatch(known -> known.getPrefix().equals(prefix))) {
+                throw new ParseException(prefix.equals("i/") ? MESSAGE_INTRODUCER_PREFIX
+                        : String.format(MESSAGE_UNSUPPORTED_PREFIX, prefix));
+            }
+        }
     }
 
     /**
