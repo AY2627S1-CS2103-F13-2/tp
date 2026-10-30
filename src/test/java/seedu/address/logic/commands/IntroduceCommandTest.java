@@ -29,6 +29,32 @@ import seedu.address.testutil.PersonBuilder;
 public class IntroduceCommandTest {
 
     @Test
+    public void execute_unchangedIntroducer_doesNotPromptOrChangeContact() throws Exception {
+        Person original = new PersonBuilder().withIntroducer("Jane Smith").build();
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(original).build(), new UserPrefs());
+
+        CommandResult result = new IntroduceCommand(Index.fromOneBased(1), new Name("Jane   Smith"), false)
+                .execute(model);
+
+        assertFalse(result.getPendingRequest().isPresent());
+        assertEquals(String.format(IntroduceCommand.MESSAGE_ALREADY_RECORDED, "Jane Smith", original.getName()),
+                result.getFeedbackToUser());
+        assertEquals(original, model.getContactFile().getPersonList().getFirst());
+    }
+
+    @Test
+    public void execute_unchangedIntroducerByName_doesNotPrompt() throws Exception {
+        Person original = new PersonBuilder().withIntroducer("Jane Smith").build();
+        Model model = new ModelManager(new ContactFileBuilder().withPerson(original).build(), new UserPrefs());
+
+        CommandResult result = new IntroduceCommand(original.getName().fullName, new Name("Jane Smith"), false)
+                .execute(model);
+
+        assertFalse(result.getPendingRequest().isPresent());
+        assertEquals(original, model.getContactFile().getPersonList().getFirst());
+    }
+
+    @Test
     public void execute_validIntroducerNotInContactFile_recordsAndDisplaysContact() {
         Model model = new ModelManager(getTypicalContactFile(), new UserPrefs());
         Person target = model.getFilteredPersonList().get(0);

@@ -252,7 +252,8 @@ Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUC
 * `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
 * `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
-* If an introducer is already recorded, Astra displays that name in the confirmation panel.
+* Re-entering the same introducer reports that the name is already recorded and does not ask for confirmation.
+* If a different introducer is already recorded, Astra displays that name in the confirmation panel.
   Reply `y` to replace it or `n`/`cancel` to stop. An initial command ending in `--confirm`
   still applies immediately for compatibility.
 * Astra displays the updated contact after recording the introducer.
