@@ -14,6 +14,8 @@ import seedu.address.model.person.Person;
  */
 public final class PersonSelectionRequest implements PendingRequest {
 
+    static final String MESSAGE_SELECTION = "Enter the index of the contact, or n/cancel to stop.";
+
     private final List<Person> candidates;
     private final Function<Person, CommandResult> selectionAction;
 
@@ -28,7 +30,7 @@ public final class PersonSelectionRequest implements PendingRequest {
     @Override
     public String getPrompt() {
         return candidates.size() + " contacts found:\n" + PersonNameResolver.formatNumberedList(candidates)
-                + "\nEnter a contact number, or n/cancel to stop.";
+                + "\n" + MESSAGE_SELECTION;
     }
 
     @Override
