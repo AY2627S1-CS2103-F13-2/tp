@@ -23,6 +23,18 @@ public class FuzzyNamePredicateTest {
     }
 
     @Test
+    public void test_approximatelyMatchingFullName_returnsTrue() {
+        Person person = new PersonBuilder()
+                .withName("Alice Pauline")
+                .build();
+
+        FuzzyNamePredicate predicate =
+                new FuzzyNamePredicate("Alicee Pauline");
+
+        assertTrue(predicate.test(person));
+    }
+
+    @Test
     public void test_matchingNameIsCaseInsensitive_returnsTrue() {
         Person person = new PersonBuilder()
                 .withName("Alicia Tan")
