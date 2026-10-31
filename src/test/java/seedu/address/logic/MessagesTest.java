@@ -38,15 +38,15 @@ public class MessagesTest {
     }
 
     @Test
-    public void format_customOrder_introducerStillFollowsLinkedin() {
+    public void format_customOrder_introducerFollowsConfiguredPosition() {
         Person person = new PersonBuilder().withName("Alex Yeoh").withTags().withCompany(null).withRole(null)
                 .withPhone(null).withEmail(null).withLinkedin("linkedin.com/in/alex").withIntroducer("Jane")
                 .build().withInteraction(COFFEE_CHAT);
         FieldOrder order = new FieldOrder(List.of("interactions", "linkedin", "name", "tags", "company", "role",
                 "phone", "email", "followups"));
 
-        assertEquals("Interaction history:\n1. 2026-10-01: Coffee chat; LinkedIn: linkedin.com/in/alex; "
-                + "Introduced by: Jane; Alex Yeoh", Messages.format(person, order));
+        assertEquals("Introduced by: Jane; Interaction history:\n1. 2026-10-01: Coffee chat; "
+                + "LinkedIn: linkedin.com/in/alex; Alex Yeoh", Messages.format(person, order));
     }
 
     @Test
