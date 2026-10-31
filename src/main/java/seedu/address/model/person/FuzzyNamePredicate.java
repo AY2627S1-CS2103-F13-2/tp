@@ -34,7 +34,8 @@ public class FuzzyNamePredicate implements Predicate<Person> {
             return false;
         }
 
-        if (personName.contains(query)) {
+        if (personName.contains(query)
+                || levenshteinDistance(personName, query) <= MAX_DISTANCE) {
             return true;
         }
 
