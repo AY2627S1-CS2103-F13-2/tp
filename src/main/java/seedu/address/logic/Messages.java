@@ -59,6 +59,7 @@ public class Messages {
                 details.add(formatField(person, FieldOrder.Field.INTRODUCER));
             }
         }
+        details.add(formatEvents(person));
         return details.stream().filter(value -> !value.isEmpty()).collect(Collectors.joining("; "));
     }
 
@@ -77,6 +78,17 @@ public class Messages {
             case INTERACTIONS -> person.getInteractions().isEmpty() ? ""
                     : "Interaction history:\n" + formatInteractions(person.getInteractions());
         };
+    }
+
+    /**
+     * Formats the events associated with a person.
+     */
+    private static String formatEvents(Person person) {
+        return person.getEvents().isEmpty() ? ""
+                : "Events: " + person.getEvents().stream()
+                        .map(Object::toString)
+                        .sorted(String.CASE_INSENSITIVE_ORDER)
+                        .collect(Collectors.joining(", "));
     }
 
     /**

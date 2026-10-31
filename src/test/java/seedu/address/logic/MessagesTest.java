@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.FieldOrder;
+import seedu.address.model.person.Event;
 import seedu.address.model.person.Interaction;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
@@ -46,5 +47,23 @@ public class MessagesTest {
 
         assertEquals("Interaction history:\n1. 2026-10-01: Coffee chat; LinkedIn: linkedin.com/in/alex; "
                 + "Introduced by: Jane; Alex Yeoh", Messages.format(person, order));
+    }
+
+    @Test
+    public void format_withEvents_includesEvents() {
+        Event event = new Event("NUS Career Fair");
+        Person person = new PersonBuilder()
+                .withName("Alice Tan")
+                .withTags()
+                .withCompany(null)
+                .withRole(null)
+                .withPhone(null)
+                .withEmail(null)
+                .withLinkedin(null)
+                .withIntroducer(null)
+                .build()
+                .withEvent(event);
+
+        assertEquals("Alice Tan; Events: " + event, Messages.format(person));
     }
 }
