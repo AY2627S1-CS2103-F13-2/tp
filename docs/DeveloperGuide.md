@@ -210,9 +210,12 @@ The following predicates support the implemented search modes:
 
 * `NameContainsKeywordsPredicate` performs case-insensitive contiguous and
   partial name matching.
-* `FuzzyNamePredicate` normalises the query and compares it with each individual
-  word in a contact's name using Levenshtein distance. A contact matches when at
-  least one name word is within a distance of two from the query.
+* `FuzzyNamePredicate` normalises the query and compares it, using Levenshtein
+  distance, with the contact's full name and with each word of it. A contact
+  matches when the full name or a word is within a distance of two from the
+  query, and of one fewer than the query's length. The second limit stops a
+  one- or two-letter query from matching unrelated short words: any two-letter
+  word is within two edits of `al`, but `yu` shares no letter with it.
 * `ContactFieldPredicate` searches fields such as phone number, email, company,
   and role.
 * `EventContainsKeywordsPredicate` searches the names of events associated with
