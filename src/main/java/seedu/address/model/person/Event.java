@@ -107,7 +107,7 @@ public class Event {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name.toLowerCase(Locale.ROOT), date);
+        return Objects.hash(name.toUpperCase(Locale.ROOT), date);
     }
 
     @Override

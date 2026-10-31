@@ -126,4 +126,13 @@ public class EventTest {
     public void isValidDate_nullDate_returnsFalse() {
         assertFalse(Event.isValidDate(null));
     }
+
+    @Test
+    public void equals_unicodeCaseVariants_haveSameHashCode() {
+        Event uppercaseSigma = new Event("Σ", "2026-10-20");
+        Event finalSigma = new Event("ς", "2026-10-20");
+
+        assertTrue(uppercaseSigma.equals(finalSigma));
+        assertEquals(uppercaseSigma.hashCode(), finalSigma.hashCode());
+    }
 }
