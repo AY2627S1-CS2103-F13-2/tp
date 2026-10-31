@@ -46,6 +46,9 @@ public class MainWindow extends UiPart<Stage> {
     private Person selectedContact;
     private FollowUpEntry selectedFollowUp;
     private FollowUpListPanel followUpListPanel;
+    private boolean isRequestPending;
+    /** The contact that was selected when the pending request began, selected again once it ends. */
+    private Person selectionBeforeRequest;
 
     @FXML
     private StackPane personDetailsPlaceholder;
@@ -234,11 +237,24 @@ public class MainWindow extends UiPart<Stage> {
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         lastCommand.setText(commandText);
+        Person selectedBeforeCommand = personListPanel.selectedPersonProperty().get();
         try {
             CommandResult commandResult = logic.execute(commandText);
             logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
             confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
             displayResult(commandResult);
+            if (commandResult.getPendingRequest().isPresent()) {
+                if (!isRequestPending) {
+                    isRequestPending = true;
+                    selectionBeforeRequest = selectedBeforeCommand;
+                }
+            } else if (commandResult.getPersonForDetails().isEmpty()
+                    && commandResult.getFollowUpListing().isEmpty()) {
+                restoreSelectionBeforeRequest();
+            } else {
+                isRequestPending = false;
+                selectionBeforeRequest = null;
+            }
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -253,6 +269,7 @@ public class MainWindow extends UiPart<Stage> {
             logger.fine("Command failed: " + e.getClass().getSimpleName());
             confirmationPanel.showRequest(null);
             showContactList();
+            restoreSelectionBeforeRequest();
             showContact(personListPanel.selectedPersonProperty().get());
             resultDisplay.setFeedbackToUser(e.getMessage() == null ? "Unexpected command failure." : e.getMessage());
             throw e;
@@ -302,6 +319,19 @@ public class MainWindow extends UiPart<Stage> {
         selectedFollowUp = null;
         selectedContact = personListPanel.selectedPersonProperty().get();
         refreshDetails();
+    }
+
+    /**
+     * Selects the contact that was selected before the pending request began, if one has just ended, so that
+     * cancelling or completing a request does not move the selection to the first contact in the list.
+     */
+    private void restoreSelectionBeforeRequest() {
+        if (isRequestPending && selectionBeforeRequest != null) {
+            personListPanel.selectPerson(selectionBeforeRequest);
+            showContact(personListPanel.selectedPersonProperty().get());
+        }
+        isRequestPending = false;
+        selectionBeforeRequest = null;
     }
 
     private void showContact(Person person) {
