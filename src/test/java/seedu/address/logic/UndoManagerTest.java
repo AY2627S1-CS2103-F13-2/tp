@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
@@ -14,6 +15,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.PendingRequest;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.model.ContactFile;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -45,10 +47,26 @@ public class UndoManagerTest {
         PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
 
         request.respond("y", model);
+        // the entry is only marked as undone once LogicManager has saved the restored contacts
+        assertFalse(undoManager.getHistory().contains("(undone)"));
+        undoManager.recordChange(new UndoCommand(undoManager), List.of(), List.of(ALICE), "Restored contact");
+
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO,
                 request.respond("y", model).getFeedbackToUser());
         assertEquals(List.of(ALICE), model.getContactFile().getPersonList());
         assertTrue(undoManager.getHistory().contains("deletion (undone): Deleted Alice"));
+    }
+
+    @Test
+    public void discardUnsavedUndo_keepsEntryAvailableAndNotUndone() throws Exception {
+        UndoManager undoManager = new UndoManager();
+        undoManager.recordChange(new DeleteCommand(Index.fromOneBased(1)), List.of(ALICE), List.of(), "Deleted Alice");
+        undoManager.executeUndo().getPendingRequest().orElseThrow().respond("y", createModel(List.of()));
+
+        undoManager.discardUnsavedUndo();
+
+        assertFalse(undoManager.getHistory().contains("(undone)"));
+        assertTrue(undoManager.executeUndo().getPendingRequest().isPresent());
     }
 
     @Test
