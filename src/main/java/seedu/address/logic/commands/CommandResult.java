@@ -32,6 +32,7 @@ public class CommandResult {
     private final Person personForDetails;
     private final FollowUp followUpForDetails;
     private final FollowUpListing followUpListing;
+    private final boolean preserveCurrentView;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
@@ -76,6 +77,13 @@ public class CommandResult {
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
             PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails,
             FollowUpListing followUpListing) {
+        this(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest, personForDetails, followUpForDetails,
+                followUpListing, false);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean saveContactFile,
+            PendingRequest pendingRequest, Person personForDetails, FollowUp followUpForDetails,
+            FollowUpListing followUpListing, boolean preserveCurrentView) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
@@ -84,6 +92,7 @@ public class CommandResult {
         this.personForDetails = personForDetails;
         this.followUpForDetails = followUpForDetails;
         this.followUpListing = followUpListing;
+        this.preserveCurrentView = preserveCurrentView;
     }
 
     /**
@@ -99,7 +108,7 @@ public class CommandResult {
     public CommandResult withFeedbackPrefix(String prefix) {
         requireNonNull(prefix);
         return new CommandResult(prefix + feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
-                personForDetails, followUpForDetails, followUpListing);
+                personForDetails, followUpForDetails, followUpListing, preserveCurrentView);
     }
 
     /**
@@ -108,7 +117,7 @@ public class CommandResult {
     public CommandResult withSelectedFollowUp(FollowUp action) {
         requireNonNull(personForDetails);
         return new CommandResult(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
-                personForDetails, requireNonNull(action), followUpListing);
+                personForDetails, requireNonNull(action), followUpListing, preserveCurrentView);
     }
 
     /**
@@ -116,7 +125,19 @@ public class CommandResult {
      */
     public CommandResult withFollowUpListing(FollowUpListing listing) {
         return new CommandResult(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
-                personForDetails, followUpForDetails, requireNonNull(listing));
+                personForDetails, followUpForDetails, requireNonNull(listing), preserveCurrentView);
+    }
+
+    /**
+     * Marks a result whose display should not replace the currently viewed contact or action.
+     */
+    public CommandResult withPreserveCurrentView() {
+        return new CommandResult(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                personForDetails, followUpForDetails, followUpListing, true);
+    }
+
+    public boolean shouldPreserveCurrentView() {
+        return preserveCurrentView;
     }
 
     public Optional<FollowUpListing> getFollowUpListing() {
@@ -169,13 +190,14 @@ public class CommandResult {
                 && Objects.equals(pendingRequest, otherCommandResult.pendingRequest)
                 && Objects.equals(personForDetails, otherCommandResult.personForDetails)
                 && Objects.equals(followUpForDetails, otherCommandResult.followUpForDetails)
-                && Objects.equals(followUpListing, otherCommandResult.followUpListing);
+                && Objects.equals(followUpListing, otherCommandResult.followUpListing)
+                && preserveCurrentView == otherCommandResult.preserveCurrentView;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(feedbackToUser, showHelp, exit, saveContactFile, pendingRequest, personForDetails,
-                followUpForDetails, followUpListing);
+                followUpForDetails, followUpListing, preserveCurrentView);
     }
 
     @Override

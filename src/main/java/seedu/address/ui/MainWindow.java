@@ -18,6 +18,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ConfirmationRequest;
+import seedu.address.logic.commands.OrderCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FollowUpEntry;
@@ -238,6 +239,9 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         lastCommand.setText(commandText);
         Person selectedBeforeCommand = personListPanel.selectedPersonProperty().get();
+        Person contactBeforeCommand = selectedContact;
+        FollowUpEntry followUpBeforeCommand = selectedFollowUp;
+        boolean followUpViewBeforeCommand = followUpListPanel.getRoot().isVisible();
         try {
             CommandResult commandResult = logic.execute(commandText);
             logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
@@ -268,9 +272,26 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException | RuntimeException e) {
             logger.fine("Command failed: " + e.getClass().getSimpleName());
             confirmationPanel.showRequest(null);
-            showContactList();
-            restoreSelectionBeforeRequest();
-            showContact(personListPanel.selectedPersonProperty().get());
+            if (isOrderCommand(commandText)) {
+                isRequestPending = false;
+                selectionBeforeRequest = null;
+                if (followUpViewBeforeCommand && followUpBeforeCommand != null) {
+                    personListPanel.getRoot().setVisible(false);
+                    personListPanel.getRoot().setManaged(false);
+                    followUpListPanel.getRoot().setVisible(true);
+                    followUpListPanel.getRoot().setManaged(true);
+                    followUpListPanel.selectEntry(followUpBeforeCommand);
+                    showFollowUp(followUpBeforeCommand);
+                } else {
+                    showContactList();
+                    personListPanel.selectPerson(contactBeforeCommand);
+                    showContact(contactBeforeCommand);
+                }
+            } else {
+                showContactList();
+                restoreSelectionBeforeRequest();
+                showContact(personListPanel.selectedPersonProperty().get());
+            }
             resultDisplay.setFeedbackToUser(e.getMessage() == null ? "Unexpected command failure." : e.getMessage());
             throw e;
         }
@@ -292,6 +313,8 @@ public class MainWindow extends UiPart<Stage> {
             showFollowUp(entry);
             resultDisplay.setFeedbackToUser("Viewing follow-up #" + entry.followUp().getId()
                     + " for " + entry.contact().getName().fullName + ".");
+        } else if (result.shouldPreserveCurrentView()) {
+            resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
         } else {
             showContactList();
             result.getPersonForDetails().ifPresent(person -> {
@@ -307,6 +330,10 @@ public class MainWindow extends UiPart<Stage> {
                 resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
             }
         }
+    }
+
+    private static boolean isOrderCommand(String commandText) {
+        return commandText.stripLeading().split("\\s+", 2)[0].equalsIgnoreCase(OrderCommand.COMMAND_WORD);
     }
 
     private void showContactList() {
