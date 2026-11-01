@@ -29,9 +29,7 @@ class EditFollowUpCommandTest {
         EditFollowUpCommand command = new EditFollowUpCommand(
                 Index.fromOneBased(1), 1, "Send proposal", null, false);
 
-        assertThrows(
-                CommandException.class,
-                () -> command.execute(model));
+        assertThrows(CommandException.class, () -> command.execute(model));
         assertEquals(person, model.getFilteredPersonList().getFirst());
     }
 
