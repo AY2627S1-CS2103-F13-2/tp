@@ -80,7 +80,7 @@ public class LogicManager implements Logic {
                     logger.info("Pending request cancelled; model and view restored");
                     return new CommandResult("Request cancelled. No contacts changed.");
                 }
-                if (response.equalsIgnoreCase(ExitCommand.COMMAND_WORD)
+                if (isExitCommand(response)
                         || pendingRequest.shouldRunAsCommand(response)) {
                     clearPendingRequest();
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
@@ -147,6 +147,15 @@ public class LogicManager implements Logic {
             restoreFailedRequest(snapshot);
             throw e;
         }
+    }
+
+    /**
+     * Returns true if {@code response} runs {@code exit}, whether typed in full, through a shortcut, or with the
+     * extra words that {@code exit} ignores, so that the app can always be closed while a reply is awaited.
+     */
+    private boolean isExitCommand(String response) {
+        String expandedText = ContactFileParser.expandShortcut(response, model.getCommandAliases()).trim();
+        return expandedText.split("\\s+", 2)[0].equalsIgnoreCase(ExitCommand.COMMAND_WORD);
     }
 
     /**

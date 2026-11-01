@@ -113,6 +113,35 @@ public class PendingWorkflowTest {
     }
 
     @Test
+    public void execute_exitShortcutOrExtraWordsWhileConfirmationPending_exitsWithoutConfirming()
+            throws Exception {
+        logic.execute("alias q exit");
+        ContactFile original = new ContactFile(model.getContactFile());
+
+        for (String exitInput : List.of("q", "Q", "exit ignored", "q ignored")) {
+            for (String request : List.of("delete 1", "edit 1 p/99999999", "clear")) {
+                assertTrue(logic.execute(request).getPendingRequest().isPresent());
+
+                CommandResult result = logic.execute(exitInput);
+
+                assertTrue(result.isExit(), exitInput + " after " + request);
+                assertEquals(original, model.getContactFile());
+                assertEquals(0, contactStorage.saveCount);
+            }
+        }
+    }
+
+    @Test
+    public void execute_unrelatedCommandWhileConfirmationPending_stillBlocked() throws Exception {
+        logic.execute("alias l list");
+        logic.execute("clear");
+
+        // a shortcut for another command is treated as an invalid reply, so the prompt stays open
+        assertTrue(logic.execute("l").getPendingRequest().isPresent());
+        assertTrue(logic.execute("y").getFeedbackToUser().startsWith("Cleared"));
+    }
+
+    @Test
     public void execute_ambiguousDelete_selectsThenConfirmsAndRestoresOnCancel() throws Exception {
         logic.execute("find Alice");
         ContactFile original = new ContactFile(model.getContactFile());
