@@ -116,6 +116,29 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_shortcutAfterFollowUpListing_showsExpandedCommand() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("followup 1 a/Call");
+        logic.execute("alias s star");
+
+        logic.execute("followups");
+        CommandResult result = logic.execute("s 1");
+        assertTrue(result.getFeedbackToUser().startsWith("Ran: star 1\n"), result.getFeedbackToUser());
+        assertTrue(model.getContactFile().getPersonList().getFirst().isStarred());
+
+        // errors from a shortcut that leaves the listing show the expansion too
+        logic.execute("followups");
+        String indexError = "Ran: star 999\n" + Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+        assertThrows(CommandException.class, indexError, () -> logic.execute("s 999"));
+
+        Exception parseError = org.junit.jupiter.api.Assertions.assertThrows(ParseException.class, () ->
+                logic.execute("star 1 2"));
+        String parseErrorMessage = parseError.getMessage();
+        logic.execute("followups");
+        assertThrows(ParseException.class, "Ran: star 1 2\n" + parseErrorMessage, () -> logic.execute("s 1 2"));
+    }
+
+    @Test
     public void execute_shortcutNeedingConfirmation_keepsPendingRequest() throws Exception {
         model.addPerson(AMY);
         logic.execute("alias dl delete");
