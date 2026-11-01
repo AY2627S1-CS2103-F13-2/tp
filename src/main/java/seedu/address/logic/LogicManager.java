@@ -161,6 +161,7 @@ public class LogicManager implements Logic {
 
     private void restoreFailedRequest(ModelSnapshot snapshot) {
         snapshot.restore(model);
+        undoManager.discardUnsavedUndo();
         clearPendingRequest();
     }
 

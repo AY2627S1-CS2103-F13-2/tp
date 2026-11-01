@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -403,6 +404,42 @@ public class LogicManagerTest {
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO, result.getFeedbackToUser());
         assertEquals(2, model.getContactFile().getPersonList().size());
         assertEquals("87654321", model.getContactFile().getPersonList().getFirst().getPhone().orElseThrow().value);
+    }
+
+    @Test
+    public void execute_undoSaveFails_keepsUndoAvailableAndHistoryUnchanged() throws Exception {
+        Person original = new PersonBuilder().withName("Alice Smith").withPhone("12345678")
+                .withEmail(null).build();
+        model = new ModelManager(new ContactFileBuilder().withPerson(original).build(), new UserPrefs());
+        AtomicBoolean failSaves = new AtomicBoolean();
+        JsonContactFileStorage failingStorage = new JsonContactFileStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+                if (failSaves.get()) {
+                    throw DUMMY_IO_EXCEPTION;
+                }
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("failingPrefs.json"))));
+
+        logic.execute("delete 1");
+        logic.execute("y");
+        String historyBeforeUndo = logic.execute("history").getFeedbackToUser();
+
+        logic.execute("undo");
+        failSaves.set(true);
+        assertThrows(CommandException.class, () -> logic.execute("y"));
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
+        assertEquals(historyBeforeUndo, logic.execute("history").getFeedbackToUser());
+
+        // the deletion can still be undone once saving works again
+        failSaves.set(false);
+        assertTrue(logic.execute("undo").getPendingRequest().isPresent());
+        logic.execute("y");
+        assertEquals(List.of(original), model.getContactFile().getPersonList());
+        assertTrue(logic.execute("history").getFeedbackToUser().startsWith("1. deletion (undone)"));
+        assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO, logic.execute("undo").getFeedbackToUser());
     }
 
     @Test
