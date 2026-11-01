@@ -34,6 +34,25 @@ class EditFollowUpCommandTest {
     }
 
     @Test
+    void execute_distinctPendingDescription_allowsEdit() throws Exception {
+        Person person = new PersonBuilder(ALICE).withFollowUps(
+                new FollowUp(1, "Call client", FollowUp.Status.PENDING),
+                new FollowUp(2, "Send proposal", FollowUp.Status.PENDING))
+                .build();
+        ModelManager model = new ModelManager(
+                new ContactFileBuilder().withPerson(person).build(),
+                new UserPrefs());
+        EditFollowUpCommand command = new EditFollowUpCommand(
+                Index.fromOneBased(1), 1, "Schedule meeting", null, false);
+
+        command.execute(model);
+
+        assertEquals(
+                new FollowUp(1, "Schedule meeting", FollowUp.Status.PENDING),
+                model.getFilteredPersonList().getFirst().getFollowUps().getFirst());
+    }
+
+    @Test
     void execute_completedFollowUpMayMatchPendingDescription() throws Exception {
         Person person = new PersonBuilder(ALICE).withFollowUps(
                 new FollowUp(1, "Old description", FollowUp.Status.COMPLETED),
