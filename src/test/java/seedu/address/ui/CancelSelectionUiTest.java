@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
@@ -67,6 +68,38 @@ class CancelSelectionUiTest {
                 assertEquals(List.of(ALICE, BENSON, DANIEL), model.getFilteredPersonList());
                 assertEquals(DANIEL, window.getPersonListPanel().selectedPersonProperty().get());
                 assertEquals(DANIEL.getPhone().orElseThrow().value, shownPhone(stage));
+            } finally {
+                stage.hide();
+            }
+        });
+        assertFalse(Files.exists(contacts));
+    }
+
+    @Test
+    void window_requestStartedWithoutSelection_selectsNothingWhenCancelled() throws Exception {
+        ModelManager model = new ModelManager();
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+        // with every contact hidden when the window opens, no contact is ever selected
+        model.updateFilteredPersonList(person -> false);
+        Path contacts = testFolder.resolve("contacts.json");
+        LogicManager logic = new LogicManager(model, new StorageManager(
+                new JsonContactFileStorage(contacts), new JsonUserPrefsStorage(testFolder.resolve("prefs.json"))));
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            try {
+                MainWindow window = new MainWindow(stage, logic, contacts);
+                window.fillInnerParts("Loaded");
+                window.show();
+                TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+
+                assertNull(window.getPersonListPanel().selectedPersonProperty().get());
+                execute(input, "clear");
+                execute(input, "cancel");
+
+                assertEquals(List.of(), model.getFilteredPersonList());
+                assertNull(window.getPersonListPanel().selectedPersonProperty().get());
+                assertEquals(List.of(ALICE, BENSON), model.getContactFile().getPersonList());
             } finally {
                 stage.hide();
             }
