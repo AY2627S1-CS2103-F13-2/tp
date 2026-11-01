@@ -57,6 +57,22 @@ public class CommandResultTest {
     }
 
     @Test
+    public void equals_comparesPendingRequestAndFollowUpListing() {
+        PendingRequest request = new ConfirmationRequest("preview", new OrderCommand());
+        CommandResult pending = new CommandResult("feedback", request);
+        assertEquals(pending, new CommandResult("feedback", request));
+        assertNotEquals(pending, new CommandResult("feedback"));
+
+        FollowUp action = new FollowUp(1, "Call", FollowUp.Status.PENDING);
+        FollowUpEntry entry = new FollowUpEntry(ALICE, action);
+        FollowUpListing listing = new FollowUpListing("Pending", List.of(entry));
+        CommandResult withListing = new CommandResult("feedback").withFollowUpListing(listing);
+        assertEquals(withListing, new CommandResult("feedback").withFollowUpListing(listing));
+        assertNotEquals(withListing, new CommandResult("feedback")
+                .withFollowUpListing(new FollowUpListing("Other", List.of(entry))));
+    }
+
+    @Test
     public void equals() {
         CommandResult commandResult = new CommandResult("feedback");
 
