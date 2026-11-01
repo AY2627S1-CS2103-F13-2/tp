@@ -61,15 +61,20 @@ public class CommandResultTest {
         PendingRequest request = new ConfirmationRequest("preview", new OrderCommand());
         CommandResult pending = new CommandResult("feedback", request);
         assertEquals(pending, new CommandResult("feedback", request));
-        assertNotEquals(pending, new CommandResult("feedback"));
+        assertNotEquals(pending, new CommandResult("feedback",
+                new ConfirmationRequest("preview", new OrderCommand())));
 
         FollowUp action = new FollowUp(1, "Call", FollowUp.Status.PENDING);
         FollowUpEntry entry = new FollowUpEntry(ALICE, action);
         FollowUpListing listing = new FollowUpListing("Pending", List.of(entry));
         CommandResult withListing = new CommandResult("feedback").withFollowUpListing(listing);
         assertEquals(withListing, new CommandResult("feedback").withFollowUpListing(listing));
-        assertNotEquals(withListing, new CommandResult("feedback")
-                .withFollowUpListing(new FollowUpListing("Other", List.of(entry))));
+        CommandResult otherListing = new CommandResult("feedback")
+                .withFollowUpListing(new FollowUpListing("Other", List.of(entry)));
+        assertNotEquals(withListing, otherListing);
+        assertNotEquals(withListing, new CommandResult("feedback"));
+        assertNotEquals(new CommandResult("feedback"), withListing);
+        assertNotEquals(withListing, withListing.withPreserveCurrentView());
     }
 
     @Test
