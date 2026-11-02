@@ -112,6 +112,10 @@ public class EditFollowUpCommand extends Command {
                 existing.getStatus(),
                 updatedDueDate);
 
+        if (existing.equals(replacement)) {
+            return new CommandResult("Follow-up #" + followUpId + " is unchanged. No changes were applied.");
+        }
+
         Person updated = target.replaceFollowUp(followUpId, replacement);
         model.setPerson(target, updated);
 
