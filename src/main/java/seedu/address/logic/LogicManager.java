@@ -94,7 +94,9 @@ public class LogicManager implements Logic {
                 try {
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
                     logger.fine("Executing " + command.getClass().getSimpleName());
-                    commandResult = command.execute(model).withFeedbackPrefix(shortcutNote);
+                    CommandResult selected = ContactSelection.prepare(commandText, model, contactFileParser);
+                    commandResult = (selected == null ? command.execute(model) : selected)
+                            .withFeedbackPrefix(shortcutNote);
                 } catch (ParseException pe) {
                     throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
                 } catch (CommandException ce) {

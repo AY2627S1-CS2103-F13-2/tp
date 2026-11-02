@@ -270,6 +270,11 @@ these comparisons. Missing phone/email values are not shared keys.
 
 ### Pending requests and transactional commands
 
+`ContactSelection` handles numeric selectors for commands that already accept a contact index or name.
+It combines the displayed-index contact with stored name matches, removes duplicates, and uses the existing
+numbered selection request when several contacts match. Choosing a contact then runs the original command's
+validation and confirmation flow. Logic retains the original command type for history and undo bookkeeping.
+
 `CommandResult` can carry a `PendingRequest`. `LogicManager` retains it together
 with a `ModelSnapshot` captured before the initial command. `ConfirmationRequest`
 executes its resolved command only for y. `PersonSelectionRequest` turns a
