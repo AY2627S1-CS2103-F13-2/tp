@@ -88,35 +88,50 @@ public class DeleteCommand extends Command {
 
         PendingRequest request;
         if (targetIndex != null) {
-            if (targetIndex.getZeroBased() >= model.getFilteredPersonList().size()) {
-                throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-            }
-            request = createConfirmation(List.of(model.getFilteredPersonList().get(targetIndex.getZeroBased())), model);
+            request = createConfirmation(List.of(getIndexedPerson(model)), model);
         } else if (targetName != null) {
-            List<Person> matches = PersonNameResolver.findMatches(model, targetName);
-            if (matches.isEmpty()) {
-                throw new CommandException(String.format(PersonNameResolver.MESSAGE_NAME_NOT_FOUND, targetName));
-            }
-            if (matches.size() > 1) {
-                model.updateFilteredPersonList(matches::contains);
-                request = new PersonSelectionRequest(matches, person -> {
-                    PendingRequest confirmation = createConfirmation(List.of(person), model);
-                    return new CommandResult(confirmation.getPrompt(), confirmation);
-                });
-            } else {
-                request = createConfirmation(matches, model);
-            }
+            request = createNameRequest(model);
         } else if (targetPhone != null) {
             request = createConfirmation(List.of(resolveField(model, ContactFieldPredicate.Field.PHONE,
                     targetPhone.value)), model);
         } else {
-            Set<Person> targets = new LinkedHashSet<>();
-            for (Email email : targetEmails) {
-                targets.add(resolveField(model, ContactFieldPredicate.Field.EMAIL, email.value));
-            }
-            request = createConfirmation(List.copyOf(targets), model);
+            request = createConfirmation(resolveEmails(model), model);
         }
         return new CommandResult(request.getPrompt(), request);
+    }
+
+    private Person getIndexedPerson(Model model) throws CommandException {
+        List<Person> displayedPersons = model.getFilteredPersonList();
+        if (targetIndex.getZeroBased() >= displayedPersons.size()) {
+            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        }
+        return displayedPersons.get(targetIndex.getZeroBased());
+    }
+
+    /**
+     * Returns a confirmation for the one contact named, or asks the user to pick one if the name matches several.
+     */
+    private PendingRequest createNameRequest(Model model) throws CommandException {
+        List<Person> matches = PersonNameResolver.findMatches(model, targetName);
+        if (matches.isEmpty()) {
+            throw new CommandException(String.format(PersonNameResolver.MESSAGE_NAME_NOT_FOUND, targetName));
+        }
+        if (matches.size() == 1) {
+            return createConfirmation(matches, model);
+        }
+        model.updateFilteredPersonList(matches::contains);
+        return new PersonSelectionRequest(matches, person -> {
+            PendingRequest confirmation = createConfirmation(List.of(person), model);
+            return new CommandResult(confirmation.getPrompt(), confirmation);
+        });
+    }
+
+    private List<Person> resolveEmails(Model model) throws CommandException {
+        Set<Person> targets = new LinkedHashSet<>();
+        for (Email email : targetEmails) {
+            targets.add(resolveField(model, ContactFieldPredicate.Field.EMAIL, email.value));
+        }
+        return List.copyOf(targets);
     }
 
     private Person resolveField(Model model, ContactFieldPredicate.Field field, String value) throws CommandException {
