@@ -35,7 +35,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
    * `delete 3`, then `y`: Deletes the 3rd contact shown in the current list.
 
    * `followup 1 a/Send portfolio`: Records a pending action for the first displayed contact.
-   * `followups [overdue|today|upcoming|completed|undated]`: Reviews follow-ups across all contacts by date or status.
+   * `followups overdue`: Lists overdue follow-ups across all contacts. Use `followups` to list all pending follow-ups.
 
    * `order name phone email company role tags linkedin followups introducer interactions`: Changes the field order for every contact.
 
@@ -162,9 +162,19 @@ Format: `star INDEX` or `star QUERY`
 * If the contact is already starred, Astra reports that status without changing contact data.
 * Starred status is saved automatically and preserved across restarts and edits.
 
-Example: `find Betsy` followed by `star 1` stars the 1st search result.
+Example: `find Charlotte` followed by `star 1` stars the 1st search result.
 
-Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`](#locating-persons-find): a name, `/contact PHONE_NUMBER`, or `/email EMAIL`.
+Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`](#locating-persons-find):
+
+* `NAME` or `/fuzzy NAME` for a name search.
+* `/contact PHONE_NUMBER` or `/email EMAIL` for a phone or email search.
+* `/company COMPANY`, `/role ROLE`, or `/company COMPANY /role ROLE` for a company,
+  role, or combined company-and-role search.
+* `/event EVENT` for an event search.
+* `/notes KEYWORDS` for an interaction-note search.
+
+Use the query after `star` or `unstar`, without the word `find`.
+The matching and combination rules described in the `find` section also apply.
 
 * Queries search all contacts and replace the current displayed filter with the search results.
 * One match: the contact's starred status is updated. If it already has the requested status, Astra reports this without changing contact data.
@@ -172,7 +182,8 @@ Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`]
 * No matches: Astra reports `Contact not found.` and keeps the current list displayed.
 * A positive whole-number selector also searches contact names. If several contacts match, reply with a candidate number by itself.
 
-Examples: `star Alex`, `star /contact 87438807`, and `unstar /email alex@example.com`.
+Examples: `star Charlotte`, `star /company Grab`, `star /company DBS /role Analyst`,
+and `unstar /email alexyeoh@example.com`.
 
 
 ### Removing a contact's star: `unstar`
@@ -594,9 +605,9 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   that ends in `/`, such as `and/or` or `c/o`, is also read as a prefix and
   rejected, so rephrase such words.
 * Optionally add one `d/DATE` before or after `a/DESCRIPTION`. For example,
-  `followup 1 d/2026-10-30 a/Call back` is also accepted. Accepted formats are
-  `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
-  `d MMM yyyy` (`25 Oct 2026`). Month names use English three-letter abbreviations
+  `followup 1 d/2026-11-30 a/Call back` is also accepted. Accepted formats are
+  `yyyy-MM-dd` (for example `2026-11-25`), `dd/MM/yyyy` (`25/11/2026`), and
+  `d MMM yyyy` (`25 Nov 2026`). Month names use English three-letter abbreviations
   and are case-insensitive. Slash-separated dates use day/month/year.
   Dates before `2000-01-01` are rejected.
   Omitting `d/` creates an action with no due date. Empty or repeated `d/`
@@ -604,7 +615,7 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   date errors show the supported formats.
 * A new action is saved immediately with status `PENDING`. The response and
   contact card show the ordered list with stable IDs, for example
-  `#1 [PENDING] Send portfolio | Due: 2026-10-25`. `view INDEX` also shows the full history.
+  `#4 [PENDING] Send portfolio | Due: 2026-11-25`. `view INDEX` also shows the full history.
   All dates display as `yyyy-MM-dd`, regardless of the input format. Undated
   actions display `No due date`. Past dates are accepted: pending actions due
   before today show `[OVERDUE]`. Actions due today or later and completed
@@ -627,14 +638,20 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
 
 Example:
 
+Start with a fresh copy of the sample contacts and run `list`, so Alex Yeoh is
+contact 1. Alex already has follow-ups `#1` to `#3`, so these additions get
+`#4` and `#5`. With other data, use the IDs shown in your contact's history.
+The dated examples assume today is 3 November 2026. If you try them later,
+choose future dates to avoid an additional `[OVERDUE]` label on pending actions.
+
 ```text
-followup 1 a/Send portfolio d/25 Oct 2026
-followup 1 a/Send portfolio d/01/11/2026
+followup 1 a/Send portfolio d/25 Nov 2026
+followup 1 a/Send portfolio d/01/12/2026
 ```
 
-The first command adds `#1 [PENDING] Send portfolio | Due: 2026-10-25`.
-The second asks whether another is wanted; enter `y` to add `#2` due on
-`2026-11-01`, or `n` to keep just `#1`. The original
+The first command adds `#4 [PENDING] Send portfolio | Due: 2026-11-25`.
+The second asks whether another is wanted; enter `y` to add `#5` due on
+`2026-12-01`, or `n` to keep just the new `#4` and Alex's original actions. The original
 command does not need to be repeated while answering the prompt.
 
 ### Reviewing follow-ups: `followups`
@@ -713,11 +730,15 @@ Format:
 
 Examples:
 
+After creating `#5` in the `followup` example above, keep Alex as contact 1.
+The following are alternative edits to that action. With other data, replace
+`i/5` with the ID shown in the contact's history.
+
 ```text
-editfollowup 1 i/2 a/Call client
-editfollowup 1 i/2 d/2026-11-05
-editfollowup 1 i/2 a/Call client d/2026-11-05
-editfollowup 1 i/2 d/
+editfollowup 1 i/5 a/Call client
+editfollowup 1 i/5 d/2026-12-05
+editfollowup 1 i/5 a/Call client d/2026-12-05
+editfollowup 1 i/5 d/
 ```
 
 ### Completing or reopening a follow-up: `completefollowup`, `reopenfollowup`
@@ -745,13 +766,17 @@ Format:
 
 Examples:
 
+Continue with `#5` from the `followup` example above. If needed, first run
+`editfollowup 1 i/5 a/Call client d/2026-12-05` so its description and due date
+match the result below. Then change its status:
+
 ```text
-completefollowup 1 i/2
-reopenfollowup 1 i/2
+completefollowup 1 i/5
+reopenfollowup 1 i/5
 ```
 
-The first command changes `#2 [PENDING] Call client | Due: 2026-11-05` to
-`#2 [COMPLETED] Call client | Due: 2026-11-05`. The second reverts it to pending.
+The completion command changes `#5 [PENDING] Call client | Due: 2026-12-05` to
+`#5 [COMPLETED] Call client | Due: 2026-12-05`. The reopening command reverts it to pending.
 
 ### Deleting a follow-up: `deletefollowup`
 
@@ -771,7 +796,8 @@ Format: `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`
 * Invalid contact indices or action IDs change nothing. A failed save restores the
   original file, contact history, retired IDs, and pre-request view. Start a new request to retry.
 
-Example: `deletefollowup 1 i/2`, then `y`, removes action `#2` from the first displayed contact.
+Example: after the examples above, `deletefollowup 1 i/5`, then `y`, removes
+action `#5` from Alex. His remaining action IDs are unchanged.
 
 ### Using the confirmation panel
 
@@ -931,13 +957,13 @@ Action | Format, Examples
 **History** | `history`
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
 **Filter** | `filter [mode/and] t/TAG [t/TAG]...` or `filter mode/or t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/mentor t/referral`
-**Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
-**Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/2`
-**Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br> e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
-**Complete follow-up** | `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `completefollowup 1 i/2`
-**Reopen follow-up** | `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `reopenfollowup 1 i/2`
+**Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Nov 2026`; duplicate pending actions ask `y`/`n`/`cancel`
+**Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/5`
+**Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br> e.g., `editfollowup 1 i/5 a/Call client d/2026-12-05`
+**Complete follow-up** | `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `completefollowup 1 i/5`
+**Reopen follow-up** | `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `reopenfollowup 1 i/5`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
-**Follow-ups** | `followups [FILTER]`, where `FILTER` is `overdue`, `today`, `upcoming`, `completed` or `undated`, then a displayed number to view details/contact or `n`/`cancel` to stop
+**Follow-ups** | `followups [FILTER]`, where `FILTER` is `overdue`, `today`, `upcoming`, `completed` or `undated`, then a displayed number to view details/contact or `n`/`cancel` to stop<br> e.g., `followups overdue`
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
 **Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
@@ -947,3 +973,4 @@ Action | Format, Examples
 **Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
 **Starred** | `starred`
 **Help** | `help`
+**Exit** | `exit`
