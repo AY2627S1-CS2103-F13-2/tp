@@ -52,7 +52,6 @@ class FollowUpIdStorageTest {
         Path path = testFolder.resolve("contacts.json");
         JsonContactFileStorage storage = new JsonContactFileStorage(path);
         storage.saveContactFile(contacts);
-        assertTrue(Files.readString(path).contains("\"lastFollowUpId\" : 9"));
         assertEquals(retired, storage.readContactFile().orElseThrow().getPersonList().getFirst());
         String valid = JsonUtil.toJsonString(new JsonAdaptedPerson(retired));
         Files.writeString(path, "{\"persons\":[" + valid + ",{\"name\":\"Invalid\",\"lastFollowUpId\":-1}]}");

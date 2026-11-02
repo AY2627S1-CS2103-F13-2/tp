@@ -16,6 +16,8 @@ import seedu.address.model.person.FollowUp;
  * Preserves JSON value types so malformed actions are rejected instead of coerced.
  */
 class JsonAdaptedFollowUp {
+    private static final String MESSAGE_INVALID_STATUS = "Follow-up status must be PENDING or COMPLETED.";
+
     private final JsonNode id;
     private final JsonNode description;
     private final JsonNode status;
@@ -58,13 +60,13 @@ class JsonAdaptedFollowUp {
             throw new IllegalValueException(FollowUp.MESSAGE_CONSTRAINTS);
         }
         if (status == null || !status.isTextual()) {
-            throw new IllegalValueException("Follow-up status must be PENDING or COMPLETED.");
+            throw new IllegalValueException(MESSAGE_INVALID_STATUS);
         }
         final FollowUp.Status modelStatus;
         try {
             modelStatus = FollowUp.Status.valueOf(status.textValue());
         } catch (IllegalArgumentException e) {
-            throw new IllegalValueException("Follow-up status must be PENDING or COMPLETED.");
+            throw new IllegalValueException(MESSAGE_INVALID_STATUS);
         }
         LocalDate modelDueDate = null;
         if (dueDate != null && !dueDate.isNull()) {

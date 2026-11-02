@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Represents an immutable follow-up action with an ID unique within its contact.
+ * Represents a follow-up action with an ID unique within its contact.
  */
 public final class FollowUp {
     public static final String MESSAGE_CONSTRAINTS = "Follow-up descriptions must not be blank.";

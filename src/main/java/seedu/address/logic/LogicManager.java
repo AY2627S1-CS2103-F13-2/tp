@@ -105,29 +105,9 @@ public class LogicManager implements Logic {
             }
 
             if (commandResult.getPendingRequest().isPresent()) {
-                assert !snapshot.hasDataChanged(model) : "Pending requests must not mutate contact data";
-                assert !snapshot.hasPreferencesChanged(model) : "Pending requests must not mutate preferences";
-                pendingRequest = commandResult.getPendingRequest().orElseThrow();
-                pendingSnapshot = snapshot;
-                pendingCommand = command;
-                pendingPersonsBeforeCommand = personsBeforeCommand;
-                logger.fine("Awaiting " + pendingRequest.getClass().getSimpleName());
+                retainPendingRequest(commandResult, snapshot, command, personsBeforeCommand);
             } else {
-                if (commandResult.shouldSaveContactFile() && snapshot.hasDataChanged(model)) {
-                    storage.saveContactFile(model.getContactFile());
-                    logger.info("Contact transaction saved for " + command.getClass().getSimpleName() + ": "
-                            + personsBeforeCommand.size() + " -> "
-                            + model.getContactFile().getPersonList().size() + " contacts");
-                }
-                // Shortcuts and the field order live in the preferences file; save them now rather than
-                // only when the app closes. A failed save restores the snapshot, so nothing is half-applied.
-                if (snapshot.hasPreferencesChanged(model)) {
-                    storage.saveUserPrefs(model.getUserPrefs());
-                    logger.info("Preference transaction saved");
-                }
-                undoManager.recordChange(command, personsBeforeCommand, model.getContactFile().getPersonList(),
-                        commandResult.getFeedbackToUser());
-                clearPendingRequest();
+                commitResult(commandResult, snapshot, command, personsBeforeCommand);
             }
             assertPendingState();
             return commandResult;
@@ -148,6 +128,44 @@ public class LogicManager implements Logic {
             restoreFailedRequest(snapshot);
             throw e;
         }
+    }
+
+    /**
+     * Keeps {@code result}'s pending request, with the snapshot and command it belongs to, until the user replies.
+     */
+    private void retainPendingRequest(CommandResult result, ModelSnapshot snapshot, Command command,
+            List<Person> personsBeforeCommand) {
+        assert !snapshot.hasDataChanged(model) : "Pending requests must not mutate contact data";
+        assert !snapshot.hasPreferencesChanged(model) : "Pending requests must not mutate preferences";
+        pendingRequest = result.getPendingRequest().orElseThrow();
+        pendingSnapshot = snapshot;
+        pendingCommand = command;
+        pendingPersonsBeforeCommand = personsBeforeCommand;
+        logger.fine("Awaiting " + pendingRequest.getClass().getSimpleName());
+    }
+
+    /**
+     * Saves whatever {@code command} changed since {@code snapshot}, records it for undo, and ends the request.
+     *
+     * @throws IOException if a save fails, so that the caller can roll the model back.
+     */
+    private void commitResult(CommandResult result, ModelSnapshot snapshot, Command command,
+            List<Person> personsBeforeCommand) throws IOException {
+        if (result.shouldSaveContactFile() && snapshot.hasDataChanged(model)) {
+            storage.saveContactFile(model.getContactFile());
+            logger.info("Contact transaction saved for " + command.getClass().getSimpleName() + ": "
+                    + personsBeforeCommand.size() + " -> "
+                    + model.getContactFile().getPersonList().size() + " contacts");
+        }
+        // Shortcuts and the field order live in the preferences file; save them now rather than
+        // only when the app closes. A failed save restores the snapshot, so nothing is half-applied.
+        if (snapshot.hasPreferencesChanged(model)) {
+            storage.saveUserPrefs(model.getUserPrefs());
+            logger.info("Preference transaction saved");
+        }
+        undoManager.recordChange(command, personsBeforeCommand, model.getContactFile().getPersonList(),
+                result.getFeedbackToUser());
+        clearPendingRequest();
     }
 
     /**

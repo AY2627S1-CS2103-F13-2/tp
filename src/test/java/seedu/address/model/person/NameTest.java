@@ -33,6 +33,7 @@ public class NameTest {
         assertFalse(Name.isValidName("peter*")); // contains non-alphanumeric characters
         assertFalse(Name.isValidName("-peter")); // starts with punctuation
         assertFalse(Name.isValidName("'")); // punctuation only
+        assertFalse(Name.isValidName("\u0301abc")); // starts with a combining accent
 
         // valid name
         assertTrue(Name.isValidName("peter jack")); // alphabets only
@@ -48,6 +49,10 @@ public class NameTest {
         assertTrue(Name.isValidName("Jose Garcia"));
         assertTrue(Name.isValidName("Zoe Muller"));
         assertTrue(Name.isValidName("Bjorn Borg"));
+
+        // valid names using combining marks
+        assertTrue(Name.isValidName("\u092A\u094D\u0930\u093F\u092F\u093E")); // Devanagari "Priya" with vowel signs
+        assertTrue(Name.isValidName("Jose\u0301")); // "Jose" followed by a combining acute accent
     }
 
     @Test

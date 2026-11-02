@@ -13,6 +13,7 @@ public class ClearCommandParser implements Parser<ClearCommand> {
     /**
      * Parses the given {@code String} of arguments in the context of the ClearCommand
      * and returns a ClearCommand object for execution.
+     *
      * @throws ParseException if any argument is supplied
      */
     public ClearCommand parse(String args) throws ParseException {

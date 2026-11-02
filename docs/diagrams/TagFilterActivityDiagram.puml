@@ -1,0 +1,37 @@
+@startuml
+skin rose
+!include style.puml
+/'
+// @@author Cookiemunchrr
+'/
+skinparam ArrowFontStyle plain
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+start
+:User enters filter with one or more tags
+and an optional mode;
+if () then ([input is invalid])
+  :Show the error;
+  note right
+    e.g. no tag, an invalid tag, or an
+    unknown or repeated mode. The
+    displayed list is unchanged.
+  end note
+else ([else])
+  if () then ([mode/or])
+    :Keep every stored contact that has
+    at least one of the tags;
+  else ([mode/and or no mode])
+    :Keep every stored contact that has
+    all of the tags;
+  endif
+  if () then ([some contacts match])
+    :Show the matching contacts in stored order,
+    with their count and the mode;
+  else ([else])
+    :Show an empty list and a no-match message;
+  endif
+endif
+stop
+@enduml

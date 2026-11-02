@@ -154,13 +154,14 @@ public class JsonAdaptedPersonTest {
     public void toModelType_nullOptionalFields_returnsPersonWithoutThem() throws Exception {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, null, null, null, null, null, null, VALID_TAGS);
-        assertEquals(new Name(VALID_NAME), person.toModelType().getName());
-        assertEquals(java.util.Optional.empty(), person.toModelType().getCompany());
-        assertEquals(java.util.Optional.empty(), person.toModelType().getRole());
-        assertEquals(java.util.Optional.empty(), person.toModelType().getPhone());
-        assertEquals(java.util.Optional.empty(), person.toModelType().getEmail());
-        assertEquals(java.util.Optional.empty(), person.toModelType().getLinkedin());
-        assertEquals(java.util.Optional.empty(), person.toModelType().getIntroducer());
+        Person modelPerson = person.toModelType();
+        assertEquals(new Name(VALID_NAME), modelPerson.getName());
+        assertEquals(Optional.empty(), modelPerson.getCompany());
+        assertEquals(Optional.empty(), modelPerson.getRole());
+        assertEquals(Optional.empty(), modelPerson.getPhone());
+        assertEquals(Optional.empty(), modelPerson.getEmail());
+        assertEquals(Optional.empty(), modelPerson.getLinkedin());
+        assertEquals(Optional.empty(), modelPerson.getIntroducer());
     }
 
     @Test

@@ -49,6 +49,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/keeyencheng.png" width="200px">
 
-`[[github](http://github.com/keeyencheng)]
+[[github](https://github.com/KeeYenCheng)]
 
 * Role: Developer

@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -25,7 +24,6 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.ModelManager;
-import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Event;
 import seedu.address.model.person.FollowUp;
@@ -34,6 +32,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.CountingStorage;
 import seedu.address.testutil.PersonBuilder;
 
 class DeleteFollowUpWorkflowTest {
@@ -75,7 +74,7 @@ class DeleteFollowUpWorkflowTest {
         for (String reply : List.of("maybe", "yes", "list", "clear", "deletefollowup 2 i/2", "")) {
             assertTrue(logic.execute(reply).getPendingRequest().isPresent());
             assertEquals(List.of(ORIGINAL, BENSON), model.getContactFile().getPersonList());
-            assertEquals(0, storage.saveCount);
+            assertEquals(0, storage.getSaveCount());
             assertArrayEquals(bytes, Files.readAllBytes(file));
         }
     }
@@ -91,7 +90,7 @@ class DeleteFollowUpWorkflowTest {
             assertEquals(List.of(ORIGINAL), model.getFilteredPersonList());
             assertSame(binding, model.getFilteredPersonList());
             assertThrows(ParseException.class, () -> logic.execute("y"));
-            assertEquals(0, storage.saveCount);
+            assertEquals(0, storage.getSaveCount());
             assertArrayEquals(bytes, Files.readAllBytes(file));
         }
     }
@@ -109,7 +108,7 @@ class DeleteFollowUpWorkflowTest {
         assertEquals(List.of(expected), binding);
         assertSame(binding, model.getFilteredPersonList());
         assertEquals(model.getContactFile(), storage.readContactFile().orElseThrow());
-        assertEquals(1, storage.saveCount);
+        assertEquals(1, storage.getSaveCount());
         assertThrows(ParseException.class, () -> logic.execute("y"));
     }
 
@@ -166,7 +165,7 @@ class DeleteFollowUpWorkflowTest {
         logic.execute("find Alice");
         ObservableList<Person> binding = model.getFilteredPersonList();
         byte[] bytes = Files.readAllBytes(file);
-        storage.shouldFail = true;
+        storage.setShouldFail(true);
         logic.execute("deletefollowup 1 i/9");
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(List.of(ORIGINAL), binding);
@@ -174,10 +173,10 @@ class DeleteFollowUpWorkflowTest {
         assertEquals(9, binding.getFirst().getLastFollowUpId());
         assertArrayEquals(bytes, Files.readAllBytes(file));
         assertThrows(ParseException.class, () -> logic.execute("y"));
-        storage.shouldFail = false;
+        storage.setShouldFail(false);
         logic.execute("deletefollowup 1 i/9");
         logic.execute("y");
-        assertEquals(2, storage.saveCount);
+        assertEquals(2, storage.getSaveCount());
     }
 
     @Test
@@ -186,7 +185,8 @@ class DeleteFollowUpWorkflowTest {
         model.setPerson(ORIGINAL, ORIGINAL.withStarred(false));
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertThrows(ParseException.class, () -> logic.execute("y"));
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
+        // A failed confirmation restores the prompt-time snapshot, undoing the change made since.
         assertEquals(ORIGINAL, model.getContactFile().getPersonList().getFirst());
     }
 
@@ -197,24 +197,24 @@ class DeleteFollowUpWorkflowTest {
             assertThrows(ParseException.class, () -> logic.execute("y"));
         }
         assertEquals(List.of(ORIGINAL, BENSON), model.getContactFile().getPersonList());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
     }
 
     @Test
     void execute_deleteDuringReview_transitionsToConfirmationWithoutChangingData() throws Exception {
         logic.execute("followups");
         assertTrue(logic.execute("deletefollowup 1 i/2").getPendingRequest().isPresent());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
         logic.execute("y");
         assertEquals(ORIGINAL.removeFollowUp(2), model.getContactFile().getPersonList().getFirst());
-        assertEquals(1, storage.saveCount);
+        assertEquals(1, storage.getSaveCount());
     }
 
     @Test
     void execute_exhaustedCounterAfterDeletion_stillRejectsAllocation() throws Exception {
         Person full = ALICE.appendFollowUp(new FollowUp(Integer.MAX_VALUE, "Last", FollowUp.Status.PENDING));
         model.setPerson(ORIGINAL, full);
-        logic.execute("deletefollowup 1 i/2147483647");
+        logic.execute("deletefollowup 1 i/" + Integer.MAX_VALUE);
         logic.execute("y");
         restart();
         assertThrows(CommandException.class, () -> logic.execute("followup 1 a/Overflow"));
@@ -230,23 +230,5 @@ class DeleteFollowUpWorkflowTest {
     private void restart() throws Exception {
         model = new ModelManager(storage.readContactFile().orElseThrow(), new UserPrefs());
         logic = createLogic(model);
-    }
-
-    private static final class CountingStorage extends JsonContactFileStorage {
-        private int saveCount;
-        private boolean shouldFail;
-
-        private CountingStorage(Path path) {
-            super(path);
-        }
-
-        @Override
-        public void saveContactFile(ReadOnlyContactFile contacts) throws IOException {
-            saveCount++;
-            if (shouldFail) {
-                throw new IOException("Simulated deletion save failure");
-            }
-            super.saveContactFile(contacts);
-        }
     }
 }

@@ -26,13 +26,13 @@ public class DeleteFollowUpCommandParser implements Parser<DeleteFollowUpCommand
                 Index actionId = ParserUtil.parseIndex(matcher.group(2));
                 return new DeleteFollowUpCommand(targetIndex, actionId.getOneBased());
             } catch (ParseException e) {
-                throw invalidFormat();
+                throw createInvalidFormatException();
             }
         }
-        throw invalidFormat();
+        throw createInvalidFormatException();
     }
 
-    private static ParseException invalidFormat() {
+    private static ParseException createInvalidFormatException() {
         return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteFollowUpCommand.MESSAGE_USAGE));
     }
 }

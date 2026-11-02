@@ -1,0 +1,53 @@
+@startuml
+skin rose
+!include style.puml
+/'
+// @@author Cookiemunchrr
+'/
+skinparam ArrowFontStyle plain
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+start
+:User enters a command that asks for confirmation,
+e.g. edit, delete, clear or deletefollowup;
+:Take a snapshot of the model;
+if () then ([input is invalid, or a
+target cannot be found])
+  :Show the error;
+  note right: No confirmation panel is shown.
+  stop
+else ([else])
+endif
+repeat
+  :Show the preview in the confirmation panel;
+  :User types a reply or clicks a panel button;
+repeat while () is ([any other reply]) not ([y, n, cancel, exit\nor a button])
+note right
+  Clicks from a panel that has
+  since been hidden or replaced
+  are ignored.
+end note
+:Hide the confirmation panel;
+switch ()
+case ([n, cancel or\nCancel button])
+  :Restore the snapshot;
+  :Show that the request was cancelled;
+case ([exit])
+  :Discard the request and close Astra;
+case ([y or Confirm button])
+  :Run the confirmed command;
+  if () then ([target changed or
+command fails])
+    :Restore the snapshot and show the error;
+  else ([else])
+    :Save the changed data;
+    if () then ([save succeeds])
+      :Show the result;
+    else ([else])
+      :Restore the snapshot and show the error;
+    endif
+  endif
+endswitch
+stop
+@enduml

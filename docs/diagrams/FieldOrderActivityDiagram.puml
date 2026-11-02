@@ -1,0 +1,40 @@
+@startuml
+skin rose
+!include style.puml
+/'
+// @@author Cookiemunchrr
+'/
+skinparam ArrowFontStyle plain
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+start
+:User enters order, optionally followed by field names;
+if () then ([no field names])
+  :Show the current field order;
+  stop
+else ([else])
+endif
+:Add a missing introducer and/or
+interactions field, if only those
+fields are missing;
+if () then ([a field is unknown, repeated
+or still missing])
+  :Show the accepted fields;
+  note right: The field order is unchanged.
+elseif () then ([order is the
+current order])
+  :Report that no change is needed;
+else ([else])
+  :Apply the new field order;
+  :Save the preferences file;
+  if () then ([save succeeds])
+    :Show the new order and redraw
+    the displayed contact details;
+  else ([else])
+    :Restore the previous order
+    and show the error;
+  endif
+endif
+stop
+@enduml

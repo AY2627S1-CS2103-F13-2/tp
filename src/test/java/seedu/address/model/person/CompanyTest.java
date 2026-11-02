@@ -26,14 +26,14 @@ public class CompanyTest {
         // null company -> throws
         assertThrows(NullPointerException.class, () -> Company.isValidCompany(null));
 
-        // invalid companys
+        // invalid companies
         assertFalse(Company.isValidCompany("")); // empty string
         assertFalse(Company.isValidCompany(" ")); // spaces only
 
-        // valid companys
+        // valid companies
         assertTrue(Company.isValidCompany("Acme Labs"));
         assertTrue(Company.isValidCompany("-")); // one character
-        assertTrue(Company.isValidCompany("Senior Engineer, Platform & Infrastructure")); // long value
+        assertTrue(Company.isValidCompany("Pacific Rim Logistics & Supply Chain Solutions Pte. Ltd.")); // long value
     }
 
     @Test

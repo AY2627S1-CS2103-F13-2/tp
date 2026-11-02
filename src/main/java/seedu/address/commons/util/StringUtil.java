@@ -40,8 +40,9 @@ public class StringUtil {
 
     /**
      * Returns {@code value} with its outer spaces trimmed and every run of whitespace inside it
-     * collapsed to a single space. This is the normalised form that field values are stored and
+     * collapsed to a single space. This is the normalized form that field values are stored and
      * compared in, so that "John  Doe " and "John Doe" are not kept as two different spellings.
+     *
      * @param value cannot be null
      */
     public static String normalise(String value) {
@@ -50,14 +51,14 @@ public class StringUtil {
     }
 
     /**
-     * Returns {@code value} with its outer spaces trimmed and every run of whitespace inside it
-     * collapsed. This is the normalised form that field values are compared with.
-     * A person with the phone (65)-9834 1234 will be normalised to 6598341234
+     * Returns {@code value} with all whitespace, parentheses and hyphens removed. This is the form
+     * in which phone numbers are compared, so (65)-9834 1234 becomes 6598341234.
+     *
      * @param value cannot be null
      */
     public static String normalisePhone(String value) {
         requireNonNull(value);
-        return value.trim().replaceAll("[()\\-]", "").replaceAll("\\s+", ""); // collapse whitespace
+        return value.trim().replaceAll("[()\\-]", "").replaceAll("\\s+", "");
     }
     /**
      * Returns a detailed message of {@code t}, including the stack trace.

@@ -42,6 +42,8 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("()123")); // empty parentheses
         assertFalse(Phone.isValidPhone("( - )9312 1534")); // parentheses around separators only
         assertFalse(Phone.isValidPhone("(()65) 9312 1534")); // empty nested parentheses
+        assertFalse(Phone.isValidPhone("123\u00BD")); // vulgar fraction is a number but not a digit
+        assertFalse(Phone.isValidPhone("\u00B2\u00B3123")); // superscripts are numbers but not digits
 
         // valid phone numbers
         assertTrue(Phone.isValidPhone("911")); // exactly 3 digits
@@ -52,6 +54,7 @@ public class PhoneTest {
         assertTrue(Phone.isValidPhone("+65 9312 1534")); // country code
         assertTrue(Phone.isValidPhone("(65) 9312 1534")); // balanced parentheses
         assertTrue(Phone.isValidPhone("((65)) 9312 1534")); // nested balanced parentheses
+        assertTrue(Phone.isValidPhone("\u0669\u0668\u0667\u0666\u0665\u0664\u0663\u0662")); // Arabic-Indic digits
     }
 
     @Test

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -31,11 +32,12 @@ public final class FieldOrder {
     @JsonCreator
     public FieldOrder(List<String> names) {
         requireNonNull(names);
+        checkArgument(names.stream().allMatch(Objects::nonNull), MESSAGE_CONSTRAINTS);
         names = withLegacyFields(names);
         checkArgument(names.size() == Field.values().length, MESSAGE_CONSTRAINTS);
         try {
-            fields = names.stream().map(name -> Field.valueOf(requireNonNull(name).toUpperCase(Locale.ROOT))).toList();
-        } catch (IllegalArgumentException | NullPointerException e) {
+            fields = names.stream().map(name -> Field.valueOf(name.toUpperCase(Locale.ROOT))).toList();
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(MESSAGE_CONSTRAINTS, e);
         }
         checkArgument(EnumSet.copyOf(fields).size() == Field.values().length, MESSAGE_CONSTRAINTS);

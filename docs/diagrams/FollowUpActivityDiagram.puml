@@ -1,0 +1,47 @@
+@startuml
+skin rose
+!include style.puml
+/'
+// @@author Cookiemunchrr
+'/
+skinparam ArrowFontStyle plain
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+start
+:User enters followup INDEX a/DESCRIPTION [d/DATE];
+if () then ([input is invalid, or the index
+is not in the displayed list])
+  :Show the error;
+  stop
+else ([else])
+endif
+if () then ([contact has a pending follow-up
+with the same description])
+  repeat
+    :Show the existing follow-up
+    and ask "Add another?";
+    :User replies;
+  repeat while () is ([any other reply]) not ([y, n or cancel])
+  if () then ([n or cancel])
+    :Discard the request;
+    stop
+  elseif () then ([contact changed
+since the prompt])
+    :Show that the contact changed;
+    stop
+  else ([else])
+  endif
+else ([else])
+endif
+:Add a pending follow-up with
+ID lastFollowUpId + 1;
+:Save the contact file;
+if () then ([save succeeds])
+  :Show the contact's follow-ups;
+else ([else])
+  :Restore the contact and the
+  displayed list, and show the error;
+endif
+stop
+@enduml
