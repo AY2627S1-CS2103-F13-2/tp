@@ -25,6 +25,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.LogicManager;
 import seedu.address.model.ModelManager;
 import seedu.address.model.person.Interaction;
@@ -127,6 +128,20 @@ class TerminalWorkspaceUiTest {
             assertTrue(notes.getHeight() > 30);
             assertTrue(notes.localToScene(notes.getBoundsInLocal()).getMaxX()
                     <= card.localToScene(card.getBoundsInLocal()).getMaxX());
+        });
+    }
+
+    @Test
+    void windowConstruction_appliesSavedSizeAndPosition() throws Exception {
+        ModelManager model = new ModelManager();
+        model.setGuiSettings(new GuiSettings(900, 700, 100, 120));
+
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = openWindow(model);
+            assertEquals(900, stage.getWidth());
+            assertEquals(700, stage.getHeight());
+            assertEquals(100, stage.getX());
+            assertEquals(120, stage.getY());
         });
     }
 
