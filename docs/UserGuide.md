@@ -299,7 +299,9 @@ Examples:
 Searching approximately by name:
 
 * `find /fuzzy NAME` performs a case-insensitive fuzzy name search.
-* Minor spelling differences are accepted.
+* Minor spelling differences are accepted: a name, or any word in it, may differ from your search by up to
+  two letters. A search of only one or two letters must keep at least one of them, so `find /fuzzy Al`
+  does not match `Bernice Yu`.
 
 Example:
 
