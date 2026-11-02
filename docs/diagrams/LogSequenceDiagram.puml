@@ -10,11 +10,13 @@ participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":ContactFileParser" as ContactFileParser LOGIC_COLOR
 participant ":LogCommandParser" as LogCommandParser LOGIC_COLOR
 participant "l:LogCommand" as LogCommand LOGIC_COLOR
+participant "<<class>>\nPersonNameResolver" as PersonNameResolver LOGIC_COLOR
 participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
 participant ":Model" as Model MODEL_COLOR
+participant "i:Interaction" as Interaction MODEL_COLOR
 participant "p:Person" as Person MODEL_COLOR
 participant "updated:Person" as UpdatedPerson MODEL_COLOR
 end box
@@ -26,7 +28,12 @@ end box
 [-> LogicManager : execute("log 1 nt/Coffee chat")
 activate LogicManager
 
-LogicManager -> ContactFileParser : parseCommand("log 1 nt/Coffee chat")
+LogicManager -> Model : getCommandAliases()
+activate Model
+Model --> LogicManager : aliases
+deactivate Model
+
+LogicManager -> ContactFileParser : parseCommand("log 1 nt/Coffee chat", aliases)
 activate ContactFileParser
 
 create LogCommandParser
@@ -35,7 +42,7 @@ activate LogCommandParser
 LogCommandParser --> ContactFileParser
 deactivate LogCommandParser
 
-ContactFileParser -> LogCommandParser : parse("1 nt/Coffee chat")
+ContactFileParser -> LogCommandParser : parse(" 1 nt/Coffee chat")
 activate LogCommandParser
 
 note right of LogCommandParser
@@ -44,8 +51,14 @@ note right of LogCommandParser
   note is rejected here.
 end note
 
+create Interaction
+LogCommandParser -> Interaction : Interaction(today, "Coffee chat")
+activate Interaction
+Interaction --> LogCommandParser : i
+deactivate Interaction
+
 create LogCommand
-LogCommandParser -> LogCommand
+LogCommandParser -> LogCommand : LogCommand(1, i)
 activate LogCommand
 LogCommand --> LogCommandParser
 deactivate LogCommand
@@ -61,17 +74,24 @@ deactivate ContactFileParser
 LogicManager -> LogCommand : execute(m)
 activate LogCommand
 
-LogCommand -> Model : getFilteredPersonList()
+LogCommand -> PersonNameResolver : resolveTarget(m, 1, null, "log")
+activate PersonNameResolver
+PersonNameResolver -> Model : getFilteredPersonList()
 activate Model
-Model --> LogCommand : displayed contacts
+Model --> PersonNameResolver : displayed contacts
 deactivate Model
+PersonNameResolver --> LogCommand : p
+deactivate PersonNameResolver
 
-LogCommand -> Person : hasInteraction(interaction)
+LogCommand -> Person : hasInteraction(i)
 activate Person
 Person --> LogCommand : false
 deactivate Person
 
-LogCommand -> Person : withInteraction(interaction)
+LogCommand -> Person : withInteraction(i)
+activate Person
+
+Person -> Person : withInteractions(interactions)
 activate Person
 
 create UpdatedPerson
@@ -80,6 +100,8 @@ activate UpdatedPerson
 UpdatedPerson --> Person
 deactivate UpdatedPerson
 
+deactivate Person
+
 Person --> LogCommand : updated
 deactivate Person
 
@@ -87,6 +109,13 @@ LogCommand -> Model : setPerson(p, updated)
 activate Model
 Model --> LogCommand
 deactivate Model
+
+note right of LogCommand
+  Done through
+  InteractionCommandUtil, which
+  first widens the filter if it
+  would hide the updated contact.
+end note
 
 create CommandResult
 LogCommand -> CommandResult
@@ -97,10 +126,12 @@ deactivate CommandResult
 LogCommand --> LogicManager : r
 deactivate LogCommand
 
+opt contact data changed
 LogicManager -> Storage : saveContactFile(contactFile)
 activate Storage
 Storage --> LogicManager
 deactivate Storage
+end
 
 [<--LogicManager : r
 deactivate LogicManager
