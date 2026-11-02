@@ -34,13 +34,16 @@ public class FuzzyNamePredicate implements Predicate<Person> {
             return false;
         }
 
+        // A query no longer than the allowed distance could be rewritten into any short word,
+        // so at least one of its letters must survive for a word to count as a match.
+        int maxDistance = Math.min(MAX_DISTANCE, query.length() - 1);
         if (personName.contains(query)
-                || levenshteinDistance(personName, query) <= MAX_DISTANCE) {
+                || levenshteinDistance(personName, query) <= maxDistance) {
             return true;
         }
 
         return java.util.Arrays.stream(personName.split(" "))
-                .anyMatch(word -> levenshteinDistance(word, query) <= MAX_DISTANCE);
+                .anyMatch(word -> levenshteinDistance(word, query) <= maxDistance);
     }
 
     private static String normalize(String value) {

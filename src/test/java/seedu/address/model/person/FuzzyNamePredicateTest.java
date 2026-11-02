@@ -59,6 +59,42 @@ public class FuzzyNamePredicateTest {
     }
 
     @Test
+    public void test_shortQueryWithNoCommonLetter_returnsFalse() {
+        Person person = new PersonBuilder()
+                .withName("Bernice Yu")
+                .build();
+
+        FuzzyNamePredicate predicate =
+                new FuzzyNamePredicate("Al");
+
+        assertFalse(predicate.test(person));
+    }
+
+    @Test
+    public void test_shortQueryWithOneTypo_returnsTrue() {
+        Person person = new PersonBuilder()
+                .withName("David Li")
+                .build();
+
+        FuzzyNamePredicate predicate =
+                new FuzzyNamePredicate("Lu");
+
+        assertTrue(predicate.test(person));
+    }
+
+    @Test
+    public void test_swappedLetters_returnsTrue() {
+        Person person = new PersonBuilder()
+                .withName("John Doe")
+                .build();
+
+        FuzzyNamePredicate predicate =
+                new FuzzyNamePredicate("Jhon");
+
+        assertTrue(predicate.test(person));
+    }
+
+    @Test
     public void test_emptyQuery_returnsFalse() {
         Person person = new PersonBuilder()
                 .withName("Alicia Tan")
