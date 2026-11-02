@@ -69,6 +69,7 @@ public class IntroduceCommandTest {
                 expectedModel);
     }
 
+    //@@author Yx0905
     @Test
     public void execute_validIntroducer_keepsFollowUpsStarAndInteractions() throws Exception {
         Person rich = new PersonBuilder().build()
@@ -84,6 +85,7 @@ public class IntroduceCommandTest {
         assertTrue(updated.isStarred());
         assertEquals(rich.getInteractions(), updated.getInteractions());
     }
+    //@@author
 
     @Test
     public void execute_existingIntroducer_confirmsWithYesWithoutChangingContactBeforeReply() throws Exception {

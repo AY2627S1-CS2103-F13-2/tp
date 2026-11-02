@@ -1,3 +1,4 @@
+//@@author Yx0905
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
@@ -116,7 +117,9 @@ public class UnlogCommand extends Command {
         List<Interaction> interactions = new ArrayList<>(person.getInteractions());
         Interaction removed = interactions.remove(entry.getZeroBased());
         Person updatedPerson = person.withInteractions(interactions);
+        //@@author
         InteractionCommandUtil.setPersonPreservingView(model, person, updatedPerson);
+        //@@author Yx0905
         logger.fine("Removed interaction from " + person.getName() + ": " + removed);
 
         String history = interactions.isEmpty()
@@ -150,3 +153,4 @@ public class UnlogCommand extends Command {
                 .toString();
     }
 }
+//@@author

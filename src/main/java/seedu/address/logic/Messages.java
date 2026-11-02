@@ -68,8 +68,10 @@ public class Messages {
             case LINKEDIN -> person.getLinkedin().map(value -> "LinkedIn: " + value).orElse("");
             case FOLLOWUPS -> person.getFollowUps().isEmpty() ? "" : "Follow-ups:\n" + formatFollowUps(person);
             case INTRODUCER -> person.getIntroducer().map(value -> "Introduced by: " + value).orElse("");
+            //@@author Yx0905
             case INTERACTIONS -> person.getInteractions().isEmpty() ? ""
                     : "Interaction history:\n" + formatInteractions(person.getInteractions());
+                    //@@author
         };
     }
 
@@ -84,6 +86,7 @@ public class Messages {
                         .collect(Collectors.joining(", "));
     }
 
+    //@@author Yx0905
     /**
      * Returns the interactions as numbered lines in the given order, e.g. "1. 2026-10-15: Discussed internships".
      */
@@ -94,6 +97,7 @@ public class Messages {
                 history.append("\n");
             }
             history.append(i + 1).append(". ").append(interactions.get(i));
+            //@@author
         }
         return history.toString();
     }

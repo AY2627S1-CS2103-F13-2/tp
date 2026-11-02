@@ -34,18 +34,22 @@ public class UndoManager {
     private final List<HistoryEntry> history = new ArrayList<>();
     private HistoryEntry undoableEntry;
     private HistoryEntry pendingEntry;
+    //@@author Yx0905
     /** An entry whose undo has been applied to the model but not yet saved. */
     private HistoryEntry appliedEntry;
+    //@@author
 
     /**
      * Records a successful data-changing command and updates the available undo action.
      */
     public void recordChange(Command command, List<Person> before, List<Person> after, String feedback) {
+        //@@author Yx0905
         // The undo is only marked once its change has been saved; see discardUnsavedUndo().
         if (appliedEntry != null) {
             appliedEntry.isUndone = true;
             appliedEntry = null;
         }
+        //@@author
         if (before.equals(after)) {
             return;
         }
@@ -131,6 +135,7 @@ public class UndoManager {
         return new CommandResult(String.format(MESSAGE_UNDO_SUCCESS, formatRestoredPersons(restoredPersons)));
     }
 
+    //@@author Yx0905
     /**
      * Forgets an undo whose change was rolled back because it could not be saved, so the entry can still be
      * undone and is not shown as undone in the history.
@@ -139,6 +144,7 @@ public class UndoManager {
         appliedEntry = null;
         pendingEntry = null;
     }
+    //@@author
 
     private void restorePersons(List<Person> currentPersons, List<Person> restoredPersons) {
         for (Person restored : restoredPersons) {

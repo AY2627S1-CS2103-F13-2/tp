@@ -88,6 +88,7 @@ public final class PersonNameResolver {
         return new Outcome.Unique(matches.get(0));
     }
 
+    //@@author Yx0905
     /**
      * Returns the contact a command targets: the one at {@code index} in the displayed list when
      * {@code targetName} is null, or else the contact named by {@code targetName}, as {@link #resolve}
@@ -113,6 +114,7 @@ public final class PersonNameResolver {
         }
         return new Outcome.Unique(lastShownList.get(index.getZeroBased()));
     }
+    //@@author
 
     /**
      * Returns all matching stored contacts without changing the current display.

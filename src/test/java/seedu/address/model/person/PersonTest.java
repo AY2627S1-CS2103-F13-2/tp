@@ -285,8 +285,10 @@ public class PersonTest {
                 + ", events=" + ALICE.getEvents()
                 + ", followUps=" + ALICE.getFollowUps()
                 + ", lastFollowUpId=" + ALICE.getLastFollowUpId()
+                //@@author Yx0905
                 + ", starred=" + ALICE.isStarred()
                 + ", interactions=" + ALICE.getInteractions() + "}";
+        //@@author
         assertEquals(expected, ALICE.toString());
     }
 

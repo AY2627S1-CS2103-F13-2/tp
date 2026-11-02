@@ -33,6 +33,7 @@ public interface Model {
      */
     void setGuiSettings(GuiSettings guiSettings);
 
+    //@@author Yx0905
     /**
      * Returns the command shortcuts, mapping each shortcut name to the command it stands for.
      */
@@ -52,6 +53,7 @@ public interface Model {
      * Replaces all command shortcuts with {@code commandAliases}.
      */
     void setCommandAliases(Map<String, String> commandAliases);
+    //@@author
 
     /**
      * Returns the global contact display order.

@@ -30,6 +30,7 @@ public class DropCommandParserTest {
                         new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("stale"))), false));
     }
 
+    //@@author Yx0905
     @Test
     public void parse_repeatedTag_keptOnce() {
         assertParseSuccess(parser, "2 t/careerfair t/careerfair",
@@ -40,6 +41,7 @@ public class DropCommandParserTest {
                         new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("old")),
                         new DropCommand.FieldValue(DropCommand.Field.TAG, new Tag("stale"))), false));
     }
+    //@@author
 
     @Test
     public void parse_validNameWithEmail_returnsDropCommand() {

@@ -50,6 +50,7 @@ public class UserPrefs implements ReadOnlyUserPrefs {
         this.fieldOrder = requireNonNull(fieldOrder);
     }
 
+    //@@author Yx0905
     @Override
     public Map<String, String> getCommandAliases() {
         // A preferences file with "commandAliases": null is treated as having no shortcuts. Entries are
@@ -85,6 +86,7 @@ public class UserPrefs implements ReadOnlyUserPrefs {
         updated.remove(shortcut);
         commandAliases = updated;
     }
+    //@@author
 
     @Override
     public boolean equals(Object other) {
@@ -97,8 +99,10 @@ public class UserPrefs implements ReadOnlyUserPrefs {
             return false;
         }
 
+        //@@author Yx0905
         return guiSettings.equals(otherUserPrefs.guiSettings) && fieldOrder.equals(otherUserPrefs.fieldOrder)
                 && getCommandAliases().equals(otherUserPrefs.getCommandAliases());
+        //@@author
     }
 
     @Override
@@ -108,8 +112,10 @@ public class UserPrefs implements ReadOnlyUserPrefs {
 
     @Override
     public String toString() {
+        //@@author Yx0905
         return "Gui Settings : " + guiSettings + "; Field Order : " + fieldOrder
                 + "; Command Aliases : " + getCommandAliases();
+        //@@author
     }
 
 }

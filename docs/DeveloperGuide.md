@@ -695,6 +695,8 @@ lower-priority user story. The activity diagram below shows how `order` handles 
 
 <!-- @@author -->
 
+<!-- @@author Yx0905 -->
+
 ### Interaction history (UC10)
 
 Each `Person` holds an immutable list of `Interaction`s, kept in date order, oldest first. An
@@ -780,6 +782,8 @@ starts, `AliasCommandParser#validAliases` drops any entry in a hand-edited prefe
 
 `LogicManager` expands the input before parsing. When a shortcut was used, it prefixes the result, and any
 error, with `Ran: <expanded command>`, so the user sees exactly what was run.
+
+<!-- @@author -->
 
 ### Undo and session history
 

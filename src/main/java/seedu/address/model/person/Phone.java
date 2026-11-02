@@ -62,8 +62,10 @@ public class Phone {
      * and every pair of parentheses encloses at least one digit, so {@code ()123} is rejected.
      */
     private static boolean hasBalancedParentheses(String test) {
+        //@@author Yx0905
         // Each entry records whether the parentheses opened at that level enclose a digit yet.
         Deque<Boolean> openLevels = new ArrayDeque<>();
+        //@@author
         for (int i = 0; i < test.length(); i++) {
             char current = test.charAt(i);
             if (current == '(') {
@@ -72,6 +74,7 @@ public class Phone {
                 if (openLevels.isEmpty() || !openLevels.pop()) {
                     return false;
                 }
+                //@@author Yx0905
                 if (!openLevels.isEmpty()) {
                     openLevels.pop();
                     openLevels.push(true);
@@ -79,6 +82,7 @@ public class Phone {
             } else if (Character.isDigit(current) && !openLevels.isEmpty()) {
                 openLevels.pop();
                 openLevels.push(true);
+                //@@author
             }
         }
         return openLevels.isEmpty();

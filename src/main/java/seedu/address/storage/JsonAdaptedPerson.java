@@ -90,11 +90,13 @@ class JsonAdaptedPerson {
     /**
      * Constructs a JsonAdaptedPerson with every field except interactions.
      */
+    //@@author Yx0905
     public JsonAdaptedPerson(String name, String company, String role, String phone, String email, String linkedin,
             String introducer, List<JsonAdaptedTag> tags, List<JsonAdaptedEvent> events,
             List<JsonAdaptedFollowUp> followUps, boolean starred) {
         this(name, company, role, phone, email, linkedin, introducer, tags, events, followUps, starred, null);
     }
+    //@@author
 
     /**
      * Creates an adapted legacy contact whose allocated ID is inferred from its history.
@@ -296,6 +298,7 @@ class JsonAdaptedPerson {
     }
 
     private List<Interaction> toInteractions() throws IllegalValueException {
+        //@@author Yx0905
         List<Interaction> modelInteractions = new ArrayList<>();
         for (JsonAdaptedInteraction interaction : interactions) {
             if (interaction == null) {
@@ -307,6 +310,7 @@ class JsonAdaptedPerson {
             }
             modelInteractions.add(modelInteraction);
         }
+        //@@author
         return modelInteractions;
     }
 }

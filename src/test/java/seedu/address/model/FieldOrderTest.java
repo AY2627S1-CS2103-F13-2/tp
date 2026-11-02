@@ -37,9 +37,11 @@ class FieldOrderTest {
 
     @Test
     void constructor_orderSavedBeforeInteractions_addsIntroducerBeforeInteractions() {
+        //@@author Yx0905
         FieldOrder order = new FieldOrder(
                 List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name"));
         assertEquals(List.of("followups", "linkedin", "email", "phone", "role", "company", "tags", "name",
+                //@@author
                 "introducer", "interactions"), order.getFieldNames());
     }
 

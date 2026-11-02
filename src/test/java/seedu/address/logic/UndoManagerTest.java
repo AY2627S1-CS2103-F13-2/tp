@@ -47,9 +47,11 @@ public class UndoManagerTest {
         PendingRequest request = undoManager.executeUndo().getPendingRequest().orElseThrow();
 
         request.respond("y", model);
+        //@@author Yx0905
         // the entry is only marked as undone once LogicManager has saved the restored contacts
         assertFalse(undoManager.getHistory().contains("(undone)"));
         undoManager.recordChange(new UndoCommand(undoManager), List.of(), List.of(ALICE), "Restored contact");
+        //@@author
 
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO,
                 request.respond("y", model).getFeedbackToUser());
@@ -57,6 +59,7 @@ public class UndoManagerTest {
         assertTrue(undoManager.getHistory().contains("deletion (undone): Deleted Alice"));
     }
 
+    //@@author Yx0905
     @Test
     public void discardUnsavedUndo_keepsEntryAvailableAndNotUndone() throws Exception {
         UndoManager undoManager = new UndoManager();
@@ -68,6 +71,7 @@ public class UndoManagerTest {
         assertFalse(undoManager.getHistory().contains("(undone)"));
         assertTrue(undoManager.executeUndo().getPendingRequest().isPresent());
     }
+    //@@author
 
     @Test
     public void executeUndo_missingRestoredPerson_reportsConflict() throws Exception {

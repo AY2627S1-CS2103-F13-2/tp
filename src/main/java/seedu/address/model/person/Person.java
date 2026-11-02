@@ -119,9 +119,11 @@ public class Person {
     public Person(Name name, Company company, Role role, Phone phone, Email email,
             Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
             List<FollowUp> followUps, boolean starred) {
+        //@@author Yx0905
         this(name, company, role, phone, email, linkedin,
                 introducer, tags, events, followUps, starred, List.of());
     }
+    //@@author
 
     /**
      * Constructs a person with every field.
@@ -129,8 +131,10 @@ public class Person {
      * so no field is lost when a contact is copied.
      * Interactions are kept in date order.
      */
+    //@@author Yx0905
     public Person(Name name, Company company, Role role, Phone phone, Email email,
             Linkedin linkedin, Name introducer, Set<Tag> tags, Set<Event> events,
+            //@@author
             List<FollowUp> followUps, boolean starred,
             List<Interaction> interactions) {
         this(name, company, role, phone, email, linkedin, introducer, tags, events, followUps, starred,
@@ -164,9 +168,11 @@ public class Person {
         this.events.addAll(events);
         this.followUps.addAll(followUps);
 
+        //@@author Yx0905
         List<Interaction> sortedInteractions = new ArrayList<>(interactions);
         sortedInteractions.sort(Comparator.comparing(Interaction::getDate));
         this.interactions = List.copyOf(sortedInteractions);
+        //@@author
 
         Set<Integer> actionIds = new HashSet<>();
         for (FollowUp action : this.followUps) {
@@ -337,14 +343,17 @@ public class Person {
     /**
      * Returns a copy with the given interaction history.
      */
+    //@@author Yx0905
     public Person withInteractions(List<Interaction> interactions) {
         return new Person(name, company, role, phone, email, linkedin,
+                //@@author
                 introducer, tags, events, followUps, starred, interactions, lastFollowUpId);
     }
 
     /**
      * Returns a copy with an interaction added.
      */
+    //@@author Yx0905
     public Person withInteraction(Interaction interaction) {
         requireNonNull(interaction);
 
@@ -353,6 +362,7 @@ public class Person {
 
         return withInteractions(updatedInteractions);
     }
+    //@@author
 
     /**
      * Returns true if this person has an interaction with the same date and note.
@@ -425,8 +435,10 @@ public class Person {
                 && events.equals(otherPerson.events)
                 && followUps.equals(otherPerson.followUps)
                 && lastFollowUpId == otherPerson.lastFollowUpId
+                //@@author Yx0905
                 && starred == otherPerson.starred
                 && interactions.equals(otherPerson.interactions);
+        //@@author
     }
 
     @Override

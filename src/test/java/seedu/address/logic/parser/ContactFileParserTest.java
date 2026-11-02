@@ -286,6 +286,7 @@ public class ContactFileParserTest {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("record 1 i/Jane Doe"));
     }
 
+    //@@author Yx0905
     @Test
     public void isBuiltInCommandWord_everyParsedCommand_true() {
         // Every command the parser runs is a built-in word, so a shortcut can never hide it.
@@ -296,4 +297,5 @@ public class ContactFileParserTest {
         }
         assertEquals("filter t/work", ContactFileParser.expandShortcut("filter t/work", Map.of("filter", "list")));
     }
+    //@@author
 }

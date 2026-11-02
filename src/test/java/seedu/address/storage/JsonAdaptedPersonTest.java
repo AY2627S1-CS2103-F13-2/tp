@@ -187,6 +187,7 @@ public class JsonAdaptedPersonTest {
         assertThrows(IllegalValueException.class, person::toModelType);
     }
 
+    //@@author Yx0905
     @Test
     public void toModelType_personWithInteractions_keepsInteractions() throws Exception {
         Person person = BENSON.withInteraction(new Interaction(LocalDate.of(2026, 10, 15), "Coffee chat"))
@@ -229,6 +230,7 @@ public class JsonAdaptedPersonTest {
         return new JsonAdaptedPerson(VALID_NAME, VALID_COMPANY, VALID_ROLE, VALID_PHONE,
                 VALID_EMAIL, VALID_LINKEDIN, null, VALID_TAGS, null, null, false, List.of(interactions));
     }
+    //@@author
 
     @Test
     public void toModelType_nullEventEntry_throwsIllegalValueException() {

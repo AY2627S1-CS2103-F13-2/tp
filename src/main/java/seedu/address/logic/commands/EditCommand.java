@@ -124,8 +124,10 @@ public class EditCommand extends Command {
             case PersonNameResolver.Outcome.Unique unique -> {
                 personToEdit = unique.person();
             }
+            //@@author Yx0905
             case PersonNameResolver.Outcome.Several several -> {
                 return new CommandResult(several.message());
+                //@@author
             }
         }
 

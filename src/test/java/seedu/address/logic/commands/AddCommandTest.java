@@ -261,6 +261,7 @@ public class AddCommandTest {
             throw new AssertionError("This method should not be called.");
         }
 
+        //@@author Yx0905
         @Override
         public Map<String, String> getCommandAliases() {
             throw new AssertionError("This method should not be called.");
@@ -280,6 +281,7 @@ public class AddCommandTest {
         public void setCommandAliases(Map<String, String> commandAliases) {
             throw new AssertionError("This method should not be called.");
         }
+        //@@author
 
         @Override
         public void addPerson(Person person) {

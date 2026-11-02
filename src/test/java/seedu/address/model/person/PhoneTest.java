@@ -39,9 +39,11 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("(6591234567")); // unclosed parenthesis
         assertFalse(Phone.isValidPhone("6591234567)")); // unopened parenthesis
         assertFalse(Phone.isValidPhone(")65(91234567")); // parentheses in the wrong order
+        //@@author Yx0905
         assertFalse(Phone.isValidPhone("()123")); // empty parentheses
         assertFalse(Phone.isValidPhone("( - )9312 1534")); // parentheses around separators only
         assertFalse(Phone.isValidPhone("(()65) 9312 1534")); // empty nested parentheses
+        //@@author
         assertFalse(Phone.isValidPhone("123\u00BD")); // vulgar fraction is a number but not a digit
         assertFalse(Phone.isValidPhone("\u00B2\u00B3123")); // superscripts are numbers but not digits
 
