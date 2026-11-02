@@ -251,7 +251,7 @@ Records the name of the person who introduced a contact. The introducer does not
 Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`
 
 * `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
-* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
+* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them with numbered indexes. Enter the index of the contact by itself, or `n`/`cancel` to stop.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * The introducer's name must differ from the contact's name, ignoring letter case and normalized spacing.
   Renaming a contact to their saved introducer's name is also rejected.
@@ -265,6 +265,14 @@ Examples:
 * `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
 * `introduce 1 i/Jane Smith` Records Jane Smith as the introducer of the 1st contact in the displayed list.
 * `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
+
+Ambiguous-name example: suppose the candidates are `1. Alice Tan` and `2. Alice Lim`.
+
+1. Enter `introduce Alice i/Jane` to display the matching contacts.
+2. Reply with `2` by itself to choose Alice Lim from those candidates. Do not repeat the `introduce` command.
+3. Reply with `y` **only if** Astra asks to replace a different existing introducer;
+   `n` or `cancel` keeps the existing introducer. With no saved introducer, Jane is recorded after step 2.
+   If Jane is already recorded, Astra reports no change and does not ask for confirmation.
 
 ### Locating persons: `find`
 
