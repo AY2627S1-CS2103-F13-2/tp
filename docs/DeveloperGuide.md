@@ -17,6 +17,16 @@ title: Developer Guide
   [OpenJFX Monocle](https://github.com/TestFX/Monocle) for running UI tests without a display.
 * Fuzzy name search uses the standard
   [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) algorithm.
+* Notable uses of AI:
+  * @Cookiemunchrr used Claude Code (Anthropic's Claude models) extensively as a pair programmer: to implement
+    and test the contact model rework, deletion and confirmation flows, transactional saves, tag filtering,
+    follow-ups and field order; to draft their User Guide and Developer Guide sections and UML diagrams; and to
+    draft commit messages and pull request descriptions. They reviewed, edited and tested all generated output.
+  * @Yx0905 used Claude Code to implement, test and document parts of their work, such as the interaction
+    history, command shortcuts and several bug fixes.
+  * @KeeYenCheng used GitHub Copilot to help implement and test parts of their work, such as the introducer,
+    undo history, field order coverage and window position recovery, and to update Developer Guide diagrams.
+  * @Kafka03 used OpenAI Codex for some v1.6 fixes, such as numeric contact selection.
 
 --------------------------------------------------------------------------------------------------------------------
 
