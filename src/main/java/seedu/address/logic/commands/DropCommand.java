@@ -165,6 +165,7 @@ public class DropCommand extends Command {
                         selected.field().getDisplayName(), selected.displayValue(), person.getName()));
             }
         }
+        Person updatedPerson = validateRemoval(model, person);
 
         if (!confirmed) {
             String preview = String.format(MESSAGE_CONFIRM_REMOVAL, person.getName(), formatValues(values));
@@ -173,11 +174,18 @@ public class DropCommand extends Command {
             return new CommandResult(request.getPrompt(), request);
         }
 
-        return applyRemoval(model, person, targetName != null);
+        return applyRemoval(model, person, updatedPerson, targetName != null);
     }
 
-    private CommandResult applyRemoval(Model model, Person person, boolean restoreFilteredList) {
+    private Person validateRemoval(Model model, Person person) throws CommandException {
         Person updatedPerson = removeValues(person, values);
+        if (!person.isSamePerson(updatedPerson) && model.hasPerson(updatedPerson)) {
+            throw new CommandException(EditCommand.MESSAGE_DUPLICATE_PERSON);
+        }
+        return updatedPerson;
+    }
+
+    private CommandResult applyRemoval(Model model, Person person, Person updatedPerson, boolean restoreFilteredList) {
         model.setPerson(person, updatedPerson);
         if (restoreFilteredList) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
@@ -205,7 +213,8 @@ public class DropCommand extends Command {
                             selected.field().getDisplayName(), selected.displayValue(), target.getName()));
                 }
             }
-            return applyRemoval(model, target, restoreFilteredList);
+            Person updatedPerson = validateRemoval(model, target);
+            return applyRemoval(model, target, updatedPerson, restoreFilteredList);
         }
     }
 
