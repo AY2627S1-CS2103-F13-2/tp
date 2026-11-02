@@ -19,12 +19,13 @@ public class FollowUpCommandParser implements Parser<FollowUpCommand> {
     public static final String MESSAGE_DATE_FORMAT =
             "Due date must be a valid date in yyyy-MM-dd, dd/MM/yyyy or d MMM yyyy format (English month names).";
     private static final Pattern PREFIX = Pattern.compile("(?<!\\S)[A-Za-z][A-Za-z0-9_-]*/");
+
     @Override
     public FollowUpCommand parse(String args) throws ParseException {
         requireNonNull(args);
         List<MatchResult> prefixes = PREFIX.matcher(args).results().toList();
         if (prefixes.isEmpty()) {
-            throw invalidFormat();
+            throw createInvalidFormatException();
         }
         String description = null;
         String date = null;
@@ -37,11 +38,11 @@ public class FollowUpCommandParser implements Parser<FollowUpCommand> {
             } else if (prefix.group().equals("d/") && date == null) {
                 date = value;
             } else {
-                throw invalidFormat();
+                throw createInvalidFormatException();
             }
         }
         if (description == null) {
-            throw invalidFormat();
+            throw createInvalidFormatException();
         }
         if (!FollowUp.isValidDescription(description)) {
             throw new ParseException(FollowUp.MESSAGE_CONSTRAINTS);
@@ -55,7 +56,7 @@ public class FollowUpCommandParser implements Parser<FollowUpCommand> {
         return DateParserUtil.parseDate(value, MESSAGE_DATE_FORMAT);
     }
 
-    private static ParseException invalidFormat() {
+    private static ParseException createInvalidFormatException() {
         return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FollowUpCommand.MESSAGE_USAGE));
     }
 }

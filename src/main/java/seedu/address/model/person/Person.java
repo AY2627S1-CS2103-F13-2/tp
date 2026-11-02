@@ -279,12 +279,12 @@ public class Person {
         requireNonNull(action);
 
         checkArgument(action.getId() > lastFollowUpId, "Follow-up IDs must not be reused.");
-        List<FollowUp> updatedActions = new ArrayList<>(followUps);
+        List<FollowUp> updatedFollowUps = new ArrayList<>(followUps);
 
-        updatedActions.add(action);
+        updatedFollowUps.add(action);
 
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, updatedActions, starred, interactions, action.getId());
+                introducer, tags, events, updatedFollowUps, starred, interactions, action.getId());
     }
 
     /**
@@ -321,15 +321,17 @@ public class Person {
     }
 
     /**
-     * Returns a copy without the specified action, preserving order and retired IDs.
+     * Returns a copy without the specified follow-up, preserving order and retired IDs.
      */
     public Person removeFollowUp(int followUpId) {
         checkArgument(followUps.stream().anyMatch(action -> action.getId() == followUpId),
                 "Follow-up with the specified ID does not exist.");
-        List<FollowUp> remaining = followUps.stream().filter(action -> action.getId() != followUpId).toList();
-        assert remaining.size() == followUps.size() - 1 : "Exactly one action must be removed";
+        List<FollowUp> remainingFollowUps = followUps.stream()
+                .filter(action -> action.getId() != followUpId)
+                .toList();
+        assert remainingFollowUps.size() == followUps.size() - 1 : "Exactly one follow-up must be removed";
         return new Person(name, company, role, phone, email, linkedin,
-                introducer, tags, events, remaining, starred, interactions, lastFollowUpId);
+                introducer, tags, events, remainingFollowUps, starred, interactions, lastFollowUpId);
     }
 
     /**

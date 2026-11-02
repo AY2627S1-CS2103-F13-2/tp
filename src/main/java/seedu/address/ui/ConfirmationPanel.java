@@ -16,6 +16,8 @@ import seedu.address.logic.commands.PendingRequest;
  */
 public class ConfirmationPanel extends UiPart<Region> {
     private static final String FXML = "ConfirmationPanel.fxml";
+    private static final String CONFIRM_REPLY = "y";
+    private static final String CANCEL_REPLY = "cancel";
 
     private final Consumer<String> replyHandler;
     private long revision;
@@ -48,8 +50,8 @@ public class ConfirmationPanel extends UiPart<Region> {
         getRoot().setManaged(isConfirmation);
         confirmationPreview.setText(isConfirmation ? request.getPrompt() : "");
         confirmationPreview.positionCaret(0);
-        confirmButton.setOnAction(event -> sendReply("y", currentRevision));
-        cancelButton.setOnAction(event -> sendReply("cancel", currentRevision));
+        confirmButton.setOnAction(event -> sendReply(CONFIRM_REPLY, currentRevision));
+        cancelButton.setOnAction(event -> sendReply(CANCEL_REPLY, currentRevision));
     }
 
     private void sendReply(String response, long expectedRevision) {

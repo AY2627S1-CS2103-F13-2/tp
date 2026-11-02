@@ -21,8 +21,8 @@ import seedu.address.model.person.Person;
  * here, so the rule cannot drift between commands as more of them gain the ability.
  *
  * <p>Because a name need not be given in full, it can match several contacts. When it does, the
- * caller is handed a numbered list of the matches to show the user, rather than being left to act on
- * a guess.
+ * caller either shows a numbered list of the matches or asks the user to pick one (see
+ * {@link PersonSelectionRequest}), rather than being left to act on a guess.
  */
 public final class PersonNameResolver {
 
@@ -31,7 +31,7 @@ public final class PersonNameResolver {
             + "To %3$s one of them, enter the command again with its index in place of the name.";
 
     private PersonNameResolver() {
-        // Utility class; all behaviour is in the static resolve method.
+        // Prevents instantiation of this utility class.
     }
 
     /**
@@ -125,8 +125,8 @@ public final class PersonNameResolver {
 
     /**
      * Returns the given contacts as numbered lines of their name, company and email, skipping details
-     * they do not have, e.g. "1. John Lim - Google - john.lim@example.com", separated by em dashes. Name alone is
-     * rarely enough to tell two matches apart, which is the whole reason the list is being shown.
+     * they do not have, e.g. "1. John Lim — Google — john.lim@example.com". Name alone is rarely
+     * enough to tell two matches apart, which is the whole reason the list is being shown.
      */
     static String formatNumberedList(List<Person> persons) {
         StringBuilder list = new StringBuilder();
