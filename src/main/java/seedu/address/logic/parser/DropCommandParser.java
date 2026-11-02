@@ -83,11 +83,13 @@ public class DropCommandParser implements Parser<DropCommand> {
                 if (value.isEmpty()) {
                     throw invalidFormat();
                 }
+                //@@author Yx0905
                 DropCommand.FieldValue parsed = parseValue(field, value);
                 // A tag repeated in the command is removed once, so it is listed once in the preview.
                 if (!values.contains(parsed)) {
                     values.add(parsed);
                 }
+                //@@author
             }
         }
         return values;

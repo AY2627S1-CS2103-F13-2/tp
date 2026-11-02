@@ -56,8 +56,10 @@ public class LogicManager implements Logic {
         this.storage = storage;
         undoManager = new UndoManager();
         contactFileParser = new ContactFileParser(undoManager);
+        //@@author Yx0905
         // Shortcuts loaded from a hand-edited preferences file have not been checked yet.
         model.setCommandAliases(AliasCommandParser.validAliases(model.getCommandAliases()));
+        //@@author
     }
 
     @Override
@@ -88,21 +90,25 @@ public class LogicManager implements Logic {
                 } else {
                     commandResult = pendingRequest.respond(response, model);
                 }
+                //@@author Yx0905
             }
             if (commandResult == null) {
                 String shortcutNote = shortcutNote(commandText);
                 try {
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
+                    //@@author
                     logger.fine("Executing " + command.getClass().getSimpleName());
                     CommandResult selected = ContactSelection.prepare(commandText, model, contactFileParser);
                     commandResult = (selected == null ? command.execute(model) : selected)
                             .withFeedbackPrefix(shortcutNote);
+                //@@author Yx0905
                 } catch (ParseException pe) {
                     throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
                 } catch (CommandException ce) {
                     throw shortcutNote.isEmpty() ? ce : new CommandException(shortcutNote + ce.getMessage(), ce);
                 }
             }
+            //@@author
 
             if (commandResult.getPendingRequest().isPresent()) {
                 retainPendingRequest(commandResult, snapshot, command, personsBeforeCommand);
@@ -168,6 +174,7 @@ public class LogicManager implements Logic {
         clearPendingRequest();
     }
 
+    //@@author Yx0905
     /**
      * Returns true if {@code response} runs {@code exit}, whether typed in full, through a shortcut, or with the
      * extra words that {@code exit} ignores, so that the app can always be closed while a reply is awaited.
@@ -186,6 +193,7 @@ public class LogicManager implements Logic {
         String expandedText = ContactFileParser.expandShortcut(commandText, model.getCommandAliases());
         return expandedText.equals(commandText) ? "" : String.format(MESSAGE_SHORTCUT_EXPANDED, expandedText.trim());
     }
+    //@@author
 
     private void restoreFailedRequest(ModelSnapshot snapshot) {
         snapshot.restore(model);

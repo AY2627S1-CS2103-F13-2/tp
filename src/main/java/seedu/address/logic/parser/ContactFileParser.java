@@ -56,12 +56,14 @@ public class ContactFileParser {
     private static final Pattern BASIC_COMMAND_FORMAT =
             Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
     private static final Logger logger = LogsCenter.getLogger(ContactFileParser.class);
+    //@@author Yx0905
     /**
      * Every built-in command word and how to create its command. This is the only list of command words:
      * {@link #parseCommand(String)} and the shortcut checks both read it, so a new command added here can
      * be run, cannot be hidden by a shortcut, and can be the target of one.
      */
     private static final Map<String, CommandFactory> COMMANDS = createCommands();
+    //@@author
 
     private final UndoManager undoManager;
 
@@ -73,6 +75,7 @@ public class ContactFileParser {
         this.undoManager = undoManager;
     }
 
+    //@@author Yx0905
     /**
      * Creates the command for one command word from the arguments typed after it.
      */
@@ -85,10 +88,12 @@ public class ContactFileParser {
         Map<String, CommandFactory> commands = new LinkedHashMap<>();
         commands.put(AddCommand.COMMAND_WORD, (parser, arguments) -> new AddCommandParser().parse(arguments));
         commands.put(EditCommand.COMMAND_WORD, (parser, arguments) -> new EditCommandParser().parse(arguments));
+        //@@author
         commands.put(DeleteFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
             new DeleteFollowUpCommandParser().parse(arguments));
         commands.put(EditFollowUpCommand.COMMAND_WORD, (parser, arguments) ->
             new EditFollowUpCommandParser().parse(arguments));
+        //@@author Yx0905
         commands.put(ChangeFollowUpStatusCommand.COMMAND_WORD_COMPLETE, (parser, arguments) ->
             new ChangeFollowUpStatusCommandParser(FollowUp.Status.COMPLETED).parse(arguments));
         commands.put(ChangeFollowUpStatusCommand.COMMAND_WORD_REOPEN, (parser, arguments) ->
@@ -108,8 +113,10 @@ public class ContactFileParser {
         commands.put(UnlogCommand.COMMAND_WORD, (parser, arguments) -> new UnlogCommandParser().parse(arguments));
         commands.put(EditLogCommand.COMMAND_WORD, (parser, arguments) -> new EditLogCommandParser().parse(arguments));
         commands.put(FollowUpCommand.COMMAND_WORD, (parser, arguments) -> new FollowUpCommandParser().parse(arguments));
+        //@@author
         commands.put(PendingFollowUpsCommand.COMMAND_WORD, (parser, arguments) ->
                 new PendingFollowUpsCommandParser().parse(arguments));
+        //@@author Yx0905
         commands.put(OrderCommand.COMMAND_WORD, (parser, arguments) -> new OrderCommandParser().parse(arguments));
         commands.put(ListCommand.COMMAND_WORD, (parser, arguments) -> new ListCommand());
         commands.put(ExitCommand.COMMAND_WORD, (parser, arguments) -> new ExitCommand());
@@ -162,6 +169,7 @@ public class ContactFileParser {
     public Command parseCommand(String userInput, Map<String, String> aliases) throws ParseException {
         return parseCommand(expandShortcut(userInput, aliases));
     }
+    //@@author
 
     /**
      * Parses user input into command for execution.
@@ -184,12 +192,14 @@ public class ContactFileParser {
         // Lower level log messages are used sparingly to minimize noise in the code.
         logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
 
+        //@@author Yx0905
         CommandFactory factory = COMMANDS.get(commandWord);
         if (factory == null) {
             logger.finer("This user input caused a ParseException: " + userInput);
             throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
         }
         return factory.create(this, arguments);
+        //@@author
     }
 
     private UndoCommand parseUndoCommand(String arguments) throws ParseException {

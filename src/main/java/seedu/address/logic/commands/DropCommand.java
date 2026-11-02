@@ -250,6 +250,7 @@ public class DropCommand extends Command {
     }
 
     private boolean containsValue(Person person, FieldValue selected) {
+        //@@author Yx0905
         Stream<?> saved = switch (selected.field()) {
             case COMPANY -> person.getCompany().stream();
             case ROLE -> person.getRole().stream();
@@ -272,6 +273,7 @@ public class DropCommand extends Command {
             case TAG, PHONE -> selected.equals(saved);
             default -> selected.getClass().equals(saved.getClass())
                     && selected.toString().equalsIgnoreCase(saved.toString());
+                    //@@author
         };
     }
 

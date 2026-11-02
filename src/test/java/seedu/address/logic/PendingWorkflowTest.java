@@ -98,6 +98,7 @@ public class PendingWorkflowTest {
         assertEquals(0, contactStorage.getSaveCount());
     }
 
+    //@@author Yx0905
     @Test
     public void execute_exitShortcutOrExtraWordsWhileConfirmationPending_exitsWithoutConfirming()
             throws Exception {
@@ -112,7 +113,9 @@ public class PendingWorkflowTest {
 
                 assertTrue(result.isExit(), exitInput + " after " + request);
                 assertEquals(original, model.getContactFile());
+                //@@author
                 assertEquals(0, contactStorage.getSaveCount());
+                //@@author Yx0905
             }
         }
     }
@@ -126,6 +129,7 @@ public class PendingWorkflowTest {
         assertTrue(logic.execute("l").getPendingRequest().isPresent());
         assertTrue(logic.execute("y").getFeedbackToUser().startsWith("Cleared"));
     }
+    //@@author
 
     @Test
     public void execute_ambiguousDelete_selectsThenConfirmsAndRestoresOnCancel() throws Exception {

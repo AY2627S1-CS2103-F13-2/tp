@@ -31,6 +31,7 @@ public class LogCommand extends Command {
             + PREFIX_NOTE + "NOTE\n"
             + "Date formats: yyyy-MM-dd, dd/MM/yyyy or d MMM yyyy (English month names); "
             + "dates must be on or after 2000-01-01.\n"
+            //@@author Yx0905
             + "Example: " + COMMAND_WORD + " John Lim " + PREFIX_DATE + "2026-10-15 "
             + PREFIX_NOTE + "Discussed backend internships";
 
@@ -83,7 +84,9 @@ public class LogCommand extends Command {
         }
 
         Person updatedPerson = person.withInteraction(interaction);
+        //@@author
         InteractionCommandUtil.setPersonPreservingView(model, person, updatedPerson);
+        //@@author Yx0905
         logger.fine("Logged interaction for " + person.getName() + ": " + interaction);
 
         return new CommandResult(String.format(MESSAGE_SUCCESS, person.getName(), interaction.getDate(),
@@ -115,3 +118,4 @@ public class LogCommand extends Command {
                 .toString();
     }
 }
+//@@author

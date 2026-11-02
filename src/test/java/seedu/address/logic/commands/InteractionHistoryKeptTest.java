@@ -37,6 +37,7 @@ public class InteractionHistoryKeptTest {
         new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model)
                 .getPendingRequest().orElseThrow().respond("y", model);
 
+        //@@author Yx0905
         Person editedAlice = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         assertEquals("Apple", editedAlice.getCompany().orElseThrow().toString());
         assertEquals(List.of(OCT_1), editedAlice.getInteractions());
@@ -59,3 +60,4 @@ public class InteractionHistoryKeptTest {
         assertFalse(feedback.contains("Interaction history"));
     }
 }
+//@@author

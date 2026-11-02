@@ -68,6 +68,7 @@ public class ModelManager implements Model {
         userPrefs.setGuiSettings(guiSettings);
     }
 
+    //@@author Yx0905
     @Override
     public Map<String, String> getCommandAliases() {
         return userPrefs.getCommandAliases();
@@ -90,6 +91,7 @@ public class ModelManager implements Model {
         requireNonNull(commandAliases);
         userPrefs.setCommandAliases(commandAliases);
     }
+    //@@author
 
     @Override
     public FieldOrder getFieldOrder() {

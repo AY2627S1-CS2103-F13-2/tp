@@ -132,6 +132,7 @@ public class CommandResultTest {
         assertEquals(expected, commandResult.toString());
     }
 
+    //@@author Yx0905
     @Test
     public void withFeedbackPrefix_keepsEveryOtherField() {
         CommandResult result = new CommandResult("Previewed.", false, true, false);
@@ -141,4 +142,5 @@ public class CommandResultTest {
         assertEquals("Ran: undo\nPreviewed.", prefixed.getFeedbackToUser());
         assertEquals(new CommandResult("Ran: undo\nPreviewed.", false, true, false), prefixed);
     }
+    //@@author
 }

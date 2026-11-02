@@ -62,6 +62,7 @@ public class DropCommandTest {
         assertEquals(original.getEmail(), expectedPerson.getEmail());
     }
 
+    //@@author Yx0905
     @Test
     public void execute_confirmed_keepsFollowUpsStarAndInteractions() throws Exception {
         Person rich = original.appendFollowUp(new FollowUp(1, "Send portfolio", FollowUp.Status.PENDING))
@@ -77,6 +78,7 @@ public class DropCommandTest {
         assertTrue(dropped.isStarred());
         assertEquals(rich.getInteractions(), dropped.getInteractions());
     }
+    //@@author
 
     @Test
     public void execute_deletedTarget_rejectsStaleRequest() throws Exception {
@@ -224,6 +226,7 @@ public class DropCommandTest {
                 model, DropCommand.MESSAGE_NO_VALUES);
     }
 
+    //@@author Yx0905
     @Test
     public void execute_valuesInDifferentLetterCase_removesSavedValues() {
         Person person = new PersonBuilder(original).withCompany("Acme Pte Ltd").withIntroducer("Jane Smith").build();
@@ -252,6 +255,7 @@ public class DropCommandTest {
                         List.of(new FieldValue(Field.TAG, new Tag("Old"))), true),
                 model, String.format(DropCommand.MESSAGE_VALUE_NOT_FOUND, "tag", "Old", "Jane Doe"));
     }
+    //@@author
 
     @Test
     public void execute_valueWithWrongModelType_isReportedAsNotFound() {

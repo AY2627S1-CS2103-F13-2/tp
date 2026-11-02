@@ -89,6 +89,7 @@ public class LogicManagerTest {
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
     }
 
+    //@@author Yx0905
     @Test
     public void execute_shortcut_savedToPrefsFileAndExpanded() throws Exception {
         Path prefsPath = temporaryFolder.resolve("userPrefs.json");
@@ -205,6 +206,7 @@ public class LogicManagerTest {
         logic.execute(ListCommand.COMMAND_WORD);
         assertFalse(temporaryFolder.resolve("userPrefs.json").toFile().exists());
     }
+    //@@author
 
     @Test
     public void execute_starAndUnstar_persistsStatusThroughSaveFlow() throws Exception {
@@ -429,6 +431,7 @@ public class LogicManagerTest {
         assertEquals("87654321", model.getContactFile().getPersonList().getFirst().getPhone().orElseThrow().value);
     }
 
+    //@@author Yx0905
     @Test
     public void execute_undoSaveFails_keepsUndoAvailableAndHistoryUnchanged() throws Exception {
         Person original = new PersonBuilder().withName("Alice Smith").withPhone("12345678")
@@ -464,6 +467,7 @@ public class LogicManagerTest {
         assertTrue(logic.execute("history").getFeedbackToUser().startsWith("1. deletion (undone)"));
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO, logic.execute("undo").getFeedbackToUser());
     }
+    //@@author
 
     @Test
     public void execute_undoWouldViolateUniqueness_reportsConflictWithoutChangingData() throws Exception {

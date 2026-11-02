@@ -45,9 +45,11 @@ public final class FieldOrder {
 
     private static List<String> withLegacyFields(List<String> names) {
         String introducer = Field.INTRODUCER.name().toLowerCase(Locale.ROOT);
+        //@@author Yx0905
         String interactions = Field.INTERACTIONS.name().toLowerCase(Locale.ROOT);
         boolean hasInteractions = names.stream()
                 .anyMatch(name -> name != null && name.toLowerCase(Locale.ROOT).equals(interactions));
+        //@@author
         boolean hasIntroducer = names.stream()
                 .anyMatch(name -> name != null && name.toLowerCase(Locale.ROOT).equals(introducer));
         if (hasInteractions && !hasIntroducer && names.size() == Field.values().length - 1) {

@@ -102,12 +102,14 @@ public class CommandResult {
         return new CommandResult(feedbackToUser, false, false, null, requireNonNull(person));
     }
 
+    //@@author Yx0905
     /**
      * Returns a copy of this result whose feedback starts with {@code prefix}, keeping every other field.
      */
     public CommandResult withFeedbackPrefix(String prefix) {
         requireNonNull(prefix);
         return new CommandResult(prefix + feedbackToUser, showHelp, exit, saveContactFile, pendingRequest,
+                //@@author
                 personForDetails, followUpForDetails, followUpListing, preserveCurrentView);
     }
 

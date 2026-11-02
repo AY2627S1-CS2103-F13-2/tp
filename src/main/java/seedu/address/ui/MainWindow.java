@@ -51,9 +51,11 @@ public class MainWindow extends UiPart<Stage> {
     private Person selectedContact;
     private FollowUpEntry selectedFollowUp;
     private FollowUpListPanel followUpListPanel;
+    //@@author Yx0905
     private boolean isRequestPending;
     /** The contact that was selected when the pending request began, selected again once it ends. */
     private Person selectionBeforeRequest;
+    //@@author
 
     @FXML
     private StackPane personDetailsPlaceholder;
@@ -264,6 +266,7 @@ public class MainWindow extends UiPart<Stage> {
             logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
             confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
             displayResult(commandResult);
+            //@@author Yx0905
             if (commandResult.getPendingRequest().isPresent()) {
                 if (!isRequestPending) {
                     isRequestPending = true;
@@ -276,6 +279,7 @@ public class MainWindow extends UiPart<Stage> {
                 isRequestPending = false;
                 selectionBeforeRequest = null;
             }
+            //@@author
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -370,6 +374,7 @@ public class MainWindow extends UiPart<Stage> {
         refreshDetails();
     }
 
+    //@@author Yx0905
     /**
      * Selects the contact that was selected before the pending request began, if one has just ended, so that
      * cancelling or completing a request does not move the selection to the first contact in the list.
@@ -382,6 +387,7 @@ public class MainWindow extends UiPart<Stage> {
         isRequestPending = false;
         selectionBeforeRequest = null;
     }
+    //@@author
 
     private void showContact(Person person) {
         selectedContact = person;

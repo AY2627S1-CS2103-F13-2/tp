@@ -132,7 +132,9 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
 * Use `i/INTRODUCER` to record who introduced the contact. This name is optional and does not need to belong to an existing Astra contact.
   A contact cannot be their own introducer; the comparison ignores letter case and normalizes spacing.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
+  <!-- @@author Yx0905 -->
 * `l/LINKEDIN` accepts a `linkedin.com` URL, such as `linkedin.com/in/johndoe` or `https://www.linkedin.com/in/johndoe`, or a profile handle of 3 to 100 letters, digits and hyphens, such as `john-doe`.
+  <!-- @@author -->
 * The phone number and email must not already belong to another contact. Two contacts can share a name unless neither of them has an email. Names are compared without regard to letter case, so adding `john doe` without an email is rejected if `John Doe` without an email already exists.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
@@ -250,14 +252,18 @@ Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…�
 * Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
 * Astra first displays the proposed removal in the confirmation panel. Reply `y` to apply it,
   or `n`/`cancel` to stop. Until confirmed, the contact file is unchanged and not saved.
+  <!-- @@author Yx0905 -->
   You do not need to type the command again with `--confirm`.
 * Ending the command with `--confirm` skips the preview and removes the values immediately,
   without asking. Use it only when you are sure of the values.
+  <!-- @@author -->
 * Repeating `t/TAG` removes only those selected tags; all other tags and contact details are retained.
 
 Examples:
 * `drop 1 t/outdated` Shows the selected tag removal for the 1st contact.
+  <!-- @@author Yx0905 -->
 * `drop 1 t/outdated --confirm` Removes that tag immediately, without a preview, while keeping the contact's other tags.
+  <!-- @@author -->
 * `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
 * `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
 
@@ -265,9 +271,12 @@ Examples:
 
 Records the name of the person who introduced a contact. The introducer does not need to be an existing Astra contact.
 
+<!-- @@author Yx0905 -->
+
 Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`
 
 * `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
+  <!-- @@author -->
 * `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them with numbered indexes. Enter the index of the contact by itself, or `n`/`cancel` to stop.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * The introducer's name must differ from the contact's name, ignoring letter case and normalized spacing.
@@ -280,7 +289,9 @@ Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUC
 
 Examples:
 * `introduce John Doe i/Jane Smith` Records Jane Smith as the person who introduced John Doe.
+  <!-- @@author Yx0905 -->
 * `introduce 1 i/Jane Smith` Records Jane Smith as the introducer of the 1st contact in the displayed list.
+  <!-- @@author -->
 * `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
 Ambiguous-name example: suppose the candidates are `1. Alice Tan` and `2. Alice Lim`.
@@ -463,6 +474,7 @@ Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
   `2026-10-01`), `dd/MM/yyyy` (`01/10/2026`), or `d MMM yyyy` (`1 Oct 2026`).
   Month names use English three-letter abbreviations and are case-insensitive.
   Dates before `2000-01-01` are not accepted. If omitted, today's date is used.
+  <!-- @@author Yx0905 -->
 * The date cannot be in the future, since the interaction has already happened.
 * `NOTE` is what was discussed, and cannot be blank.
 * Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
@@ -485,6 +497,7 @@ Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
 * Astra first shows the interaction and asks you to confirm. Enter `y` to remove it, or `n` or `cancel` to keep it.
 * After removing it, Astra shows what was removed and the person's remaining history, renumbered.
 * When you give an `INDEX`, the displayed list stays as it was, so the same index still points to the same person. When you give a `NAME`, the list shows the people matching that name, the same way as `log`.
+  <!-- @@author -->
   This also applies when removing the last note matching a `find /notes` search. Run the search again
   to refresh its results.
 * If the person has fewer interactions than `ENTRY`, nothing is removed.
@@ -882,6 +895,8 @@ Examples:
 * `order followups name tags company role phone email linkedin introducer interactions` puts follow-up
   history first on contacts that have it.
 
+<!-- @@author Yx0905 -->
+
 ### Creating command shortcuts: `alias`
 
 Saves a short word that stands for a command you type often. Entering the shortcut then runs that command, followed by anything you type after the shortcut.
@@ -903,6 +918,8 @@ Examples:
 * `alias fe find /contact` when `fe` already exists reports `Shortcut fe already runs: find /email` and tells you how to replace it.
 * `alias /replace fe find /contact` replaces it.
 * `alias list find` is rejected, because `list` is already a command.
+
+<!-- @@author -->
 
 ### Exiting the program: `exit`
 

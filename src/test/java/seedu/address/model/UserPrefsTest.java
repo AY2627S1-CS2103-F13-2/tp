@@ -18,6 +18,7 @@ public class UserPrefsTest {
         assertThrows(NullPointerException.class, () -> userPref.setGuiSettings(null));
     }
 
+    //@@author Yx0905
     @Test
     public void commandAliases_setAndRemove() {
         UserPrefs userPrefs = new UserPrefs();
@@ -46,5 +47,6 @@ public class UserPrefsTest {
         assertEquals("Gui Settings : " + userPrefs.getGuiSettings() + "; Field Order : " + userPrefs.getFieldOrder()
                 + "; Command Aliases : {fn=find /notes}", userPrefs.toString());
     }
+    //@@author
 
 }
