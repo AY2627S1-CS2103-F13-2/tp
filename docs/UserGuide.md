@@ -235,7 +235,7 @@ Removes only the explicitly selected detail values from a contact, after confirm
 
 Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`
 
-* `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them and makes no changes.
+* `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them with numbered indexes. Enter the index of the contact by itself, or `n`/`cancel` to stop. Astra then continues as if you had given that index.
 * Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
 * Astra first displays the proposed removal in the confirmation panel. Reply `y` to apply it,
   or `n`/`cancel` to stop. Until confirmed, the contact file is unchanged and not saved.
@@ -522,7 +522,7 @@ delete /email EMAIL [EMAIL]...
 * A name can be partial and is matched without regard to letter case. Names,
   phone numbers, and emails search every stored contact, even when filtered.
 * If a name matches several contacts, Astra displays numbered candidates. Enter
-  the candidate's number by itself. Astra then previews that contact and asks
+  the index of the candidate by itself. Astra then previews that contact and asks
   for confirmation; selection alone never deletes anything.
 * Phone numbers match the complete number, ignoring spaces, hyphens, and
   parentheses. A leading plus remains significant. Emails match complete

@@ -219,7 +219,7 @@ public class DropCommand extends Command {
         @Override
         public String getPrompt() {
             return candidates.size() + " contacts found:\n" + PersonNameResolver.formatNumberedList(candidates)
-                    + "\nEnter a contact number, or n/cancel to stop.";
+                    + "\n" + PersonSelectionRequest.MESSAGE_SELECTION;
         }
 
         @Override

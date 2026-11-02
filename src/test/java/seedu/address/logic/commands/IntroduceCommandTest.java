@@ -174,7 +174,7 @@ public class IntroduceCommandTest {
         assertEquals(first, model.getFilteredPersonList().get(0));
         assertEquals(second, model.getFilteredPersonList().get(1));
         assertTrue(result.getFeedbackToUser().contains("2 contacts found:"));
-        assertTrue(result.getFeedbackToUser().contains("Enter a contact number"));
+        assertTrue(result.getFeedbackToUser().contains(PersonSelectionRequest.MESSAGE_SELECTION));
         assertTrue(result.getPendingRequest().isPresent());
         assertFalse(model.getContactFile().getPersonList().get(0).getIntroducer().isPresent());
 
