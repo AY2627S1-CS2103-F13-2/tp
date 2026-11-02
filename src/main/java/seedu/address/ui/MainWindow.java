@@ -1,17 +1,21 @@
 package seedu.address.ui;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
@@ -194,9 +198,22 @@ public class MainWindow extends UiPart<Stage> {
         primaryStage.setHeight(guiSettings.getWindowHeight());
         primaryStage.setWidth(guiSettings.getWindowWidth());
         if (guiSettings.getWindowCoordinates() != null) {
-            primaryStage.setX(guiSettings.getWindowCoordinates().getX());
-            primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+            Point2D position = getReachableWindowPosition(guiSettings.getWindowCoordinates().getX(),
+                    guiSettings.getWindowCoordinates().getY(), guiSettings.getWindowWidth(),
+                    guiSettings.getWindowHeight(), Screen.getScreens().stream().map(Screen::getVisualBounds).toList());
+            primaryStage.setX(position.getX());
+            primaryStage.setY(position.getY());
         }
+    }
+
+    static Point2D getReachableWindowPosition(double x, double y, double width, double height,
+            List<Rectangle2D> screenBounds) {
+        if (screenBounds.stream().anyMatch(bounds -> bounds.intersects(x, y, width, height))) {
+            return new Point2D(x, y);
+        }
+        Rectangle2D primary = screenBounds.get(0);
+        return new Point2D(primary.getMinX() + (primary.getWidth() - width) / 2,
+                primary.getMinY() + (primary.getHeight() - height) / 2);
     }
 
     /**

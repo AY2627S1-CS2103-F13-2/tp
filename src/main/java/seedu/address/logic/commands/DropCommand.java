@@ -47,6 +47,8 @@ public class DropCommand extends Command {
 
     public static final String MESSAGE_EMPTY_CONTACT_FILE = "There are no contacts to update.";
     public static final String MESSAGE_NO_VALUES = "At least one detail value to remove must be provided.";
+    public static final String MESSAGE_DUPLICATE_PERSON =
+            "Dropping this field would result in a duplicate person.";
     public static final String MESSAGE_VALUE_NOT_FOUND =
             "The selected %1$s value \"%2$s\" is not saved for %3$s.";
     public static final String MESSAGE_CONFIRM_REMOVAL = "Remove the following detail(s) from %1$s?\n%2$s";
@@ -165,6 +167,7 @@ public class DropCommand extends Command {
                         selected.field().getDisplayName(), selected.displayValue(), person.getName()));
             }
         }
+        Person updatedPerson = validateRemoval(model, person);
 
         if (!confirmed) {
             String preview = String.format(MESSAGE_CONFIRM_REMOVAL, person.getName(), formatValues(values));
@@ -173,11 +176,18 @@ public class DropCommand extends Command {
             return new CommandResult(request.getPrompt(), request);
         }
 
-        return applyRemoval(model, person, targetName != null);
+        return applyRemoval(model, person, updatedPerson, targetName != null);
     }
 
-    private CommandResult applyRemoval(Model model, Person person, boolean restoreFilteredList) {
+    private Person validateRemoval(Model model, Person person) throws CommandException {
         Person updatedPerson = removeValues(person, values);
+        if (!person.isSamePerson(updatedPerson) && model.hasPerson(updatedPerson)) {
+            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        }
+        return updatedPerson;
+    }
+
+    private CommandResult applyRemoval(Model model, Person person, Person updatedPerson, boolean restoreFilteredList) {
         model.setPerson(person, updatedPerson);
         if (restoreFilteredList) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
@@ -205,7 +215,8 @@ public class DropCommand extends Command {
                             selected.field().getDisplayName(), selected.displayValue(), target.getName()));
                 }
             }
-            return applyRemoval(model, target, restoreFilteredList);
+            Person updatedPerson = validateRemoval(model, target);
+            return applyRemoval(model, target, updatedPerson, restoreFilteredList);
         }
     }
 

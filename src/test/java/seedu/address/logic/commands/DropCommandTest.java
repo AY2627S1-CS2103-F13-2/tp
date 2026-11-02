@@ -125,6 +125,40 @@ public class DropCommandTest {
     }
 
     @Test
+    public void execute_identityConflict_rejectsBeforePreviewAndWithoutSaving() {
+        Person withEmail = new PersonBuilder().withName("Alice Tan").withEmail("alice@example.com").build();
+        Person withoutEmail = new PersonBuilder().withName("Alice Tan").withEmail(null).build();
+        ContactFile file = new ContactFileBuilder().withPerson(withEmail).withPerson(withoutEmail).build();
+
+        for (boolean confirmed : List.of(false, true)) {
+            Model model = new ModelManager(new ContactFile(file), new UserPrefs());
+            CommandException exception = assertThrows(CommandException.class, () ->
+                    new DropCommand(Index.fromOneBased(1),
+                            List.of(new FieldValue(Field.EMAIL, new Email("alice@example.com"))), confirmed)
+                            .execute(model));
+
+            assertEquals(DropCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
+            assertEquals(file.getPersonList(), model.getContactFile().getPersonList());
+        }
+    }
+
+    @Test
+    public void execute_ambiguousSelection_identityConflictRejectsWithoutChangingContacts() throws CommandException {
+        Person withEmail = new PersonBuilder().withName("Alice Tan").withEmail("alice@example.com").build();
+        Person withoutEmail = new PersonBuilder().withName("Alice Tan").withEmail(null).build();
+        ContactFile file = new ContactFileBuilder().withPerson(withEmail).withPerson(withoutEmail).build();
+        Model model = new ModelManager(new ContactFile(file), new UserPrefs());
+        CommandResult selection = new DropCommand("Alice Tan",
+                List.of(new FieldValue(Field.EMAIL, new Email("alice@example.com"))), false).execute(model);
+
+        CommandException exception = assertThrows(CommandException.class, () ->
+                selection.getPendingRequest().orElseThrow().respond("1", model));
+
+        assertEquals(DropCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
+        assertEquals(file.getPersonList(), model.getContactFile().getPersonList());
+    }
+
+    @Test
     public void execute_removesIntroducerAndRetainsOtherDetails() {
         Person withIntroducer = new PersonBuilder(original).withIntroducer("Old Introducer").build();
         ContactFile file = new ContactFileBuilder().withPerson(withIntroducer).build();
