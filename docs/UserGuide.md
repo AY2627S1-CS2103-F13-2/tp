@@ -266,6 +266,14 @@ Examples:
 * `introduce 1 i/Jane Smith` Records Jane Smith as the introducer of the 1st contact in the displayed list.
 * `introduce John i/Jane Smith --confirm` Confirms replacing the introducer for the uniquely matched John Doe.
 
+Ambiguous-name example: suppose the candidates are `1. Alice Tan` and `2. Alice Lim`.
+
+1. Enter `introduce Alice i/Jane` to display the matching contacts.
+2. Reply with `2` by itself to choose Alice Lim from those candidates. Do not repeat the `introduce` command.
+3. Reply with `y` **only if** Astra asks to replace a different existing introducer;
+   `n` or `cancel` keeps the existing introducer. With no saved introducer, Jane is recorded after step 2.
+   If Jane is already recorded, Astra reports no change and does not ask for confirmation.
+
 ### Locating persons: `find`
 
 Finds contacts by name, approximate name, phone number, email address, company, role, event, or interaction notes.
