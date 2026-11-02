@@ -36,14 +36,14 @@ public class OrderCommand extends Command {
     public CommandResult execute(Model model) {
         requireNonNull(model);
         if (requestedOrder == null) {
-            return new CommandResult("Current field order: " + model.getFieldOrder());
+            return new CommandResult("Current field order: " + model.getFieldOrder()).withPreserveCurrentView();
         }
         if (requestedOrder.equals(model.getFieldOrder())) {
-            return new CommandResult("Field order is unchanged. No changes needed.");
+            return new CommandResult("Field order is unchanged. No changes needed.").withPreserveCurrentView();
         }
         model.setFieldOrder(requestedOrder);
         assert model.getFieldOrder().equals(requestedOrder) : "Requested field order must be applied";
-        return new CommandResult("Field order updated: " + requestedOrder);
+        return new CommandResult("Field order updated: " + requestedOrder).withPreserveCurrentView();
     }
 
     @Override

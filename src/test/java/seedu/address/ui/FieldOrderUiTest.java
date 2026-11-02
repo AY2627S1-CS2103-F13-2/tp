@@ -29,6 +29,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -36,6 +37,7 @@ import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.model.ContactFile;
 import seedu.address.model.FieldOrder;
+import seedu.address.model.FollowUpEntry;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
@@ -163,6 +165,43 @@ class FieldOrderUiTest {
     }
 
     @Test
+    void window_orderSaveFailure_restoresSelectedFollowUpView() throws Exception {
+        Path contactsPath = testFolder.resolve("follow-up-contacts.json");
+        Path prefsPath = testFolder.resolve("follow-up-preferences.json");
+        ContactFile contacts = new ContactFile();
+        contacts.addPerson(WITH_ACTION);
+        ModelManager model = new ModelManager(contacts, new UserPrefs());
+        JsonContactFileStorage contactStorage = new JsonContactFileStorage(contactsPath);
+        contactStorage.saveContactFile(contacts);
+        new JsonUserPrefsStorage(prefsPath).saveUserPrefs(model.getUserPrefs());
+        FailingPreferences prefs = new FailingPreferences(prefsPath);
+        LogicManager logic = new LogicManager(model, new StorageManager(contactStorage, prefs));
+
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, logic, contactsPath);
+            window.fillInnerParts("Loaded");
+            window.show();
+            TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+            TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
+
+            execute(input, "followups");
+            execute(input, "1");
+            prefs.shouldFail = true;
+            execute(input, "order " + CUSTOM);
+
+            assertEquals(FieldOrder.DEFAULT, model.getFieldOrder());
+            assertTrue(output.getText().contains("Could not save data"));
+            assertFalse(personListRoot(stage).isVisible());
+            assertTrue(stage.getScene().lookup("#followUpListPanel").isVisible());
+            ListView<?> followUpList = (ListView<?>) stage.getScene().lookup("#followUpListPanel").lookup(".list-view");
+            assertEquals(new FollowUpEntry(WITH_ACTION, WITH_ACTION.getFollowUps().getFirst()),
+                    followUpList.getSelectionModel().getSelectedItem());
+            assertTrue(((Label) stage.getScene().lookup("#selectedFollowUpText")).getText().contains("Send portfolio"));
+        });
+    }
+
+    @Test
     void window_externalOrderNotification_refreshesDisplayedDetailsImmediately() throws Exception {
         ContactFile contacts = new ContactFile();
         contacts.addPerson(WITH_ACTION);
@@ -223,6 +262,10 @@ class FieldOrderUiTest {
     private static void execute(TextField input, String command) {
         input.setText(command);
         input.fireEvent(new ActionEvent());
+    }
+
+    private static Node personListRoot(Stage stage) {
+        return ((StackPane) stage.getScene().lookup("#personListPanelPlaceholder")).getChildren().get(0);
     }
 
     private static final class FailingPreferences extends JsonUserPrefsStorage {

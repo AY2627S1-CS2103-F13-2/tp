@@ -94,7 +94,9 @@ public class EditFollowUpCommand extends Command {
                 ? dueDate
                 : existing.getDueDate().orElse(null);
 
-        boolean duplicateExists = target.getFollowUps().stream()
+        boolean duplicateExists = description != null
+                && !existing.getDescription().equals(updatedDescription)
+                && target.getFollowUps().stream()
                 .anyMatch(action -> action.getId() != followUpId
                         && action.getStatus() == FollowUp.Status.PENDING
                         && existing.getStatus() == FollowUp.Status.PENDING
@@ -109,6 +111,10 @@ public class EditFollowUpCommand extends Command {
                 updatedDescription,
                 existing.getStatus(),
                 updatedDueDate);
+
+        if (existing.equals(replacement)) {
+            return new CommandResult("Follow-up #" + followUpId + " is unchanged. No changes were applied.");
+        }
 
         Person updated = target.replaceFollowUp(followUpId, replacement);
         model.setPerson(target, updated);

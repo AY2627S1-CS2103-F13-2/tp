@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -112,6 +113,29 @@ public class LogicManagerTest {
         CommandResult result = logic.execute("q");
         assertTrue(result.isExit());
         assertEquals("Ran: exit\n" + ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_shortcutAfterFollowUpListing_showsExpandedCommand() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("followup 1 a/Call");
+        logic.execute("alias s star");
+
+        logic.execute("followups");
+        CommandResult result = logic.execute("s 1");
+        assertTrue(result.getFeedbackToUser().startsWith("Ran: star 1\n"), result.getFeedbackToUser());
+        assertTrue(model.getContactFile().getPersonList().getFirst().isStarred());
+
+        // errors from a shortcut that leaves the listing show the expansion too
+        logic.execute("followups");
+        String indexError = "Ran: star 999\n" + Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+        assertThrows(CommandException.class, indexError, () -> logic.execute("s 999"));
+
+        Exception parseError = org.junit.jupiter.api.Assertions.assertThrows(ParseException.class, () ->
+                logic.execute("star 1 2"));
+        String parseErrorMessage = parseError.getMessage();
+        logic.execute("followups");
+        assertThrows(ParseException.class, "Ran: star 1 2\n" + parseErrorMessage, () -> logic.execute("s 1 2"));
     }
 
     @Test
@@ -403,6 +427,42 @@ public class LogicManagerTest {
         assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO, result.getFeedbackToUser());
         assertEquals(2, model.getContactFile().getPersonList().size());
         assertEquals("87654321", model.getContactFile().getPersonList().getFirst().getPhone().orElseThrow().value);
+    }
+
+    @Test
+    public void execute_undoSaveFails_keepsUndoAvailableAndHistoryUnchanged() throws Exception {
+        Person original = new PersonBuilder().withName("Alice Smith").withPhone("12345678")
+                .withEmail(null).build();
+        model = new ModelManager(new ContactFileBuilder().withPerson(original).build(), new UserPrefs());
+        AtomicBoolean failSaves = new AtomicBoolean();
+        JsonContactFileStorage failingStorage = new JsonContactFileStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
+                if (failSaves.get()) {
+                    throw DUMMY_IO_EXCEPTION;
+                }
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("failingPrefs.json"))));
+
+        logic.execute("delete 1");
+        logic.execute("y");
+        String historyBeforeUndo = logic.execute("history").getFeedbackToUser();
+
+        logic.execute("undo");
+        failSaves.set(true);
+        assertThrows(CommandException.class, () -> logic.execute("y"));
+        assertTrue(model.getContactFile().getPersonList().isEmpty());
+        assertEquals(historyBeforeUndo, logic.execute("history").getFeedbackToUser());
+
+        // the deletion can still be undone once saving works again
+        failSaves.set(false);
+        assertTrue(logic.execute("undo").getPendingRequest().isPresent());
+        logic.execute("y");
+        assertEquals(List.of(original), model.getContactFile().getPersonList());
+        assertTrue(logic.execute("history").getFeedbackToUser().startsWith("1. deletion (undone)"));
+        assertEquals(UndoManager.MESSAGE_NOTHING_TO_UNDO, logic.execute("undo").getFeedbackToUser());
     }
 
     @Test

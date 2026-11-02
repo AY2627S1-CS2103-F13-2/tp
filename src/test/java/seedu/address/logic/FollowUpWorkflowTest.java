@@ -799,6 +799,52 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_unchangedUndatedFollowUp_reportsNoChangesWithoutSaving() throws Exception {
+        logic.execute("followup 1 a/Call");
+        Person original = model.getFilteredPersonList().getFirst();
+        model.updateFilteredPersonList(original::equals);
+        byte[] bytes = Files.readAllBytes(file);
+        storage.saveCount = 0;
+        storage.shouldFail = true;
+
+        for (String fields : List.of("a/Call", "d/", "a/ Call  d/")) {
+            CommandResult result = logic.execute("editfollowup 1 i/1 " + fields);
+            assertEquals("Follow-up #1 is unchanged. No changes were applied.", result.getFeedbackToUser());
+            assertTrue(result.getPendingRequest().isEmpty());
+            assertSame(original, model.getFilteredPersonList().getFirst());
+        }
+        assertEquals(List.of(original), model.getFilteredPersonList());
+        assertEquals(0, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+    }
+
+    @Test
+    void execute_unchangedCompletedFollowUp_reportsNoChangesAndStillAllowsDateChanges() throws Exception {
+        logic.execute("followup 1 a/Call d/2026-12-01");
+        logic.execute("completefollowup 1 i/1");
+        Person original = model.getFilteredPersonList().getFirst();
+        byte[] bytes = Files.readAllBytes(file);
+        storage.saveCount = 0;
+        storage.shouldFail = true;
+
+        for (String fields : List.of("a/Call", "d/1 Dec 2026", "a/Call d/2026-12-01")) {
+            assertEquals("Follow-up #1 is unchanged. No changes were applied.",
+                    logic.execute("editfollowup 1 i/1 " + fields).getFeedbackToUser());
+            assertSame(original, model.getFilteredPersonList().getFirst());
+        }
+        assertEquals(0, storage.saveCount);
+        assertArrayEquals(bytes, Files.readAllBytes(file));
+
+        storage.shouldFail = false;
+        assertTrue(logic.execute("editfollowup 1 i/1 d/2026-12-02").getFeedbackToUser()
+                .startsWith("Updated follow-up"));
+        assertEquals(new FollowUp(1, "Call", FollowUp.Status.COMPLETED, LocalDate.of(2026, 12, 2)),
+                model.getFilteredPersonList().getFirst().getFollowUps().getFirst());
+        assertEquals(1, storage.saveCount);
+        assertEquals(model.getContactFile(), storage.readContactFile().orElseThrow());
+    }
+
+    @Test
     void execute_editFollowUpDescription_preservesIdStatusAndDate()
             throws Exception {
         logic.execute(
@@ -840,6 +886,25 @@ class FollowUpWorkflowTest {
         assertEquals(
                 LocalDate.of(2026, 12, 1),
                 updated.getDueDate().orElseThrow());
+    }
+
+    @Test
+    void execute_editDuplicateFollowUpDateAndRemoval_preservesDescription()
+            throws Exception {
+        logic.execute("followup 1 a/Dup");
+        logic.execute("followup 1 a/Dup");
+        logic.execute("y");
+
+        logic.execute("editfollowup 1 i/2 d/2026-12-01");
+        FollowUp updated = model.getFilteredPersonList().getFirst()
+                .getFollowUps().getLast();
+        assertEquals("Dup", updated.getDescription());
+        assertEquals(LocalDate.of(2026, 12, 1), updated.getDueDate().orElseThrow());
+
+        logic.execute("editfollowup 1 i/2 d/");
+        updated = model.getFilteredPersonList().getFirst().getFollowUps().getLast();
+        assertEquals("Dup", updated.getDescription());
+        assertTrue(updated.getDueDate().isEmpty());
     }
 
     @Test

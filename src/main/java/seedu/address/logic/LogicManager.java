@@ -71,7 +71,7 @@ public class LogicManager implements Logic {
                 ? pendingPersonsBeforeCommand : List.copyOf(model.getContactFile().getPersonList());
         Command command = pendingRequest == null ? null : pendingCommand;
         try {
-            CommandResult commandResult;
+            CommandResult commandResult = null;
             if (pendingRequest != null) {
                 String response = commandText.trim();
                 if (response.equalsIgnoreCase("n") || response.equalsIgnoreCase("cancel")) {
@@ -80,22 +80,23 @@ public class LogicManager implements Logic {
                     logger.info("Pending request cancelled; model and view restored");
                     return new CommandResult("Request cancelled. No contacts changed.");
                 }
-                if (response.equalsIgnoreCase(ExitCommand.COMMAND_WORD)
+                if (isExitCommand(response)
                         || pendingRequest.shouldRunAsCommand(response)) {
+                    // The reply runs as an ordinary command, with the same shortcut feedback, below.
                     clearPendingRequest();
-                    command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
                     personsBeforeCommand = List.copyOf(model.getContactFile().getPersonList());
-                    logger.fine("Executing " + command.getClass().getSimpleName());
-                    commandResult = command.execute(model);
                 } else {
                     commandResult = pendingRequest.respond(response, model);
                 }
-            } else {
+            }
+            if (commandResult == null) {
                 String shortcutNote = shortcutNote(commandText);
                 try {
                     command = contactFileParser.parseCommand(commandText, model.getCommandAliases());
                     logger.fine("Executing " + command.getClass().getSimpleName());
-                    commandResult = command.execute(model).withFeedbackPrefix(shortcutNote);
+                    CommandResult selected = ContactSelection.prepare(commandText, model, contactFileParser);
+                    commandResult = (selected == null ? command.execute(model) : selected)
+                            .withFeedbackPrefix(shortcutNote);
                 } catch (ParseException pe) {
                     throw shortcutNote.isEmpty() ? pe : new ParseException(shortcutNote + pe.getMessage(), pe);
                 } catch (CommandException ce) {
@@ -150,6 +151,15 @@ public class LogicManager implements Logic {
     }
 
     /**
+     * Returns true if {@code response} runs {@code exit}, whether typed in full, through a shortcut, or with the
+     * extra words that {@code exit} ignores, so that the app can always be closed while a reply is awaited.
+     */
+    private boolean isExitCommand(String response) {
+        String expandedText = ContactFileParser.expandShortcut(response, model.getCommandAliases()).trim();
+        return expandedText.split("\\s+", 2)[0].equalsIgnoreCase(ExitCommand.COMMAND_WORD);
+    }
+
+    /**
      * Returns the note shown before the result of a command entered through a shortcut, or an empty string if
      * {@code commandText} does not start with one. A shortcut's result, and any error it causes, starts with
      * the command it expanded to, since the user never typed that command.
@@ -161,6 +171,7 @@ public class LogicManager implements Logic {
 
     private void restoreFailedRequest(ModelSnapshot snapshot) {
         snapshot.restore(model);
+        undoManager.discardUnsavedUndo();
         clearPendingRequest();
     }
 

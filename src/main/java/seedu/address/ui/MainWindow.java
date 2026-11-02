@@ -18,6 +18,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ConfirmationRequest;
+import seedu.address.logic.commands.OrderCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FollowUpEntry;
@@ -46,6 +47,9 @@ public class MainWindow extends UiPart<Stage> {
     private Person selectedContact;
     private FollowUpEntry selectedFollowUp;
     private FollowUpListPanel followUpListPanel;
+    private boolean isRequestPending;
+    /** The contact that was selected when the pending request began, selected again once it ends. */
+    private Person selectionBeforeRequest;
 
     @FXML
     private StackPane personDetailsPlaceholder;
@@ -234,11 +238,27 @@ public class MainWindow extends UiPart<Stage> {
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         lastCommand.setText(commandText);
+        Person selectedBeforeCommand = personListPanel.selectedPersonProperty().get();
+        Person contactBeforeCommand = selectedContact;
+        FollowUpEntry followUpBeforeCommand = selectedFollowUp;
+        boolean followUpViewBeforeCommand = followUpListPanel.getRoot().isVisible();
         try {
             CommandResult commandResult = logic.execute(commandText);
             logger.fine("Command result displayed; confirmation=" + commandResult.getPendingRequest().isPresent());
             confirmationPanel.showRequest(commandResult.getPendingRequest().orElse(null));
             displayResult(commandResult);
+            if (commandResult.getPendingRequest().isPresent()) {
+                if (!isRequestPending) {
+                    isRequestPending = true;
+                    selectionBeforeRequest = selectedBeforeCommand;
+                }
+            } else if (commandResult.getPersonForDetails().isEmpty()
+                    && commandResult.getFollowUpListing().isEmpty()) {
+                restoreSelectionBeforeRequest();
+            } else {
+                isRequestPending = false;
+                selectionBeforeRequest = null;
+            }
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -252,14 +272,34 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException | RuntimeException e) {
             logger.fine("Command failed: " + e.getClass().getSimpleName());
             confirmationPanel.showRequest(null);
-            showContactList();
-            showContact(personListPanel.selectedPersonProperty().get());
+            if (isOrderCommand(commandText)) {
+                isRequestPending = false;
+                selectionBeforeRequest = null;
+                if (followUpViewBeforeCommand && followUpBeforeCommand != null) {
+                    personListPanel.getRoot().setVisible(false);
+                    personListPanel.getRoot().setManaged(false);
+                    followUpListPanel.getRoot().setVisible(true);
+                    followUpListPanel.getRoot().setManaged(true);
+                    followUpListPanel.selectEntry(followUpBeforeCommand);
+                    showFollowUp(followUpBeforeCommand);
+                } else {
+                    showContactList();
+                    personListPanel.selectPerson(contactBeforeCommand);
+                    showContact(contactBeforeCommand);
+                }
+            } else {
+                showContactList();
+                restoreSelectionBeforeRequest();
+                showContact(personListPanel.selectedPersonProperty().get());
+            }
             resultDisplay.setFeedbackToUser(e.getMessage() == null ? "Unexpected command failure." : e.getMessage());
             throw e;
         }
     }
 
     private void displayResult(CommandResult result) {
+        String shortcutNote = result.getFeedbackToUser().startsWith("Ran: ")
+                ? result.getFeedbackToUser().lines().findFirst().orElseThrow() + "\n" : "";
         if (result.getFollowUpListing().isPresent()) {
             personListPanel.getRoot().setVisible(false);
             personListPanel.getRoot().setManaged(false);
@@ -267,14 +307,17 @@ public class MainWindow extends UiPart<Stage> {
             followUpListPanel.getRoot().setManaged(true);
             followUpListPanel.showListing(result.getFollowUpListing().orElseThrow());
             showFollowUp(followUpListPanel.selectedEntryProperty().get());
-            resultDisplay.setFeedbackToUser(result.getFeedbackToUser().lines().findFirst().orElse(""));
+            resultDisplay.setFeedbackToUser(shortcutNote + result.getFeedbackToUser().lines()
+                    .skip(shortcutNote.isEmpty() ? 0 : 1).findFirst().orElse(""));
         } else if (result.getFollowUpForDetails().isPresent()) {
             FollowUpEntry entry = new FollowUpEntry(result.getPersonForDetails().orElseThrow(),
                     result.getFollowUpForDetails().orElseThrow());
             followUpListPanel.selectEntry(entry);
             showFollowUp(entry);
-            resultDisplay.setFeedbackToUser("Viewing follow-up #" + entry.followUp().getId()
+            resultDisplay.setFeedbackToUser(shortcutNote + "Viewing follow-up #" + entry.followUp().getId()
                     + " for " + entry.contact().getName().fullName + ".");
+        } else if (result.shouldPreserveCurrentView()) {
+            resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
         } else {
             showContactList();
             result.getPersonForDetails().ifPresent(person -> {
@@ -282,14 +325,20 @@ public class MainWindow extends UiPart<Stage> {
                 showContact(person);
             });
             if (result.getPersonForDetails().isPresent()) {
-                resultDisplay.setFeedbackToUser("Viewing " + result.getPersonForDetails().orElseThrow().getName()
+                resultDisplay.setFeedbackToUser(shortcutNote + "Viewing "
+                        + result.getPersonForDetails().orElseThrow().getName()
                         + ".");
             } else if (result.getPendingRequest().orElse(null) instanceof ConfirmationRequest) {
-                resultDisplay.setFeedbackToUser("Awaiting confirmation. Review the preview before continuing.");
+                resultDisplay.setFeedbackToUser(shortcutNote
+                        + "Awaiting confirmation. Review the preview before continuing.");
             } else {
                 resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
             }
         }
+    }
+
+    private static boolean isOrderCommand(String commandText) {
+        return commandText.stripLeading().split("\\s+", 2)[0].equalsIgnoreCase(OrderCommand.COMMAND_WORD);
     }
 
     private void showContactList() {
@@ -302,6 +351,19 @@ public class MainWindow extends UiPart<Stage> {
         selectedFollowUp = null;
         selectedContact = personListPanel.selectedPersonProperty().get();
         refreshDetails();
+    }
+
+    /**
+     * Selects the contact that was selected before the pending request began, if one has just ended, so that
+     * cancelling or completing a request does not move the selection to the first contact in the list.
+     */
+    private void restoreSelectionBeforeRequest() {
+        if (isRequestPending && selectionBeforeRequest != null) {
+            personListPanel.selectPerson(selectionBeforeRequest);
+            showContact(personListPanel.selectedPersonProperty().get());
+        }
+        isRequestPending = false;
+        selectionBeforeRequest = null;
     }
 
     private void showContact(Person person) {
