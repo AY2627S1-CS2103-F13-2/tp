@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -99,6 +100,65 @@ class FollowUpSelectionUiTest {
             }
         });
         assertFalse(Files.exists(contacts));
+        assertFalse(Files.exists(preferences));
+    }
+
+    @Test
+    void window_shortcuts_preserveExpansionAlongsideDetailsListingsAndConfirmation() throws Exception {
+        Person alice = ALICE.appendFollowUp(new FollowUp(7, "Call", FollowUp.Status.PENDING));
+        ModelManager model = new ModelManager();
+        model.addPerson(alice);
+        model.setCommandAliases(Map.of("v", "view", "fl", "followups", "rm", "delete"));
+        Path contacts = testFolder.resolve("contacts.json");
+        Path preferences = testFolder.resolve("preferences.json");
+        JsonContactFileStorage storage = new JsonContactFileStorage(contacts);
+        storage.saveContactFile(model.getContactFile());
+        String original = Files.readString(contacts);
+        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+                new JsonUserPrefsStorage(preferences)));
+        FxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            try {
+                MainWindow window = new MainWindow(stage, logic, contacts);
+                window.fillInnerParts("Loaded");
+                window.show();
+                TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+                TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
+                TextArea preview = (TextArea) stage.getScene().lookup("#confirmationPreview");
+                execute(input, "V 1");
+                assertEquals("Ran: view 1\nViewing Alice Pauline.", output.getText());
+                Label phone = (Label) stage.getScene().lookup("#phoneValue");
+                assertEquals(ALICE.getPhone().orElseThrow().value, phone.getText());
+                execute(input, "fl");
+                assertEquals("Ran: followups\nPending follow-ups (1):", output.getText());
+                assertTrue(stage.getScene().lookup("#followUpListPanel").isVisible());
+                execute(input, "999");
+                assertTrue(output.getText().contains("Enter a number from the displayed follow-ups."));
+                execute(input, "v 1");
+                assertEquals("Ran: view 1\nViewing Alice Pauline.", output.getText());
+                execute(input, "followups");
+                execute(input, "v 999");
+                assertTrue(output.getText().startsWith("Ran: view 999\n"));
+                execute(input, "v");
+                assertTrue(output.getText().startsWith("Ran: view\n"));
+                execute(input, "rm 1");
+                assertEquals("Ran: delete 1\nAwaiting confirmation. Review the preview before continuing.",
+                        output.getText());
+                String deletionPreview = preview.getText();
+                assertTrue(deletionPreview.contains(ALICE.getName().fullName));
+                execute(input, "invalid");
+                assertEquals(deletionPreview, preview.getText());
+                assertTrue(stage.getScene().lookup("#confirmationPanel").isVisible());
+                assertEquals(List.of(alice), model.getContactFile().getPersonList());
+                execute(input, "cancel");
+                assertFalse(stage.getScene().lookup("#confirmationPanel").isVisible());
+                execute(input, "view 1");
+                assertEquals("Viewing Alice Pauline.", output.getText());
+            } finally {
+                stage.hide();
+            }
+        });
+        assertEquals(original, Files.readString(contacts));
         assertFalse(Files.exists(preferences));
     }
 
