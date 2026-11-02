@@ -133,7 +133,7 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
   A contact cannot be their own introducer; the comparison ignores letter case and normalizes spacing.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
   <!-- @@author Yx0905 -->
-* `l/LINKEDIN` accepts a `linkedin.com` URL, such as `linkedin.com/in/johndoe` or `https://www.linkedin.com/in/johndoe`, or a profile handle of 3 to 100 letters, digits and hyphens, such as `john-doe`.
+* `l/LINKEDIN` accepts a `linkedin.com` profile URL with a path after `linkedin.com/`, such as `linkedin.com/in/johndoe` or `https://www.linkedin.com/in/johndoe`, or a profile handle of 3 to 100 unaccented English letters, digits and hyphens, such as `john-doe`. Spaces are not allowed.
   <!-- @@author -->
 * The phone number and email must not already belong to another contact. Two contacts can share a name unless neither of them has an email. Names are compared without regard to letter case, so adding `john doe` without an email is rejected if `John Doe` without an email already exists.
 
@@ -225,7 +225,7 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
   Enter `y` or choose **Confirm (y)** to apply; `n`/`cancel` or **Cancel (n)** discards them.
   Other replies repeat the prompt. Nothing is saved before confirmation.
 * Existing values will be updated to the input values after confirmation.
-* A new name that is the same as another person's is rejected when neither of them has an email.
+* An edit is rejected if, afterwards, the contact would have the same name as another contact (ignoring letter case) and neither of them has an email. This applies both to renaming a contact and to removing its email with `e/`.
 * The new phone number or email must not already belong to another person. Emails are compared without regard to letter case, so `JohnDoe@example.com` and `johndoe@example.com` are the same email.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * Use `ev/EVENT` to add one event to the contact. Existing events are retained. An event the contact already has is rejected, and `ev/` without an event name is not accepted. Events cannot be removed in this version.
@@ -480,7 +480,7 @@ Format: `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`
 * Interactions are kept in date order, so an interaction you log late is placed where it belongs. After logging, the person's full interaction history is shown.
 * Logging the same note on the same date twice is rejected, so an accidental repeat does not add a second copy. Letter case is ignored when comparing notes.
 * When you give an `INDEX`, the displayed list stays as it was. When you give a `NAME`, the list shows the people matching that name.
-* `view` shows a person's interaction history after their other details. Use `order` to move it.
+* By default, `view` shows a person's interaction history after their other details, except events, which always come last. Use `order` to move the interaction history.
 
 Examples:
 * `log John Lim nt/Discussed backend internships` logs today's conversation with John Lim.
