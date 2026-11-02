@@ -25,7 +25,7 @@ public class Phone {
      * codes and grouping characters are accepted alongside the digits. Anything else, such as a
      * letter, is rejected.
      */
-    public static final String VALIDATION_REGEX = "\\+?[\\p{N}() -]+";
+    public static final String VALIDATION_REGEX = "\\+?[\\p{Nd}() -]+";
 
     public final String value;
 
@@ -44,10 +44,10 @@ public class Phone {
      * Returns true if a given string is a valid phone number, once normalized.
      */
     public static boolean isValidPhone(String test) {
-        String normalised = StringUtil.normalise(test);
-        return normalised.matches(VALIDATION_REGEX)
-                && countDigits(normalised) >= MINIMUM_DIGITS
-                && hasBalancedParentheses(normalised);
+        String normalized = StringUtil.normalise(test);
+        return normalized.matches(VALIDATION_REGEX)
+                && countDigits(normalized) >= MINIMUM_DIGITS
+                && hasBalancedParentheses(normalized);
     }
 
     /**

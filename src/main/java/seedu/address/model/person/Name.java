@@ -16,12 +16,13 @@ public class Name {
             + "and should not be blank.";
 
     /*
-     * \p{L} and \p{N} match letters and numbers in any language, not just English, so that names
-     * such as "Nurul Aisyah" and "Jose Garcia" are accepted (NFR 9). Hyphens, apostrophes and full
+     * \p{L} and \p{N} match letters and numbers in any language, not just English, and \p{M} matches
+     * the accents and vowel signs that many scripts combine with a letter, so that names such as
+     * "Nurul Aisyah", "José García" and "प्रिया" are accepted (NFR 9). Hyphens, apostrophes and full
      * stops are allowed inside a name for the likes of "Jean-Luc", "O'Brien" and "A. Kumar", but a
      * name must still start with a letter or a number.
      */
-    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{N} '.-]*";
+    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N} '.-]*";
 
     public final String fullName;
 
