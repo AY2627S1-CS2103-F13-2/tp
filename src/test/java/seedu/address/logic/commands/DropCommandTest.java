@@ -137,7 +137,7 @@ public class DropCommandTest {
                             List.of(new FieldValue(Field.EMAIL, new Email("alice@example.com"))), confirmed)
                             .execute(model));
 
-            assertEquals(EditCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
+            assertEquals(DropCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
             assertEquals(file.getPersonList(), model.getContactFile().getPersonList());
         }
     }
@@ -154,7 +154,7 @@ public class DropCommandTest {
         CommandException exception = assertThrows(CommandException.class, () ->
                 selection.getPendingRequest().orElseThrow().respond("1", model));
 
-        assertEquals(EditCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
+        assertEquals(DropCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
         assertEquals(file.getPersonList(), model.getContactFile().getPersonList());
     }
 

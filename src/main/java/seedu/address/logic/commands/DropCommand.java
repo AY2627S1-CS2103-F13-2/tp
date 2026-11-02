@@ -47,6 +47,8 @@ public class DropCommand extends Command {
 
     public static final String MESSAGE_EMPTY_CONTACT_FILE = "There are no contacts to update.";
     public static final String MESSAGE_NO_VALUES = "At least one detail value to remove must be provided.";
+    public static final String MESSAGE_DUPLICATE_PERSON =
+            "Dropping this field would result in a duplicate person.";
     public static final String MESSAGE_VALUE_NOT_FOUND =
             "The selected %1$s value \"%2$s\" is not saved for %3$s.";
     public static final String MESSAGE_CONFIRM_REMOVAL = "Remove the following detail(s) from %1$s?\n%2$s";
@@ -180,7 +182,7 @@ public class DropCommand extends Command {
     private Person validateRemoval(Model model, Person person) throws CommandException {
         Person updatedPerson = removeValues(person, values);
         if (!person.isSamePerson(updatedPerson) && model.hasPerson(updatedPerson)) {
-            throw new CommandException(EditCommand.MESSAGE_DUPLICATE_PERSON);
+            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
         return updatedPerson;
     }
