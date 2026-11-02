@@ -19,7 +19,7 @@ skinparam Shadowing false
 show members
 hide empty members
 
-package Model <<Rectangle>> {
+package Model as ModelPackage <<Rectangle>> {
 
 interface ReadOnlyContactFile <<interface>> {
   +{abstract} getPersonList() : ObservableList<Person>
@@ -60,6 +60,7 @@ class UserPrefs {
 class ModelSnapshot <<final>> {
   -filter : Predicate<Person>
   +hasDataChanged(model : Model) : boolean
+  +hasPreferencesChanged(model : Model) : boolean
   +restore(model : Model)
 }
 
@@ -76,6 +77,7 @@ enum Field <<enumeration>> {
   EMAIL
   LINKEDIN
   FOLLOWUPS
+  INTRODUCER
   INTERACTIONS
 }
 
@@ -153,7 +155,7 @@ ContactFile *-down-> "1\npersons" UniquePersonList
 
 ' Associations: the referenced objects are shared
 UserPrefs -down-> "1<U+00A0><U+00A0><U+00A0>\nfieldOrder<U+00A0><U+00A0><U+00A0>" FieldOrder
-FieldOrder -down-> "9\nfields" Field
+FieldOrder -down-> "10\nfields" Field
 UniquePersonList -down-> "*\ninternalList" Person
 ModelManager -down-> "*\nfilteredPersons" Person
 Person -down-> "*\ninteractions" Interaction

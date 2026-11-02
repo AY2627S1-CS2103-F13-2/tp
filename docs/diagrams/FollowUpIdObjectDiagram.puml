@@ -27,7 +27,7 @@ rectangle "1. Before" as Before {
   }
 }
 
-rectangle "2. After deletefollowup 1 i/2" as AfterDelete {
+rectangle "2. After deletefollowup 1 i/2, then y" as AfterDelete {
   object "<u>p2:Person</u>" as p2 {
     lastFollowUpId = 2
   }
@@ -57,8 +57,8 @@ p2 -down-> f21
 p3 -down-> f31
 p3 -down-> f33
 
-Before -[hidden]right- AfterDelete
-AfterDelete -[hidden]right- AfterAdd
+p1 -[hidden]right- p2
+p2 -[hidden]right- p3
 f11 -[hidden]right- f12
 f31 -[hidden]right- f33
 @enduml

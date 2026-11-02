@@ -1,0 +1,37 @@
+@startuml
+skin rose
+!include style.puml
+/'
+// @@author Cookiemunchrr
+'/
+skinparam ArrowFontStyle plain
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+start
+:User enters view with an index or a name;
+if () then ([selector is malformed])
+  :Show the command usage;
+elseif () then ([selector is an index])
+  if () then ([index is in the displayed list])
+    :Show the contact's full details;
+  else ([else])
+    :Show an invalid index error;
+  endif
+else ([selector is a name])
+  :Search all stored contacts by partial,
+  case-insensitive name;
+  switch ()
+  case ([no match])
+    :Show that no contact
+    was found;
+  case ([one match])
+    :Show the contact's
+    full details;
+  case ([several matches])
+    :Show the numbered matches,
+    to be chosen with view INDEX;
+  endswitch
+endif
+stop
+@enduml

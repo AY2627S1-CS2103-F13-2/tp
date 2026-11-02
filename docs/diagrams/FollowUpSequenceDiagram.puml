@@ -35,7 +35,7 @@ Person --> AddFollowUpCommand : n
 deactivate Person
 
 create FollowUp
-AddFollowUpCommand -> FollowUp : FollowUp(n + 1, description)
+AddFollowUpCommand -> FollowUp : FollowUp(n + 1, description, PENDING, dueDate)
 activate FollowUp
 FollowUp --> AddFollowUpCommand
 deactivate FollowUp

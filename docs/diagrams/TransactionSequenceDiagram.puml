@@ -43,12 +43,19 @@ alt y
   ModelSnapshot --> LogicManager : true
   deactivate ModelSnapshot
 
-  LogicManager -> Storage : saveContactFile(contactFile)
-  activate Storage
-  Storage --> LogicManager
-  deactivate Storage
+  alt save succeeds
+    LogicManager -> Storage : saveContactFile(contactFile)
+    activate Storage
+    Storage --> LogicManager
+    deactivate Storage
 
-  opt save failed
+    [<-- LogicManager : result
+  else save throws IOException
+    LogicManager -> Storage : saveContactFile(contactFile)
+    activate Storage
+    Storage --> LogicManager : IOException
+    deactivate Storage
+
     LogicManager -> ModelSnapshot : restore(m)
     activate ModelSnapshot
     ModelSnapshot -> Model : setContactFile(saved copy)
@@ -57,9 +64,9 @@ alt y
     deactivate Model
     ModelSnapshot --> LogicManager
     deactivate ModelSnapshot
-  end
 
-  [<-- LogicManager : result
+    [<-- LogicManager : CommandException
+  end
   deactivate LogicManager
 
 else n or cancel
