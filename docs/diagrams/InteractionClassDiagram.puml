@@ -38,6 +38,7 @@ class JsonAdaptedInteraction STORAGE_COLOR_T1 {
 }
 
 Person *--> "*\n{ordered by date}" Interaction
+LogCommand --> "1" Interaction
 LogCommand ..> Person : adds to
 JsonAdaptedPerson *--> "*" JsonAdaptedInteraction
 JsonAdaptedInteraction ..> Interaction : converts to
