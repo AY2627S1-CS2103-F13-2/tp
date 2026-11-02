@@ -9,7 +9,14 @@ title: Developer Guide
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* Astra is built on [AddressBook-Level3](https://se-education.org/addressbook-level3/) (AB3) by the
+  [SE-EDU initiative](https://se-education.org). The overall architecture, much of the `commons`, UI, storage
+  and parsing code, the structure of this guide and the User Guide, and several diagrams are adapted from AB3.
+* Libraries: [JavaFX](https://openjfx.io/) for the GUI, [Jackson](https://github.com/FasterXML/jackson) for
+  JSON storage, [JUnit 5](https://junit.org/junit5/) for testing, and
+  [OpenJFX Monocle](https://github.com/TestFX/Monocle) for running UI tests without a display.
+* Fuzzy name search uses the standard
+  [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) algorithm.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -79,21 +86,23 @@ The sections below give more details of each component.
 
 ### UI component
 
-The **API** of this component is specified in [`Ui.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/Ui.java)
+The **API** of this component is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/ui/Ui.java)
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, `FollowUpListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
+The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `PersonListPanel` observes the filtered contact list exposed by the `Model`. When a find command changes the filtered list, the panel refreshes the visible contact cards.
 
 Each contact is rendered by `PersonCard`. The card displays the contact's name, tags, company, role, phone, email, LinkedIn profile, introducer, events, and follow-up information. Optional fields are hidden when they are absent.
 
-The contact card layout is defined in `PersonListCard.fxml`, while common visual styling is defined in `DarkTheme.css`.
+The contact card layout is defined in `PersonListCard.fxml`. Common visual styling is defined in `DarkTheme.css`, and `AstraTheme.css` is applied on top of it.
 
-`MainWindow` composes the main UI parts, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `StatusBarFooter`, `HelpWindow`, and `ConfirmationPanel`.
+`MainWindow` composes the main UI parts, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, `FollowUpListPanel`, `StatusBarFooter`, `HelpWindow`, and `ConfirmationPanel`.
+
+`PersonDetailsPanel` is the detail card beside the contact list. It shows every stored detail of the contact that a command such as `view` returned, in the saved field order. `FollowUpListPanel` takes the place of the contact list while a `followups` result is shown. It lists the follow-ups in the same numbered order as the command's feedback; selecting a row, by clicking or with the arrow keys, shows that contact and follow-up in `PersonDetailsPanel`.
 
 `ConfirmationPanel` displays the active confirmation request and its preview. Users can confirm or cancel the request using the panel buttons, or enter `y`, `n`, or `cancel` in the command box. Button responses are passed back through `MainWindow` and use the same command execution path as typed responses.
 
@@ -108,7 +117,7 @@ The `UI` component,
 
 ### Logic component
 
-**API** : [`Logic.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/logic/Logic.java)
+**API** : [`Logic.java`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
 
 Here's a (partial) class diagram of the `Logic` component:
 
@@ -139,7 +148,7 @@ How the parsing works:
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
-**API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
+**API** : [`Model.java`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
 <img src="images/ModelClassDiagram.png" width="750" />
 
@@ -163,7 +172,7 @@ The `Model` component,
 
 ### Storage component
 
-**API** : [`Storage.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/storage/Storage.java)
+**API** : [`Storage.java`](https://github.com/AY2627S1-CS2103-F13-2/tp/tree/master/src/main/java/seedu/address/storage/Storage.java)
 
 <img src="images/StorageClassDiagram.png" width="550" />
 
@@ -370,10 +379,11 @@ the predicate. Filtering does not change contact contents, so Logic's existing
 transaction change detection performs no contact-file save. Parser failures
 restore the previous predicate through the same snapshot boundary.
 
-The user's approved AND/OR behavior extends the PDF's AND-only UC20. AND is
-the default, and one mode applies to the entire command. No tag/schema or
-contact identity change is needed. The following diagram's editable source
-is `docs/diagrams/TagFilterActivityDiagram.dot`.
+AND is the default, and one mode applies to the entire command, because mixed
+AND/OR expressions would need a query syntax that slows down typing. OR is
+offered as well so that a user can gather contacts from several categories at
+once. No tag/schema or contact identity change is needed. The following
+diagram's editable source is `docs/diagrams/TagFilterActivityDiagram.dot`.
 
 ![Filtering contacts by tags](images/TagFilterActivityDiagram.svg)
 
@@ -514,9 +524,27 @@ status, a completed action moves from the pending and date-based views to
 reopened one moves back. Logic saves the change through the usual transactional save, and
 a failed save restores the previous status.
 
+### Deleting follow-ups and the confirmation panel
+
+`DeleteFollowUpCommandParser` accepts `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`.
+The command resolves the displayed contact and stable action ID before producing a
+`ConfirmationRequest`. Its retained contact must still match at confirmation. `Person.removeFollowUp`
+removes exactly one action without renumbering survivors or changing `lastFollowUpId`.
+Logic saves once on success and restores the original model, filter, and counter on failure.
+Deletion is permanent; the existing contact undo feature does not undo action deletion.
+
+`ConfirmationPanel` renders any `ConfirmationRequest`, including edit, delete, clear,
+follow-up deletion, duplicate follow-ups, and other existing y/n confirmations. Selection requests
+are not shown as confirmations. MainWindow feeds both typed and button replies through Logic;
+the panel never mutates the model. A revision check discards events from a hidden/replaced panel.
+Invalid replies retain the prompt; completion, cancellation, or failure hides/unmanages it.
+The preview wraps and scrolls; Tab navigation and the command box remain available.
+
+![Shared confirmation workflow](images/ConfirmationActivityDiagram.svg)
+
 ### Display-field order (UC26)
 
-`FieldOrder` is an immutable permutation of all nine supported fields. Its
+`FieldOrder` is an immutable permutation of all ten supported fields. Its
 constructor validates field count, case-insensitive names, and uniqueness;
 partial orders cannot hide fields. The default matches the original card order
 with follow-ups last. `UserPrefs` stores this global value and includes it in
@@ -527,11 +555,11 @@ startup fallback to default preferences.
 
 `OrderCommandParser` accepts a no-argument query or one complete permutation.
 `OrderCommand` changes only preferences. A query or unchanged order makes no
-mutation and performs no save. `ModelSnapshot` now includes preferences as well
+mutation and performs no save. `ModelSnapshot` includes preferences as well
 as contact data and the active predicate. Logic detects preference changes
 separately from contact changes, saves the corresponding file, and restores the
-captured model/predicate on failure. The commands in this delivery change one
-persistence domain at a time; ordering never writes the contact file.
+captured model/predicate on failure. Each command changes at most one
+persistence domain; ordering never writes the contact file.
 
 `JsonUserPrefsStorage` copies the requested preferences, writes a sibling
 temporary file, reloads and compares it, then atomically replaces the active
@@ -556,10 +584,9 @@ details; an error retains details in the restored order alongside the error.
 Other successful commands replace the detail context normally. Preference
 rollback notifies observers, returning visible cards/details to the saved order.
 
-The PDF's UC26 summary mentions alphabetical sorting, whereas its detailed
-MSS specifies field ordering. This implementation follows the detailed MSS and
-the user's explicit saved choice. Contact sorting remains outside UC26.
-The editable diagram source is `docs/diagrams/FieldOrderActivityDiagram.dot`.
+`order` reorders the fields within each contact, not the contacts themselves;
+sorting contacts is a separate, lower-priority user story. The editable diagram
+source is `docs/diagrams/FieldOrderActivityDiagram.dot`.
 
 ![Changing the contact field order](images/FieldOrderActivityDiagram.svg)
 
@@ -653,9 +680,9 @@ error, with `Ran: <expanded command>`, so the user sees exactly what was run.
 
 Astra does not use the AB3 `VersionedContactFile` redo stack. The implemented undo feature is session-scoped and command-driven: `UndoManager` keeps a list of successful data-changing commands and remembers the latest undoable `edit` or `delete` entry. This is intentionally limited to the current app session; when Astra closes, the undo history is cleared.
 
-`UndoCommand` previews the most recent change before confirmation. A preview does not mutate the model or save the contact file. If the user enters `undo --confirm`, `UndoManager#executeUndo` restores the previous person version by replacing the changed contact or re-inserting the deleted contact at its original index. It also validates the resulting list against contact uniqueness rules before accepting the undo, so a restored person cannot introduce duplicate names, emails or phone numbers. Only edit and deletion actions are tracked for undo; other commands either do not modify contact data or are explicitly not undoable.
+`UndoCommand` calls `UndoManager#executeUndo`, which returns a result carrying a `ConfirmationRequest` that previews the most recent edit or deletion. The preview does not mutate the model or save the contact file. If the user replies `y`, the confirmed request restores the previous person version by replacing the changed contact or re-inserting the deleted contact at its original index. It also validates the resulting list against contact uniqueness rules before accepting the undo, so a restored person cannot introduce duplicate names, emails or phone numbers. Only edit and deletion actions are tracked for undo; other commands either do not modify contact data or are explicitly not undoable.
 
-`history` shows the session's edit/deletion log and marks each undone item as `(undone)`. This gives the user a concise record of restore actions without exposing the AB3 redo model or stale state diagrams.
+`history` shows, newest first, every successful `add`, `edit`, `delete`, `drop`, `clear` and `introduce` in the session, and marks each undone item as `(undone)`. This gives the user a concise record of restore actions without exposing the AB3 redo model or stale state diagrams.
 
 The sequence diagram below shows a batch-style delete undo flow: the user deletes a contact, reviews the undo preview, then confirms restoration. The same pattern is used for edit undo, with the restore step replacing the changed person rather than re-adding it.
 
@@ -705,9 +732,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 | Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
 | -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | user                                       | add a new contact with their name, company, role and contact details               | remember and reach out to people  meet                                                                        |
+| `* * *`  | user                                       | add a new contact with their name, company, role and contact details               | remember and reach out to the people I meet                            |
 | `* * *` | user                                        | view all the information stored about a contact in one place   | refresh my memory before meeting them again                      |
-|`* * *`| user                                | record a contact's LinkedInprofile                   |
+| `* * *`  | user                                       | record a contact's LinkedIn profile | look up their professional background later                       |
 | `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
 | `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
 | `* * *`  | user                                     | edit a contact's details                                            | fix mistakes or add details I learn later                         |
@@ -740,8 +767,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `*`      | frequent user                            | reuse templates of common fields when adding contacts               | enter repetitive data faster                                      |
 | `*`      | first-time user                          | follow a tutorial of the main features                              | start using the app confidently                                   |
 | `*`      | user                                     | protect my contact data with a password                             | stop other people using my device from viewing it                 |
-
-*{More to be added}*
+| `* *`    | user                                     | remove one detail of a contact without retyping the others          | discard outdated details quickly                                  |
+| `* *`    | user                                     | log what I discussed with a contact and when                        | prepare for our next conversation                                 |
+| `* *`    | user                                     | correct or remove an interaction I logged by mistake                | keep a contact's history accurate                                 |
+| `* *`    | user                                     | find contacts by what we discussed                                  | recall who mentioned a topic                                      |
+| `* *`    | user                                     | review overdue, upcoming and undated follow-ups across all contacts | decide what to do next                                            |
+| `* *`    | user                                     | edit or delete a follow-up action                                   | keep my to-do list accurate                                       |
+| `*`      | user                                     | see the changes I made to my contacts in this session               | check what I changed before I undo anything                       |
 
 ### Use cases
 
@@ -755,41 +787,33 @@ The following use case diagram summarizes the main interactions supported by Ast
 
 **MSS**
 
-1. User enters an add command with the contact's name, company, role, contact number and email, and optionally a LinkedIn URL.
+1. User enters an add command with the contact's name and whichever optional details they have: company,
+   role, phone number, email, LinkedIn profile, introducer, an event and tags.
 2. Astra validates and normalises the details.
-3. Astra adds the contact, saves the contact list and shows the saved details.
+3. Astra adds the contact, saves the contact file and shows the added details.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. A required field is missing, a prefix is unsupported or repeated, or a value is invalid.
-    * 1a1. Astra shows the relevant error message and accepted format.
+* 1a. The name is missing, a prefix is unsupported, a single-valued prefix is repeated, or a value is invalid.
+    * 1a1. Astra shows the relevant error message and accepted format, and adds nothing.
 
       Use case ends.
 
-* 2a. The name matches the full name or first name of an existing contact.
-    * 2a1. Astra shows the matching contacts and asks whether to add a separate contact.
-    * 2a2. User confirms.
-
-      Use case resumes at step 3.
-
-* 2b. The contact number or email belongs to exactly one existing contact.
-    * 2b1. Astra shows the existing and incoming details and offers keep, replace, merge or cancel.
-    * 2b2. User chooses replace or merge (choosing a name if the two names differ).
-    * 2b3. Astra shows a preview of the resulting contact and asks for confirmation.
-    * 2b4. User confirms.
-    * 2b5. Astra updates the existing contact in its original position and saves the contact list.
+* 2a. The phone number or email already belongs to an existing contact.
+    * 2a1. Astra rejects the command, stating which detail is already taken, and adds nothing.
 
       Use case ends.
 
-* 2c. The contact number and email belong to two different existing contacts.
-    * 2c1. Astra rejects the command and identifies the conflicting contacts.
+* 2b. The name matches an existing contact's name, ignoring letter case, and the two contacts either both
+  have no email or have the same email.
+    * 2b1. Astra reports that the contact already exists and adds nothing.
 
       Use case ends.
 
-* 2d. All normalised fields already match one existing contact.
-    * 2d1. Astra shows that the contact already exists and makes no changes.
+* 2c. The introducer's name is the contact's own name.
+    * 2c1. Astra reports that a contact cannot be their own introducer and adds nothing.
 
       Use case ends.
 
@@ -798,11 +822,9 @@ The following use case diagram summarizes the main interactions supported by Ast
 
       Use case ends.
 
-* *a. At any prompt, the user chooses keep, cancel or n.
-    * *a1. Astra leaves the contact list unchanged.
-
-      Use case ends.
-
+**Deferred to a later version**
+* When the phone number or email belongs to an existing contact, offering to keep the existing contact,
+  replace it, or merge the two instead of rejecting the command.
 
 **Use case: UC02 - Delete a contact**
 
@@ -819,8 +841,8 @@ The following use case diagram summarizes the main interactions supported by Ast
 **Extensions**
 
 * 1a. The contact file is empty: report that there are no contacts to delete.
-* 1b. Input is malformed, an index is outside the displayed results, or any
-  name/phone/email has no unique target: explain the error and delete nothing.
+* 1b. Input is malformed, an index is outside the displayed results, or a
+  name/phone/email matches no contact: explain the error and delete nothing.
   A malformed or unresolved email invalidates the entire batch.
 * 2a. A name matches several contacts: show numbered candidates, accept a valid
   numeric reply, and resume at step 2 with the selected contact. No deletion
@@ -872,10 +894,6 @@ The following use case diagram summarizes the main interactions supported by Ast
         * 2b2a1. Astra shows an error message.
 
           Use case resumes at step 2b2.
-
-    * 2b2b. User enters cancel.
-
-      Use case ends.
 
 **Use case: UC04 - Edit a contact**
 
@@ -951,10 +969,7 @@ The following use case diagram summarizes the main interactions supported by Ast
   Edit retains its numbered command-retry behavior for ambiguity; every resolved valid edit then
   uses the shared confirmation request and supports cancellation.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
-  rejecting an identical name outright. This also needs the pending-command layer.
-
-Command-save rollback is implemented through Logic and Storage and applies to
-edit as well as delete and clear. Add merge/replace remains separate work.
+  rejecting an identical name outright.
 
 **Use case: UC05 - Clear all contacts**
 
@@ -1127,8 +1142,6 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 
       Use case ends.
 
-*{More to be added}*
-
 **Use case: UC16 - Record a follow-up action**
 
 **MSS**
@@ -1156,11 +1169,11 @@ edit as well as delete and clear. Add merge/replace remains separate work.
 * 4a. Saving fails: restore previous file/model/history/view, clear any pending
   request, and report the failure. A retry requires a new request.
 
-**Scope decisions**
+**Notes**
 
-Duplicate confirmation uses an interactive y/n reply, replacing the PDF's
-proposed confirmation suffix by user decision. IDs, completed status, and
-history storage support UC17. Creation accepts an optional
+Duplicate confirmation uses an interactive y/n reply rather than a confirmation
+suffix on the command, so the user does not have to retype the command. IDs,
+completed status, and history storage support UC17. Creation accepts an optional
 `d/DATE` before or after `a/DESCRIPTION`, in ISO, day/month/year, or English abbreviated-month format. Dates
 display in ISO format with an overdue indicator for pending actions due before
 today. Duplicate confirmation retains the requested date and creates a separate
@@ -1225,15 +1238,15 @@ links to events remain outside UC16.
 
 **Extensions**
 
+* 1a. An unknown selector or extra arguments: reject the command and display usage instructions.
 * 2a. No matching actions remain: show an empty message for the selected view.
 * 3a. Undated actions: list them after dated actions with `No due date`.
-* 1a. An unknown selector or extra arguments: reject the command and display usage instructions.
 * 4a. Invalid numeric reply: repeat the retained list and selection instructions.
-* 4d. Non-number input: clear selection and parse/execute the input as a normal
-  command. Invalid commands show their normal errors and leave selection closed.
 * 4b. User enters `n` or `cancel`: clear the request without changing data.
 * 4c. Selected contact or action history changed or the contact was deleted:
   clear the request and ask the user to run `followups` again.
+* 4d. Non-number input: clear selection and parse/execute the input as a normal
+  command. Invalid commands show their normal errors and leave selection closed.
 
 **Implementation and scope**
 
@@ -1254,17 +1267,17 @@ Non-number replies are dispatched through the normal command parser by Logic,
 after clearing the selection request. Other pending requests retain their existing
 reply handling, including confirmation prompts.
 Selection verifies that the captured contact still exists with the same data.
-The UI displays the details in the result panel while retaining the contact
-filter. Running the list again retrieves current results. Requests are held
+The UI lists the entries in `FollowUpListPanel` and displays the selected
+contact and action in `PersonDetailsPanel`, while retaining the contact filter. Running the list again retrieves current results. Requests are held
 only in memory and do not survive restart.
 
 The selection request declares itself read-only. Logic captures the current
 model before each reply instead of reusing the pre-prompt transaction snapshot,
 so cancellation or stale-selection errors cannot undo intervening changes.
 Selection does not save those intervening changes either. The detail result
-retains the contact and optional selected action as separate data. The current UI renders
-contact details through the same path as `view`, including field-order refreshes. A future
-follow-up panel can consume the selected action without duplicating contact presentation.
+retains the contact and optional selected action as separate data. The UI renders
+contact details through the same path as `view`, including field-order refreshes, and
+shows the selected action alongside them without duplicating contact presentation.
 
 **Use case: UC20 - Filter contacts by tags**
 
@@ -1292,11 +1305,11 @@ follow-up panel can consume the selected action without duplicating contact pres
 * 4a. The index is outside the filtered results: report an invalid index and
   preserve the filter.
 
-**Scope decisions**
+**Notes**
 
-The user requested OR as well as the PDF's AND matching. Tag names preserve
-existing case-sensitive equality; mode values ignore case. Mixed expressions,
-contact sorting, and changing tag validation are outside this use case.
+OR matching is offered alongside AND matching. Tag names preserve existing
+case-sensitive equality; mode values ignore case. Mixed expressions, contact
+sorting, and changing tag validation are outside this use case.
 
 **Use case: UC26 - Reorder displayed contact information**
 
@@ -1322,7 +1335,7 @@ contact sorting, and changing tag validation are outside this use case.
 
 Old preference files without an order use the default card order, with
 follow-ups last. Successful orders persist across restart. UC26 changes field
-order, following its detailed PDF MSS; it does not sort contacts alphabetically.
+order; it does not sort contacts alphabetically.
 
 ### Non-Functional Requirements
 
@@ -1330,334 +1343,286 @@ order, following its detailed PDF MSS; it does not sort contacts alphabetically.
 2.  Should hold up to 1000 contacts and respond to any command within 1 second on a typical laptop, so that the user can keep up while meeting people in quick succession.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 4.  Should work without an internet connection, and should never send contact data over the network.
-5. Should store data locally in a human-readable _JSON Lines_ file, without needing a database management system.
+5. Should store data locally in a human-readable JSON file, without needing a database management system.
 6. Changes from a successful command should survive closing and reopening the app. A crash during a save should leave either the complete old file or the complete new file, never a partially written one.
 7. Should never silently discard data from a _corrupted contact file_: the original file is backed up before anything is replaced.
 8.  Should allow only one running instance to use the contact file at a time.
-9.  Should accept names containing non-English (Unicode) letters
+9.  Should accept names containing non-English (Unicode) letters.
 10. Every error message should state what was wrong and, where relevant, the accepted format.
 11. Should be packaged as a single JAR file that runs without an installer.
-
-*{More to be added}*
 
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Contact**: A record of one person. Only the name is required; a company, a role, a contact number, an email address, a LinkedIn URL and any number of tags are each optional, and the single-valued ones hold at most one value apiece
+* **Contact**: A record of one person. Only the name is required. A company, a role, a contact number, an
+  email address, a LinkedIn profile and an introducer are each optional and hold at most one value. A contact
+  can also have any number of tags, events, follow-up actions and logged interactions
 * **Contact number**: A phone number made up of at least three digits, which may also use spaces, hyphens, a leading plus sign for a country code, and balanced parentheses
+* **Displayed index**: The number shown beside a contact in the currently displayed list, starting at 1. Commands that take an `INDEX` use it
 * **Prefix**: A field marker in a command, such as `c/` for a company or `e/` for an email. Prefixes are case-sensitive
-* **Multi-value field**: A field that can hold several comma-separated values. Every field except the name is a multi-value field
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Normalisation**: Trimming outer spaces and collapsing repeated spaces before a value is stored or compared
-* **Display value**: The normalised spelling that Astra stores and shows to the user
 * **Unique key**: A contact number or email. No two contacts may share one
-* **Duplicate contact**: An incoming contact whose contact number or email already belongs to an existing contact
-* **Merge**: Combining the distinct values of an existing and an incoming contact into one record, keeping the existing values first
+* **Duplicate contact**: An incoming contact whose contact number or email already belongs to an existing contact, or whose name and email identify an existing contact
+* **Follow-up action**: A task to do for a contact, with a description, an optional due date, a status (`PENDING` or `COMPLETED`) and an ID that is never reused within that contact
+* **Interaction**: A dated note of a conversation or meeting with a contact
+* **Pending request**: A prompt that waits for the user's next reply, such as a y/n confirmation or a choice from a numbered list
 * **MSS (Main Success Scenario)**: The most common path through a use case, where everything goes as expected
 * **CLI (Command Line Interface)**: A text-based interface where the user types commands instead of clicking
-* **Comparison value**: The form of a value used for matching, such as the lowercase name or the digits-only contact number
-* **Name-match ranking**: The eight-level order (exact full name, first, last, middle; then partial first, last, middle, full) used to sort contacts that match a name
 * **Candidate list**: The numbered list of matching contacts shown when a name matches several contacts. Indices start at 1
-* **Contact file**: The file that stores all contacts, at `<user-home>/.contacts-cli/contacts.jsonl`
-* **JSON Lines (JSONL)**: A text format with one JSON object per line
+* **Contact file**: The file that stores all contacts, at `data/contactfile.json` in the folder Astra is launched from
 * **Corrupted contact file**: A contact file with records that are malformed, have missing fields or invalid values, or conflict with earlier records
-* **Backup file**: An unchanged copy of a corrupted contact file, saved as `contacts-corrupted-<timestamp>.jsonl`
+* **Backup file**: An unchanged copy of a corrupted contact file, saved as `contactfile.original.json` in a timestamped folder under `data/recovery/` or `data/reports/`, next to a `report.txt`
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Instructions for manual testing**
 
-Given below are instructions to test the app manually.
+Given below are instructions to test the app manually. They complement the User Guide, which describes each
+command's rules in full, so the steps below give a path through the features and the inputs worth trying
+rather than every variation.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
 
 </div>
 
+**Starting from the sample data.** Unless stated otherwise, each section starts from a fresh copy of the
+sample data: close Astra, delete the `data` folder next to the JAR file, and launch Astra again. Delete
+`preferences.json` too if you want the default field order and no shortcuts. The six sample contacts are, in
+order: 1 Alex Yeoh, 2 Bernice Yu, 3 Charlotte Oliveiro, 4 David Li, 5 Irfan Ibrahim and 6 Roy Balakrishnan.
+Sample follow-up and interaction dates are counted from the day the samples are first loaded.
+
 ### Launch and shutdown
 
 1. Initial launch
-
-   1. Download the JAR file and copy it into an empty folder.
-
-   1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
-
+   1. Copy the JAR file into an empty folder, and run `java -jar contactfile.jar` from that folder.<br>
+      Expected: the GUI opens with the six sample contacts and a welcome message explaining how to clear them.
 1. Saving window preferences
+   1. Resize the window and move it to a different location. Enter `exit`.
+   1. Launch Astra again.<br>
+      Expected: the most recent window size and location are retained.
+1. Running a second instance
+   1. While Astra is running, launch the same JAR file again from the same folder.<br>
+      Expected: the second instance reports that the contact file is in use and stops. The first is unaffected.
 
-   1. Resize the window to an optimal size. Move the window to a different location. Close the window.
+### Adding and editing contacts
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
+1. `add n/Jane Tan`<br>
+   Expected: Jane Tan is added with only a name. Enter it again: rejected as an existing contact.
+   `add n/jane tan e/janetan@example.com` is accepted, because the two contacts have different emails.
+1. `add n/Sam Lee p/8743 8807`<br>
+   Expected: rejected, because Alex Yeoh already has that number once spaces are ignored.
+   `add n/Sam Lee i/sam  lee` is rejected because a contact cannot be their own introducer.
+1. `edit 1 p/91234567`<br>
+   Expected: a preview of the change and the resulting contact, with nothing changed yet. Enter `n`: Alex is
+   unchanged. Repeat the edit and enter `y`: Alex's phone is updated.
+1. `edit 1 c/ r/`, then `y`<br>
+   Expected: Alex's company and role are removed; other details remain.
+1. `edit Yu e/alexyeoh@example.com`<br>
+   Expected: rejected, because the email belongs to Alex Yeoh. `edit 1 i/Jane` is rejected with a pointer to
+   `introduce`.
 
-1. _{ more test cases …​ }_
+### Removing details and recording introducers
+
+1. `drop 1 t/mentor`, then `y`<br>
+   Expected: only the `mentor` tag is removed from Alex; the other tags remain.
+   `drop 1 t/nosuchtag` and `drop 1 n/Alex Yeoh` are rejected without changes.
+1. `introduce 4 i/Jane Smith`<br>
+   Expected: David Li has no introducer, so Jane Smith is recorded at once.
+1. `introduce 1 i/Jane Smith`<br>
+   Expected: Alex already has Bernice Yu as introducer, so Astra asks before replacing. Enter `n`: unchanged.
+1. `add n/Alex Tan e/alextan@example.com`, then `introduce Alex i/Roy Balakrishnan`<br>
+   Expected: the two Alexes are listed with indexes. Enter `9`: the list is shown again. Enter `2`: Roy
+   Balakrishnan is recorded as Alex Tan's introducer.
+
+### Starring contacts
+
+1. `starred`<br>
+   Expected: Alex Yeoh, Bernice Yu, Irfan Ibrahim and Roy Balakrishnan, in stored order.
+1. `list`, then `star 3`<br>
+   Expected: Charlotte Oliveiro is starred. Entering `star 3` again reports that she is already starred.
+1. `unstar /email royb@example.com`<br>
+   Expected: Roy Balakrishnan is no longer starred.
 
 ### Finding contacts
 
-Use the sample contacts or create contacts with the required companies, roles,
-and events.
-
-1. Run `find Alice`.
-   Expected: contacts whose names contain `Alice` are displayed.
-
-2. Run `find /fuzzy Alicee`.
-   Expected: contacts with approximately matching names, such as `Alice`, are
-   displayed.
-
-3. Run `find /contact 87438807`.
-   Expected: the contact with the exact phone number is displayed.
-
-4. Run `find /email alexyeoh@example.com`.
-   Expected: the matching contact is displayed.
-
-5. Run `find /company Google`.
-   Expected: contacts associated with Google are displayed.
-
-6. Run `find /role Engineer`.
-   Expected: contacts with the role Engineer are displayed.
-
-7. Run `find /company Google /role Engineer`.
-   Expected: only contacts matching both Google and Engineer are displayed.
-
-8. Add an event using `add n/Test Person ev/Career Fair`, then run
-   `find /event Career Fair`.
-   Expected: Test Person is displayed.
-
-9. Run `find /fuzzy`.
-   Expected: Astra displays the invalid command format and leaves the current
-   contact data unchanged.
-
-10. Run a search with no matching contacts.
-    Expected: Astra reports that no contacts match and does not modify stored
-    contact data.
-
-### Viewing contacts
-
-Use sample contacts Alice Pauline, Benson Meier, and Daniel Meier. Record the contact file's contents
-and modification time before each sequence; every view success, ambiguous result, and failure must leave
-them unchanged. No view command should ask for y/n.
-
-1. Run `view alice pauline`, `view Pauline`, and `view   ALICE   Pauline`.<br>
-   Expected: Alice's full details, including company, role, phone, email, LinkedIn, and tags when present.
-   The list contains Alice alone. Try a contact with only a name; no empty labels should appear.
-2. Run `find Alice`, then `view Carl Kurz`.<br>
-   Expected: Carl's details and a list containing Carl, even though the previous filter hid him.
-3. Run `view Meier`.<br>
-   Expected: numbered Benson/Daniel candidates in stored order with available companies/emails. Run
-   `view 3`; expect an index error and unchanged candidates. Run `view 2`; expect Daniel's details.
-   Run `list`; expect all contacts again.
-4. Run `find Meier`, then `view 1`.<br>
-   Expected: Benson's full details, using his displayed index rather than his stored position. The filter remains.
-5. With a filter active, try `view Zed`, `view`, `view 0`, `view -1`, `view 1 Alice`, and `view n/Alice`.<br>
-   Expected: missing-name/index/usage errors, unchanged contact data, and the same displayed filter.
-   Repeat name/index lookup on an empty file; expect a missing-name/index error without any save.
-
-For the combined workflows, also check `filter t/owesMoney` followed by `view 1`,
-then `view Meier` and `view 2`: indices must follow the newly displayed results. View a contact with
-pending/completed follow-ups by name and index; both paths must show every stored ID/status/description.
-Change field order and view the same person by name; retain the active order and immediate detail refresh
-from UC26. Automated integration tests cover these combined workflows.
-
-### Deleting a person
-
-Use a fresh copy of sample data for destructive tests.
-
-1. Run `delete 1`: expect a preview and no deletion. Enter `y`: expect the first
-   displayed contact removed, its details and remaining count reported, and the
-   full survivor list shown in stored order.
-2. Run `find Meier`, then `delete 1`: expect the first filtered result in the
-   preview. Enter `cancel`: expect all contacts intact and the original filtered
-   list restored. Repeat and enter `y`: expect the full survivor list.
-3. Run `delete Meier`: expect numbered candidates and no mutation. Enter `99`,
-   then `delete 1`: expect the selection prompt again. Enter `2`: expect the
-   second candidate's preview. Enter `n`: expect no mutation. Repeat the request,
-   select `2`, then enter `y`: only the selected candidate is removed.
-4. Run `find Alice`, then `delete Carl Kurz`, then `y`: Carl is found outside
-   the filter and removed. Partial names and different letter case also work.
-5. Run `delete /contact NUMBER` using a stored number with different spaces,
-   hyphens, or parentheses: expect the same complete-number target. Partial
-   numbers and a different leading-plus form must not match.
-6. Run `delete /email ALICE_EMAIL BENSON_EMAIL ALICE_EMAIL` using real sample
-   addresses: expect two unique targets and no changes before `y`. Confirm:
-   expect both removed and survivor order preserved. Use an upper-case email
-   to verify case-insensitive matching.
-7. Repeat the batch with one malformed or missing email: expect no deletion and
-   no pending request. Try `delete`, `delete 0`, `delete 1 abc`, and an out-of-range
-   filtered index: expect an error without changes.
-8. During a confirmation, enter `maybe`, `list`, and an empty reply: expect the
-   prompt again and no changes. Enter `n` or `cancel`: expect no save. A following
-   `y` must be an unknown command rather than replaying the deletion.
-9. After a confirmed clear, try deletion by index/name/phone/email: valid forms
-   report an empty file and never create a pending mutation.
-
-### Clearing all entries
-
-1. With several contacts stored, run `find Alice`, then `clear`: expect the
-   total stored count, not the filtered count, and no changes before `y`.
-2. Enter `n` or `cancel`: expect every contact intact and the original filtered
-   results restored. Invalid replies repeat the prompt.
-3. Repeat `clear`, then `y`: expect every contact removed, the cleared count and
-   0 remaining reported, and an empty full list. Restart and verify it stays empty.
-4. Run `clear` again: expect nothing to clear. Run `clear 3`: expect usage and no
-   mutation. Neither command should save.
-5. Simulate failed saving with the storage test doubles: confirmed clear and
-   delete must preserve the old file bytes, original contacts, original order,
-   and filter. A later y must not replay a failed request.
-
-### Recording follow-ups
-
-Use a fresh copy of sample data.
-
-1. Run `followup 1 a/  Send portfolio  `: expect `#1 [PENDING] Send portfolio`
-   in feedback and the card. Run `view 1`: expect the same ordered action list.
-2. Repeat `followup 1 a/Send portfolio`: expect the existing action and "Add
-   another?" without mutation. Try `maybe`, `list`, and `yes`: expect the same
-   prompt and unchanged data. Enter `n`: expect cancellation. Repeat and enter
-   `y`: expect a second action with ID 2 and one save.
-3. Run `find Benson`, then `followup 1 a/Call`: only Benson changes and the
-   filtered view remains. Repeat and enter `cancel`: the original view/history
-   remain. A later `y` must be unknown rather than replaying the request.
-4. Edit that contact's name, phone, tags, or remove an optional field. Expect
-   all actions retained. Restart: actions and IDs remain. Add a different action:
-   expect the next ID, without renumbering existing actions.
-5. Try index 0, an out-of-range index, a blank description, repeated `a/`, and
-   `followup 1 a/Call confirm/yes`: expect an error and no changes or save.
-6. Load an old contact file without `followUps`: expect an empty history.
-   Using a backed-up test file, include completed action #9 and pending action
-   #3, in that order; add the completed description again: expect pending #10
-   without a prompt. The stored action order remains 9, 3, 10.
-7. Load a test file containing one contact with duplicate/invalid action IDs
-   and another valid contact with actions: expect recovery to report the bad
-   record, preserve the original backup, and retain the valid history.
-8. Simulate failed saving using the storage test double for both a new action
-   and a confirmed duplicate: expect unchanged file bytes, actions, order,
-   filtered view, and observable-list binding. A later y must not replay it.
-
-### Completing and reopening follow-ups
-
-Use a fresh copy of sample data.
-
-1. Run `followup 1 a/Call client d/2020-01-01` and `followup 1 a/Send portfolio`.
-   Expect `#1 ... [OVERDUE]` and `#2`, both pending.
-2. Run `completefollowup 1 i/1`: expect `#1 [COMPLETED] Call client | Due: 2020-01-01`
-   without `[OVERDUE]`. Run `followups`: expect only `#2`. Run `followups completed`:
-   expect only `#1`. Run `followups overdue`: expect no follow-ups.
-3. Run `completefollowup 1 i/1` again: expect "already completed" and no save.
-   Run `reopenfollowup 1 i/2`: expect "already pending".
-4. Run `followup 1 a/Call client`, which adds pending `#3` without a prompt. Run
-   `reopenfollowup 1 i/1`: expect a rejection naming `#3`. Run
-   `completefollowup 1 i/3`, then `reopenfollowup 1 i/1`: expect `#1` pending
-   and overdue again, still first in the card.
-5. Try `completefollowup 0 i/1`, `completefollowup 1 i/0`, `completefollowup 1 i/99`,
-   `completefollowup 1`, and `completefollowup 1 i/1 i/2`: expect an error and no change.
-6. Restart Astra: expect the statuses, IDs and order to remain.
-
-### Editing logged interactions
-
-Use a fresh copy of sample data.
-
-1. Run `log 1 d/2026-10-01 nt/Coffee chat` and `log 1 d/2026-10-05 nt/Mock interview`.
-2. Run `editlog 1 i/1 nt/Coffee chat about internships`: expect entry 1 to show the new note with the same date.
-3. Run `editlog 1 i/1 d/2026-10-09`: expect the entry to become number 2, after `Mock interview`.
-4. Run `editlog 1 i/2 d/2026-10-05 nt/mock INTERVIEW`: expect a duplicate rejection and no change. Run
-   `editlog 1 i/1 nt/Mock interview`: expect "already reads" and no change.
-5. Try `editlog 1 i/1`, `editlog 1 i/9 nt/x`, `editlog 1 i/0 nt/x`, `editlog 1 i/1 nt/ `, a future
-   `d/`, and `editlog 1 i/1 nt/a nt/b`: expect an error and no change.
-6. Restart Astra: expect the edited history to remain, in date order.
-
-### Reordering displayed fields
-
-1. Run `order`: expect `name tags company role phone email linkedin followups introducer interactions`
-   on a default profile. Run the same complete order: expect "unchanged" and
-   no preference-file write.
-2. Run `view 1`, then `order followups phone email name tags company role linkedin introducer interactions`:
-   expect existing cards to reorder immediately and the viewed details to be
-   redisplayed in that order. The displayed index moves with the name; contact
-   order, active filter, and contact-file bytes remain unchanged.
-3. Test contacts with only a name and contacts with actions/tags/all optional
-   fields. Missing values must have no visible/managed blank row in any order.
-4. Try a missing field, repeated `name`, an unknown field, and an extra
-   token: expect the accepted fields with unchanged preferences and display.
-   A complete upper-case order must succeed.
-5. Restart Astra: expect the saved order in cards and `view`. Load an old
-   preference file containing only GUI settings: expect default field order
-   while preserving those GUI settings.
-6. Simulate a preference write, candidate-validation, or replacement failure:
-   expect the previous preference-file bytes, model preference, cards, viewed
-   details, filter, and contact data restored/preserved. The error should be
-   visible without reporting success. Automated tests exercise real file
-   boundaries and JavaFX updates/rollback.
-7. Verify a changed order saves preferences once and never writes contacts;
-   query/unchanged/invalid requests save neither file. Add an action afterward:
-   it must save contacts without changing or rewriting the field-order preference.
+1. `find yeo`<br>
+   Expected: Alex Yeoh. Part of a name is enough.
+1. `find /fuzzy Bernise` and `find /fuzzy Bernise Yu`<br>
+   Expected: Bernice Yu in both cases, despite the misspelling.
+1. `find /contact 8743-8807`<br>
+   Expected: Alex Yeoh. `find /contact 8743` reports `Contact not found.`, since partial numbers do not match.
+1. `find /email ALEXYEOH@example.com`<br>
+   Expected: Alex Yeoh. Letter case is ignored.
+1. `find /company sho`, `find /role engineer`, and `find /company DBS /role Engineer`<br>
+   Expected: Alex Yeoh, Alex Yeoh, and `Contact not found.` respectively.
+1. `find /event meetup`<br>
+   Expected: Alex Yeoh, Charlotte Oliveiro and Irfan Ibrahim.
+1. `find /notes internship`<br>
+   Expected: Alex Yeoh, with the date and an excerpt of the matching note.
+1. `find`, `find /fuzzy` and `find /notes`<br>
+   Expected: an error with the accepted format; the displayed list is unchanged.
 
 ### Filtering by tags
 
-Use a fresh sample-data copy. Assign tags so one contact has `work` and
-`friend`, a second has only `work`, a third only `friend`, and a fourth no tags.
-Keep their stored order different from alphabetical order.
+1. `filter t/careerfair`, then `filter t/careerfair t/referral`<br>
+   Expected: Alex, Bernice and Roy; then only Bernice and Roy, who have both tags.
+1. `filter mode/or t/finance t/data`<br>
+   Expected: David Li and Irfan Ibrahim.
+1. `filter t/CareerFair`<br>
+   Expected: an empty list and a no-match message, because tags are case-sensitive.
+1. `filter mode/xor t/data`, `filter t/` and `filter mode/and t/data mode/or`<br>
+   Expected: an error each time, with the previous list kept.
 
-1. Run `filter t/work t/friend` and `filter mode/and t/friend t/work`: expect
-   only contacts with both tags, in stored order, and an AND result count.
-2. Run `filter mode/OR t/work t/friend`: expect contacts with either/both tags,
-   each once and in stored order. The untagged contact is excluded.
-3. Repeat tags, such as `filter mode/or t/work t/work t/friend`: expect the same
-   result list without duplicates. `filter t/work t/work` is a single-tag query.
-4. Run `filter t/Work` when only lower-case `work` exists: expect an empty list
-   and the no-match message. Case-insensitive mode values do not change tag case.
-5. Run `find NAME`, then `filter t/friend`: expect tag results from all stored
-   contacts. Filter for a nonexistent tag, then run `filter t/work`: matching
-   contacts must reappear. Run `list`: expect the complete original stored order.
-6. Run `filter t/friend`, then `view 1`: expect full details for the first
-   displayed result. Try an index beyond the filtered count: expect an error
-   with the current results unchanged.
-7. From a non-empty result, try `filter`, `filter mode/or`, `filter t/`,
-   `filter t/work t/bad!`, `filter mode/xor t/work`, `filter mode/ t/work`, and
-   `filter mode/and t/work mode/or`: expect errors with no data/view change.
-8. Check unchanged contact-file bytes and zero save attempts for valid,
-   invalid, repeated, and no-match filters followed by view/list. Automated
-   tests use a storage double that fails on any attempted write.
+### Viewing contacts
+
+1. `view 2`<br>
+   Expected: Bernice Yu's full details, including her interaction history and events, in the detail panel.
+1. `find Yu`, then `view Alex Yeoh`<br>
+   Expected: Alex's details, even though the previous search hid him.
+1. `add n/Alex Tan e/alextan@example.com`, then `view Alex`<br>
+   Expected: both Alexes are listed with indexes and no prompt appears. `view 2` then shows Alex Tan.
+1. `view 0`, `view 99`, and `view n/Alex`<br>
+   Expected: an error each time, with the displayed list kept.
+
+### Deleting contacts
+
+1. `delete 6`<br>
+   Expected: a preview of Roy Balakrishnan and nothing deleted. Enter `list`: the prompt is repeated. Enter `n`:
+   nothing changes. Repeat and enter `y`: Roy is deleted and the remaining count is shown.
+1. `add n/Alex Tan e/alextan@example.com`, then `delete Alex`<br>
+   Expected: both Alexes are listed with indexes. Enter `2`: a preview of Alex Tan. Enter `y`: only Alex Tan
+   is deleted.
+1. `delete /contact 9927 2758`<br>
+   Expected: a preview of Bernice Yu. Enter `cancel`: nothing changes.
+1. `delete /email lidavid@example.com CHARLOTTE@example.com`<br>
+   Expected: a preview of both David Li and Charlotte Oliveiro. Enter `n`.
+   `delete /email lidavid@example.com nobody@example.com` is rejected as a whole, with no preview.
+
+### Undoing changes and viewing history
+
+1. `edit 2 p/90000000`, then `y`, then `undo`<br>
+   Expected: a preview of the edit to be reversed. Enter `y`: Bernice's previous phone number is restored.
+   Enter `undo` again: there is nothing to undo.
+1. `delete 3`, then `y`, then `undo`, then `y`<br>
+   Expected: Charlotte Oliveiro is restored as the 3rd contact.
+1. `add n/Temp Person`, then `undo`<br>
+   Expected: there is nothing to undo, since only edits and deletions can be undone.
+1. `history`<br>
+   Expected: the changes above, newest first, with the undone edit and deletion marked `(undone)`.
+
+### Clearing all entries
+
+1. `find Yu`, then `clear`<br>
+   Expected: the prompt counts all six stored contacts, not just the one displayed. Enter `cancel`: every
+   contact remains and the `find Yu` results are shown again.
+1. `clear`, then `y`<br>
+   Expected: all contacts are removed and `0 contact(s) remaining` is reported. Restart Astra: the list is
+   still empty, and no sample data is added.
+1. `clear` again, and `clear 3`<br>
+   Expected: nothing to clear; then an error with the accepted format.
+
+### Logging interactions
+
+1. `log 4 nt/Coffee chat about quant roles`<br>
+   Expected: logged with today's date as David Li's 3rd interaction, after his two sample interactions.
+1. `log 4 d/1 Jan 2020 nt/Met at an alumni talk`<br>
+   Expected: the interaction becomes number 1, since the history is kept in date order.
+   `log 4 d/1999-12-31 nt/x`, a future date, and `log 4 nt/coffee chat about QUANT roles` are rejected.
+1. `editlog 4 i/1 nt/Met at an alumni dinner`<br>
+   Expected: entry 1 shows the new note with the same date. `editlog 4 i/1` and `editlog 4 i/99 nt/x` are
+   rejected.
+1. `unlog 4 i/1`<br>
+   Expected: the entry is shown for confirmation. Enter `y`: it is removed and the history is renumbered.
+1. `log David nt/Chat by name`<br>
+   Expected: logged for David Li, and the list shows the contacts matching `David`.
+
+### Recording and managing follow-ups
+
+1. `followup 3 a/Send thank-you note d/2020-01-01`<br>
+   Expected: Charlotte Oliveiro gets `#2 [PENDING] Send thank-you note | Due: 2020-01-01 [OVERDUE]`.
+1. `followup 3 a/Send thank-you note`<br>
+   Expected: Astra shows the existing action and asks **Add another?** Enter `n`: nothing is added.
+1. `completefollowup 3 i/2`, then `reopenfollowup 3 i/2`<br>
+   Expected: `#2` becomes completed without `[OVERDUE]`, then pending and overdue again. Completing an
+   already completed action, or reopening a pending one, is rejected.
+1. `editfollowup 3 i/2 d/`<br>
+   Expected: `#2` shows `No due date`. `editfollowup 3 i/2 a/Ask about the next developer community session`
+   is rejected, because it would duplicate pending action `#1`.
+1. `deletefollowup 3 i/2`, then `y`, then `followup 3 a/Call Charlotte`<br>
+   Expected: `#2` is removed, and the new action gets ID `#3`, never `#2` again.
+1. `followup 0 a/x`, `followup 1 a/`, `followup 1 a/x d/2026-02-30` and `followup 1 a/x confirm/yes`<br>
+   Expected: an error each time, with no change.
+
+### Reviewing follow-ups
+
+1. `followups`<br>
+   Expected: pending actions of all contacts, dated ones first by due date, then undated ones. Alex Yeoh's `#1`
+   is marked `[OVERDUE]`.
+1. `followups overdue`, `followups today`, `followups upcoming`, `followups undated` and `followups completed`<br>
+   Expected: only the matching actions each time, e.g. `undated` lists Bernice Yu's `#2` and David Li's `#2`.
+   `followups bogus` is rejected.
+1. `followups`, then `2`<br>
+   Expected: the contact and action of the 2nd row are shown in the detail panel. Clicking a row or using the
+   arrow keys does the same.
+1. `followups`, then `list`<br>
+   Expected: the follow-up list is closed and `list` runs as a normal command.
+
+### Reordering displayed fields
+
+1. `order`<br>
+   Expected: `name tags company role phone email linkedin followups introducer interactions`.
+1. `view 1`, then `order phone name tags company role email linkedin followups introducer interactions`<br>
+   Expected: every card and the displayed details show the phone first. The order of contacts is unchanged.
+1. `order name`, `order name name tags company role phone email linkedin followups introducer` and
+   `order name tags company role phone email linkedin followups introducer interactions extra`<br>
+   Expected: an error listing the accepted fields each time; the order is unchanged.
+1. Restart Astra.<br>
+   Expected: the saved order is still used.
+
+### Creating command shortcuts
+
+1. `alias fn find /notes`, then `fn internship`<br>
+   Expected: the result starts with `Ran: find /notes internship` and shows Alex Yeoh.
+1. `alias fn list`<br>
+   Expected: rejected, showing what `fn` already runs. `alias /replace fn list` then replaces it, `alias`
+   lists it, and `alias /remove fn` removes it.
+1. `alias list find` and `alias x y`<br>
+   Expected: rejected, because `list` is a command and `y` is not.
+1. Create a shortcut and restart Astra.<br>
+   Expected: the shortcut still works.
+
+### Using the confirmation panel
+
+1. `delete 1`<br>
+   Expected: the confirmation panel shows the preview. Press Tab to reach the buttons and choose **Cancel**:
+   the panel closes and nothing is deleted.
+1. `edit 1 p/90000001`, then click **Confirm**<br>
+   Expected: the edit is applied, exactly as if `y` had been typed.
+1. Make the window as small as it goes, and run `delete 1` again.<br>
+   Expected: the preview wraps and can be scrolled. Enter `n`.
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
-
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
-
-1. _{ more test cases …​ }_
-
-### Follow-up deletion and confirmation panel (v1.5)
-
-`DeleteFollowUpCommandParser` accepts `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`.
-The command resolves the displayed contact and stable action ID before producing a
-`ConfirmationRequest`. Its retained contact must still match at confirmation. `Person.removeFollowUp`
-removes exactly one action without renumbering survivors or changing `lastFollowUpId`.
-Logic saves once on success and restores the original model, filter, and counter on failure.
-Deletion is permanent; the existing contact undo feature does not undo action deletion.
-
-`ConfirmationPanel` renders any `ConfirmationRequest`, including UC04 edit, delete, clear,
-follow-up deletion, duplicate follow-ups, and other existing y/n confirmations. Selection requests
-are not shown as confirmations. MainWindow feeds both typed and button replies through Logic;
-the panel never mutates the model. A revision check discards events from a hidden/replaced panel.
-Invalid replies retain the prompt; completion, cancellation, or failure hides/unmanages it.
-The preview wraps and scrolls; Tab navigation and the command box remain available.
-
-![Shared confirmation workflow](images/ConfirmationActivityDiagram.svg)
-
-#### Manual checks for Wednesday 28 October 2026
-
-1. Create actions with IDs `#1` and `#2`. Delete `#2`, cancel once, then confirm a new request.
-   Check that the right action was removed and `#1` retained its description, date, and status.
-2. Delete the remaining action, restart, and create another. Expect `#3`, never `#1` or `#2`.
-3. Filter to a contact that is not first in storage. Delete an action using displayed index `1`;
-   verify the other contacts, active filter, events, interactions, introducer, tags, and star are unchanged.
-4. Edit by index and by name, including removing optional fields. Check the preview, cancel, retry,
-   and confirm. During each prompt try `list`, `maybe`, and `yes`: no command or mutation may occur.
-5. Preview an ambiguous contact deletion, select a candidate, and confirm/cancel. Confirm that the
-   panel appears only after selection and that cancellation restores the original filtered view.
-6. Exercise delete, clear, duplicate follow-ups, and edit using both buttons and typed replies.
-   Resize to the minimum window size; inspect wrapped previews, scrolling, focus, and Tab navigation.
-7. Simulate save failures with the workflow/UI storage doubles. Verify unchanged disk bytes/model/view,
-   a hidden panel, a WARNING with the I/O cause, and rejection of a subsequent standalone `y`.
-8. Run `./gradlew check` on Java 25, including both Checkstyle tasks. Assertions are enabled by Gradle;
-   external IDE or direct-JAR launches must also enable assertions (`-ea`) to exercise these invariants.
+1. Dealing with a missing data file
+   1. Close Astra and delete `data/contactfile.json`. Launch Astra.<br>
+      Expected: the sample contacts are shown, as on the first launch.
+1. Dealing with a partly corrupted data file
+   1. Close Astra. In `data/contactfile.json`, change one contact's `"email"` value to `"not-an-email"`.
+      Launch Astra.<br>
+      Expected: the message area reports how many contacts were recovered and that one record was skipped,
+      with the paths of the backup and report. Check that `data/recovery/` contains a folder with
+      `contactfile.original.json`, an unchanged copy of the edited file, and `report.txt`, which names the
+      skipped record and the reason.
+1. Dealing with an unreadable data file
+   1. Close Astra and replace the whole content of `data/contactfile.json` with `{`. Launch Astra.<br>
+      Expected: **Astra startup failed** is shown with the backup and report paths under `data/reports/`.
+      Choose **Exit**: the file is unchanged.
+   1. Launch Astra again and choose **Start anew**.<br>
+      Expected: Astra opens with an empty contact list, and the backup remains in `data/reports/`.
+1. Dealing with a failed save (macOS or Linux)
+   1. While Astra is running, make the `data` folder read-only, e.g. `chmod a-w data`. Enter
+      `add n/Save Test`.<br>
+      Expected: an error that the contact file could not be saved, and Save Test is not in the list. Restore
+      the permission with `chmod u+w data`.

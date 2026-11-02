@@ -102,7 +102,7 @@ If Astra cannot safely prepare a reset, **Start anew** is unavailable and the co
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, `starred`, and `exit`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`. `clear` is the exception: it rejects extra parameters instead of ignoring them.
+  For example, `help 123` is interpreted as `help`. `clear`, `undo` and `history` are the exceptions: they reject extra parameters instead of ignoring them.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -163,7 +163,7 @@ Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`]
 * Queries search all contacts and replace the current displayed filter with the search results.
 * One match: the contact's starred status is updated. If it already has the requested status, Astra reports this without changing contact data.
 * Multiple matches: Astra displays the results without changing any contacts and asks you to retry with `star INDEX` or `unstar INDEX`.
-* No matches: Astra displays an empty list and reports `Contact not found.`
+* No matches: Astra reports `Contact not found.` and keeps the current list displayed.
 * Numeric input is treated as an index. As with other index commands, input beginning with an integer must be a single positive index.
 
 Examples: `star Alex`, `star /contact 87438807`, and `unstar /email alex@example.com`.
@@ -349,7 +349,7 @@ Example:
 
 * `find /notes internship coffee` finds contacts whose notes mention an internship or coffee.
 
-If no contacts match an ordinary search, Astra reports `Contact not found.` and displays an empty result list.
+If no contacts match an ordinary search, Astra reports `Contact not found.` and keeps the current list displayed.
 
 If a name query matches several contacts, Astra displays the matching contacts. Use the displayed index when editing one of them. For example:
 
@@ -543,6 +543,11 @@ Format: `undo`
 * If restoring the information would violate contact uniqueness rules, Astra reports the conflict and makes no changes.
 * Undo history is kept only for the current session and is cleared when Astra closes.
 
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+Review the deletion preview before entering `y`. Undo is available only for the
+most recent edit or deletion and is cleared by any later contact data change.
+</div>
+
 Examples:
 * `edit 1 p/91234567`, followed by `undo`, previews the edit that would be reversed.
 * Enter `y` after the preview to restore the previous phone number.
@@ -556,10 +561,6 @@ Format: `history`
 
 * The history is cleared when Astra closes.
 * Other command types, including viewing commands, are not included.
-<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-Review the deletion preview before entering `y`. Undo is available only for the
-most recent edit or deletion and is cleared by any later contact data change.
-</div>
 
 ### Recording a follow-up: `followup`
 
@@ -682,7 +683,7 @@ Format:
 
 `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`
 
-* `CONTACT_INDEX` is the contact number in the currently displayed list.
+* `CONTACT_INDEX` is the index of the contact in the currently displayed list.
 * `FOLLOW_UP_ID` is the ID of the follow-up to edit.
 * At least one of `a/DESCRIPTION` or `d/DATE` must be provided.
 * The follow-up's ID and status are preserved.
@@ -709,7 +710,7 @@ Format:
 `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br>
 `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`
 
-* `CONTACT_INDEX` is the contact number in the currently displayed list.
+* `CONTACT_INDEX` is the index of the contact in the currently displayed list.
 * `FOLLOW_UP_ID` is the follow-up's stable ID, shown as `#ID` on the contact card,
   in `view`, and in `followups`. It is not the row number of the `followups` list.
 * Only the status changes. The ID, description, due date and position in the
@@ -740,7 +741,7 @@ Previews one pending or completed action before permanently removing it.
 Format: `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`
 
 * `CONTACT_INDEX` refers to the currently displayed contact list. `FOLLOW_UP_ID` is
-  the stable number after `#` in that contact's history, not a dashboard row number.
+  the stable number after `#` in that contact's history, not a row number in the `followups` list.
   Both values must be positive integers.
 * The confirmation panel shows the contact, action ID, description, status, and due date.
   Enter `y` or choose **Confirm** to delete; `n`/`cancel` or **Cancel** keeps the action.
@@ -910,12 +911,11 @@ Action | Format, Examples
 **Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
 **Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/2`
-**Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br>
-e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
+**Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br> e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Complete follow-up** | `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `completefollowup 1 i/2`
 **Reopen follow-up** | `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `reopenfollowup 1 i/2`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
-**Follow-ups** | `followups [overdue|today|upcoming|completed|undated]`, then a displayed number to view details/contact or `n`/`cancel` to stop
+**Follow-ups** | `followups [overdue\|today\|upcoming\|completed\|undated]`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
 **Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
