@@ -28,7 +28,7 @@ Astra is a **desktop application for managing contacts, optimized for use throug
 
    * `list` : Lists all contacts.
 
-   * `filter mode/or t/work t/friend` : Lists contacts tagged with work or friend.
+   * `filter mode/or t/mentor t/referral` : Lists contacts tagged with mentor or referral.
 
    * `add n/John Doe c/Acme r/Engineer p/98765432 e/johnd@example.com` : Adds a contact named `John Doe` to the Contact File.
 
@@ -133,7 +133,7 @@ Format: `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN]
   A contact cannot be their own introducer; the comparison ignores letter case and normalizes spacing.
 * Use `ev/EVENT` to record an event associated with the contact. The event name must not be blank.
 * `l/LINKEDIN` accepts a `linkedin.com` URL, such as `linkedin.com/in/johndoe` or `https://www.linkedin.com/in/johndoe`, or a profile handle of 3 to 100 letters, digits and hyphens, such as `john-doe`.
-* The phone number and email must not already belong to another contact. Two contacts may share a name only if they have different emails; names are compared without regard to letter case, so `John Doe` and `john doe` without emails are the same contact.
+* The phone number and email must not already belong to another contact. Two contacts can share a name unless neither of them has an email. Names are compared without regard to letter case, so adding `john doe` without an email is rejected if `John Doe` without an email already exists.
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
@@ -143,7 +143,7 @@ Examples:
 * `add n/John Doe c/Acme r/Software Engineer p/98765432 e/johnd@example.com l/linkedin.com/in/johndoe`
 * `add n/John Doe i/O'Brien-Smith` Adds John Doe and records O'Brien-Smith as the introducer.
 * `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`
-* `add n/Hans Gruber` — just a name, when that is all you got before the conversation moved on.
+* `add n/Hans Gruber` Adds a contact with only a name, which you can complete later with `edit`.
 * `add n/Alice Tan ev/NUS Career Fair` Adds Alice Tan and records the NUS Career Fair event.
 
 ### Listing all persons: `list`
@@ -209,7 +209,7 @@ Format: `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE] [e/EMAIL] [l/LINKEDI
 * At least one of the optional fields must be provided.
 * If every value you enter is the same as the current one, nothing is changed and an error message is shown.
 * Valid edits first show the proposed changes and resulting contact in the confirmation panel.
-  Enter `y` or choose **Confirm** to apply; `n`/`cancel` or **Cancel** discards them.
+  Enter `y` or choose **Confirm (y)** to apply; `n`/`cancel` or **Cancel (n)** discards them.
   Other replies repeat the prompt. Nothing is saved before confirmation.
 * Existing values will be updated to the input values after confirmation.
 * A new name that is the same as another person's is rejected when neither of them has an email.
@@ -263,8 +263,8 @@ Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUC
   Renaming a contact to their saved introducer's name is also rejected.
 * Re-entering the same introducer reports that the name is already recorded and does not ask for confirmation.
 * If a different introducer is already recorded, Astra displays that name in the confirmation panel.
-  Reply `y` to replace it or `n`/`cancel` to stop. An initial command ending in `--confirm`
-  still applies immediately for compatibility.
+  Reply `y` to replace it or `n`/`cancel` to stop. Adding `--confirm` to the original command
+  replaces it immediately without asking.
 * Astra displays the updated contact after recording the introducer.
 
 Examples:
@@ -437,9 +437,9 @@ Format: `view INDEX` or `view NAME`
 Examples:
 * `list` followed by `view 2` shows the full details of the 2nd stored person.
 * `find Yeo` followed by `view 1` shows the full details of the first search result.
-* `view alice pauline` or `view Pauline` shows Alice Pauline when she is the only match.
-* `view Meier` lists matching Meiers; `view 2` then shows the second match's full details.
-* `find Alice` followed by `view Carl Kurz` still finds Carl, because name lookup searches all contacts.
+* `view alex yeoh` or `view Yeoh` shows Alex Yeoh when he is the only match.
+* `view an` lists Irfan Ibrahim and Roy Balakrishnan; `view 2` then shows Roy's full details.
+* `find Bernice` followed by `view Alex Yeoh` still finds Alex, because name lookup searches all contacts.
 
 ### Logging an interaction: `log`
 
@@ -518,7 +518,8 @@ delete /contact PHONE_NUMBER
 delete /email EMAIL [EMAIL]...
 ```
 
-* `INDEX` is a positive integer referring to the currently displayed list.
+* `INDEX` is a positive integer referring to the currently displayed list. A number may also match
+  contact names; see the notes about the command format.
 * A name can be partial and is matched without regard to letter case. Names,
   phone numbers, and emails search every stored contact, even when filtered.
 * If a name matches several contacts, Astra displays numbered candidates. Enter
@@ -539,11 +540,11 @@ delete /email EMAIL [EMAIL]...
 
 Examples:
 
-* `find Betsy`, then `delete 1`, then `y` deletes the first displayed result.
-* `delete John Lim`, then `y` deletes him if exactly one contact matches.
-* `delete Meier`, then `2`, then `y` deletes the second numbered candidate.
-* `delete /contact +65 (9123)-4567`, then `n` previews and cancels deletion.
-* `delete /email alice@example.com bob@example.com`, then `y` deletes both
+* `find Bernice`, then `delete 1`, then `y` deletes the first displayed result.
+* `delete Alex Yeoh`, then `y` deletes him if exactly one contact matches.
+* `delete an`, then `2`, then `y` deletes the second numbered candidate (Roy Balakrishnan in the sample data).
+* `delete /contact 8743 8807`, then `n` previews and cancels deletion.
+* `delete /email alexyeoh@example.com berniceyu@example.com`, then `y` deletes both
   contacts in one save if every address resolves successfully.
 
 ### Undoing an edit or deletion: `undo`
@@ -589,7 +590,9 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
 * Provide one non-blank description after `a/`. Outer whitespace is removed;
   letter case and internal spacing are kept. Additional command prefixes such
   as `p/`, repeated `a/`, and `confirm/` are rejected. URLs such as
-  `https://example.com/portfolio` can be part of the description.
+  `https://example.com/portfolio` can be part of the description. Any other word
+  that ends in `/`, such as `and/or` or `c/o`, is also read as a prefix and
+  rejected, so rephrase such words.
 * Optionally add one `d/DATE` before or after `a/DESCRIPTION`. For example,
   `followup 1 d/2026-10-30 a/Call back` is also accepted. Accepted formats are
   `yyyy-MM-dd` (for example `2026-10-25`), `dd/MM/yyyy` (`25/10/2026`), and
@@ -617,8 +620,8 @@ Format: `followup INDEX a/DESCRIPTION [d/DATE]`
   Completed history is retained. Use `completefollowup` and `reopenfollowup` to
   change an action's status, `editfollowup` to correct an action, and
   `deletefollowup` to remove a mistaken action.
-* Action IDs are unique within each contact and are never renumbered or reused after deletion,
-  including after restart. Older files infer the greatest allocated ID from their existing history.
+* Action IDs are unique within each contact and are never renumbered or reused, even after
+  deletion or restart.
 * Actions survive restart and ordinary contact edits. A failed save preserves
   the file, previous action history, and current view.
 
@@ -761,25 +764,26 @@ Format: `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`
   Both values must be positive integers.
 * The confirmation panel shows the contact, action ID, description, status, and due date.
   Enter `y` or choose **Confirm** to delete; `n`/`cancel` or **Cancel** keeps the action.
-  Invalid replies repeat the prompt and unrelated commands wait until you answer or cancel.
+  Other replies, including other commands, only repeat the prompt; cancel first to run another command.
 * Only that action is removed. Remaining action order and IDs, contact fields, tags,
   events, introducer, star, and interactions are preserved. The current contact filter remains active.
 * IDs are never reused, even after deleting the highest ID or the entire history and restarting.
 * Invalid contact indices or action IDs change nothing. A failed save restores the
   original file, contact history, retired IDs, and pre-request view. Start a new request to retry.
 
-Example: `deletefollowup 1 i/9`, then `y`, removes action `#9` from the first displayed contact.
+Example: `deletefollowup 1 i/2`, then `y`, removes action `#2` from the first displayed contact.
 
 ### Using the confirmation panel
 
 Contact edits, contact deletion, clear, follow-up deletion, and duplicate follow-up creation
-share one scrollable panel. Existing y/n requests from other commands use it too. Read the preview,
-then use the buttons or enter `y`, `n`, or `cancel` in the command box. Tab reaches the buttons;
-Enter or Space activates the focused button. Showing the panel does not take focus from the command box.
+share one scrollable panel, and so do the `undo`, `unlog`, `drop` and `introduce` confirmations. Read the
+preview, then choose **Confirm (y)** or **Cancel (n)**, or enter `y`, `n`, or `cancel` in the command box.
+Tab reaches the buttons, and Space activates the focused button (Enter also works on Windows and Linux).
+Showing the panel does not take focus from the command box.
 
 Invalid replies leave the panel open. Completion, cancellation, or failure hides it.
-An old button event cannot confirm a later request. Contact/action selection lists still ask for a
-number before showing a final confirmation, where applicable.
+Clicking a button on a panel that has already closed has no effect. When a name matches several
+contacts, Astra first asks for a candidate number, then shows the confirmation panel.
 
 ### Clearing all entries: `clear`
 
@@ -799,8 +803,8 @@ Examples:
 
 * `clear`, then `y`, with 12 stored contacts, reports
   `Cleared 12 contact(s). 0 contact(s) remaining.`
-* `find Alice`, then `clear`, then `cancel` preserves every contact and restores
-  the results of `find Alice`.
+* `find Alex`, then `clear`, then `cancel` preserves every contact and restores
+  the results of `find Alex`.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Confirmed clearing cannot be undone. Check the count before entering `y`.
@@ -821,12 +825,15 @@ order FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD FIELD
 * `order` shows the current global field order.
 * To change it, supply each of these ten field names **exactly once**:
   `name`, `tags`, `company`, `role`, `phone`, `email`, `linkedin`, `followups`, `introducer`, `interactions`.
-  If you leave out only `interactions`, it is placed last. Field names ignore letter case. An unknown, repeated, or missing field is
-  rejected with the accepted fields; your existing preference and view remain.
+  If you leave out only `interactions`, it is placed last. If you leave out only `introducer`, it is placed just
+  before `interactions`; if you leave out both, they are added last. Field names ignore letter case.
+  Any other missing field, or an unknown or repeated one, is rejected with the accepted fields;
+  your existing preference and view remain.
 * The default is `name tags company role phone email linkedin followups introducer interactions`,
   placing the introducer before interaction history. Interaction history
   appears only in a contact's details (`view`, `log`), not on the contact cards. Contacts without optional
-  values omit those rows, even when an absent field appears early in the order.
+  values omit those rows, even when an absent field appears early in the order. Events are not part
+  of the field order; they always appear last.
 * A successful change immediately refreshes existing cards. If you are viewing
   a contact's details, they are redisplayed in the new order alongside the
   confirmation. Later `view INDEX` and `view NAME` output use the same order.
@@ -916,25 +923,25 @@ Action | Format, Examples
 **Add** | `add n/NAME [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [i/INTRODUCER] [ev/EVENT] [t/TAG]…​` <br> e.g., `add n/James Ho c/Acme r/Analyst p/22224444 e/jamesho@example.com ev/Career Fair i/Jane Smith t/colleague`
 **Alias** | `alias SHORTCUT COMMAND…​`, `alias /replace SHORTCUT COMMAND…​`, `alias /remove SHORTCUT`, or `alias` (lists shortcuts)<br> e.g., `alias fe find /email`
 **Clear** | `clear`, then `y` to confirm or `n`/`cancel` to stop
-**Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE`, or `delete /email EMAIL [EMAIL]...`<br> Review the preview, then enter `y`, `n`, or `cancel`.
+**Delete** | `delete INDEX`, `delete NAME`, `delete /contact PHONE_NUMBER`, or `delete /email EMAIL [EMAIL]...`, then `y`, `n`, or `cancel`<br> e.g., `delete 3`, `delete Alex Yeoh`, `delete /email alexyeoh@example.com berniceyu@example.com`
 **Drop** | `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`<br> e.g., `drop 1 t/outdated`, `drop 1 i/Old Introducer --confirm`
 **Edit** | `edit INDEX [n/NAME] [c/COMPANY] [r/ROLE] [p/PHONE_NUMBER] [e/EMAIL] [l/LINKEDIN] [ev/EVENT] [t/TAG]…​` or `edit NAME …​` (same fields), then `y` to confirm or `n`/`cancel` to stop<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`, `edit James Ho p/91234567`, `edit 1 ev/Tech Conference`, `edit 3 c/` (removes the company)
 **Introduce** | `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`<br> e.g., `introduce John Doe i/Jane Smith`, `introduce 1 i/Jane Smith`
 **Undo** | `undo` to preview the most recent edit or deletion; enter `y` to restore it or `n`/`cancel` to stop
 **History** | `history`
 **Find** | `find NAME`, `find /fuzzy NAME`, `find /contact PHONE_NUMBER`, `find /email EMAIL`, `find /company COMPANY`, `find /role ROLE`, `find /event EVENT`, or `find /notes KEYWORDS`<br> e.g., `find Alex Yeoh`, `find /fuzzy Alicee`, `find /contact 87438807`, `find /email alexyeoh@example.com`, `find /company Google /role Engineer`, `find /event Career Fair`, `find /notes internship`
-**Filter** | `filter [mode/and\|mode/or] t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/work t/friend`
+**Filter** | `filter [mode/and] t/TAG [t/TAG]...` or `filter mode/or t/TAG [t/TAG]...`<br> Default AND; e.g., `filter mode/or t/mentor t/referral`
 **Follow-up** | `followup INDEX a/DESCRIPTION [d/DATE]`<br> e.g., `followup 1 a/Send portfolio d/25 Oct 2026`; duplicate pending actions ask `y`/`n`/`cancel`
 **Delete follow-up** | `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`, then `y` or `n`/`cancel`<br> e.g., `deletefollowup 1 i/2`
 **Edit follow-up** | `editfollowup CONTACT_INDEX i/FOLLOW_UP_ID [a/DESCRIPTION] [d/DATE]`<br> e.g., `editfollowup 1 i/2 a/Call client d/2026-11-05`
 **Complete follow-up** | `completefollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `completefollowup 1 i/2`
 **Reopen follow-up** | `reopenfollowup CONTACT_INDEX i/FOLLOW_UP_ID`<br> e.g., `reopenfollowup 1 i/2`
 **Log** | `log INDEX [d/DATE] nt/NOTE` or `log NAME [d/DATE] nt/NOTE`<br> e.g., `log John Lim d/2026-10-01 nt/Met at the career fair`
-**Follow-ups** | `followups [overdue\|today\|upcoming\|completed\|undated]`, then a displayed number to view details/contact or `n`/`cancel` to stop
+**Follow-ups** | `followups [FILTER]`, where `FILTER` is `overdue`, `today`, `upcoming`, `completed` or `undated`, then a displayed number to view details/contact or `n`/`cancel` to stop
 **Unlog** | `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`, then `y` to confirm<br> e.g., `unlog John Lim i/2`
 **Edit log** | `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/DATE] [nt/NOTE]`<br> e.g., `editlog John Lim i/2 nt/Discussed frontend internships`
 **List** | `list`
-**View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alice Pauline`
+**View** | `view INDEX` or `view NAME`<br> e.g., `view 2`, `view Alex Yeoh`
 **Order** | `order` to query; `order name phone email company role tags linkedin followups introducer interactions` to change
 **Star** | `star INDEX` or `star QUERY`<br> e.g., `star 2`
 **Unstar** | `unstar INDEX` or `unstar QUERY`<br> e.g., `unstar 1`
