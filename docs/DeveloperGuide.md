@@ -725,13 +725,16 @@ The sequence diagram below shows how `log 1 nt/Coffee chat` is handled.
 
 `Messages#format` shows the history as a numbered list, and it is one of the fields `order` can move, so it
 appears wherever full details are shown. `JsonAdaptedInteraction` stores the date as `YYYY-MM-DD`. A contact
-file written before this feature has no `interactions` field, which loads as an empty history. Loading applies
-the same rules as `log`: a future date, a blank note or a repeated interaction makes that contact invalid, and it
-goes through the usual recovery path.
+file written before this feature has no `interactions` field, which loads as an empty history. Loading checks
+the main rules that `log` applies: a missing or invalid date, a future date, a blank note or a repeated
+interaction makes that contact invalid, and it goes through the usual recovery path. Unlike `log`, loading does
+not reject a date before 2000-01-01.
 
 A name target goes through `PersonNameResolver#resolveTarget`, which filters the displayed list to the
 contacts matching the name. `log`, `unlog` and `editlog` leave that filter in place, so after a name target the list shows
-those matches; after an index target the list is unchanged.
+those matches. After an index target the list is normally unchanged; the exception is a number that also
+appears in a contact's name, where `ContactSelection` first filters the list to the candidates, as described
+above.
 
 `unlog` (`UnlogCommand`) removes one entry, addressed by its number in the date-ordered history. Because a
 removal cannot be undone and later entries are renumbered, the command returns a `ConfirmationRequest` that
@@ -761,7 +764,9 @@ Design considerations:
   cost is that every method that copies a `Person` must pass the history on, which the single full constructor
   makes hard to forget.
 * **Order:** sorted by date when stored (chosen), or kept in the order logged. Sorting means an interaction
-  logged late appears where it belongs, and the entry numbers that `view` shows are stable.
+  logged late appears where it belongs, and entries are numbered in date order. The cost is that logging,
+  editing or removing an entry can renumber the entries after it, which is why `editlog` reports the new number
+  and `unlog` asks for confirmation.
 * **Correcting an entry:** an `editlog` command (chosen), or only `unlog` followed by `log`. Editing keeps
   the other part of the entry, needs one command instead of two and no confirmation, and cannot lose the
   entry if the second command fails.
@@ -781,7 +786,8 @@ which also rules out a shortcut standing for another shortcut. When Logic
 starts, `AliasCommandParser#validAliases` drops any entry in a hand-edited preferences file that breaks these rules.
 
 `LogicManager` expands the input before parsing. When a shortcut was used, it prefixes the result, and any
-error, with `Ran: <expanded command>`, so the user sees exactly what was run.
+parse or command error, with `Ran: <expanded command>`, so the user sees exactly what was run. An error from
+saving the file is shown without it.
 
 <!-- @@author -->
 
@@ -1049,7 +1055,7 @@ The following use case diagram summarizes the main interactions supported by Ast
 1. User enters an edit command, identifying the contact either by its index in the displayed list or by name, with the new values of one or more fields.
 2. Astra finds the contact, validates the new values, and previews the changes and resulting contact.
 3. User confirms with `y` or the confirmation panel's Confirm button.
-4. Astra updates the contact, saves the change, and lists every updated field.
+4. Astra updates the contact, saves the change, lists every updated field, and shows the full contact list again.
 
    Use case ends.
 
@@ -1060,13 +1066,24 @@ The following use case diagram summarizes the main interactions supported by Ast
 
       Use case ends.
 
-* 1b. The command format is invalid, a prefix is repeated, or a value is malformed.
+* 1b. The command format is invalid, a single-valued prefix is repeated, or a value is malformed.
     * 1b1. Astra shows the relevant error message, with the command usage if the format is invalid.
 
       Use case ends.
 
 * 1c. A company, role, contact number, email or LinkedIn prefix is given with no value, e.g. `c/`.
     * 1c1. Astra treats it as removing that field from the contact.
+
+      Use case resumes at step 2.
+
+* 1d. The command contains a prefix that `edit` does not support.
+    * 1d1. Astra names the unsupported prefix and changes nothing. For `i/`, it tells the user to use
+      `introduce NAME i/INTRODUCER` instead.
+
+      Use case ends.
+
+* 1e. `t/` is given with no tag after it.
+    * 1e1. Astra treats it as removing all of the contact's tags.
 
       Use case resumes at step 2.
 
@@ -1091,8 +1108,9 @@ The following use case diagram summarizes the main interactions supported by Ast
 
       Use case ends.
 
-* 2e. The resulting contact conflicts with another contact's name/email identity.
-    * 2e1. Astra rejects the edit and changes nothing. A shared name alone is not an identity conflict.
+* 2e. The new name matches another contact's name, ignoring letter case, and the two contacts either both have
+  no email or have the same email.
+    * 2e1. Astra reports that the contact already exists and changes nothing.
 
       Use case ends.
 
@@ -1106,6 +1124,18 @@ The following use case diagram summarizes the main interactions supported by Ast
 
       Use case ends.
 
+* 2h. The new name is the same as the contact's recorded introducer.
+    * 2h1. Astra reports that a contact cannot be their own introducer and changes nothing.
+
+      Use case ends.
+
+* 2i. The index is a number that also appears in contact names, so the displayed contact at that index and the
+  contacts with that number in their names give several candidates.
+    * 2i1. Astra shows a numbered list of the candidates.
+    * 2i2. User enters a candidate's number, or `n`/`cancel` to stop.
+
+      Use case resumes at step 2.
+
 * 3a. User cancels.
     * 3a1. Astra changes nothing and shows the list as it was before the request.
 
@@ -1116,13 +1146,18 @@ The following use case diagram summarizes the main interactions supported by Ast
 
       Use case resumes at step 3.
 
+* 3c. User enters `exit`.
+    * 3c1. Astra changes nothing and closes.
+
+      Use case ends.
+
 * 4a. Saving fails.
     * 4a1. Astra shows a save error. The contact, the contact file and the displayed list are unchanged.
 
       Use case ends.
 
 **Deferred to a later version**
-* Choosing one of several matching contacts at a prompt instead of entering the command again.
+* Choosing one of several contacts that match a typed name at a prompt instead of entering the command again.
 * Warning and asking for confirmation when the new name or LinkedIn URL matches another contact, instead of
   rejecting an identical name outright.
 
@@ -1388,6 +1423,27 @@ they are not part of this use case.
 * 2a. The action already has the requested status: report it without saving.
 * 3a. Saving fails: restore the previous status, file and view, and report the failure.
 
+**Use case: UC10 - Log an interaction**
+
+**MSS**
+
+1. User requests to log an interaction with a contact, identified by index or name, with a note and an optional
+   date.
+2. Astra adds the interaction to the contact's history in date order, using today's date if none is given.
+3. Astra saves the change and shows the contact's numbered interaction history.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The format is invalid, a prefix is repeated, the note is blank, or the date is in the future or before
+  2000-01-01: report the error without modifying or saving contacts.
+* 1b. The index is not in the displayed list, or no contact matches the name: report the error without saving.
+* 1c. The name matches several contacts: list them and change nothing.
+* 2a. The contact already has an interaction with the same date and note, ignoring letter case: report it
+  without saving.
+* 3a. Saving fails: restore the previous history, file and view, and report the failure.
+
 **Use case: UC11 - Edit a logged interaction**
 
 **MSS**
@@ -1400,10 +1456,11 @@ they are not part of this use case.
 
 **Extensions**
 
-* 1a. The format is invalid, neither a date nor a note is given, the date is in the future, or the note is
-  blank: report the error without modifying or saving contacts.
+* 1a. The format is invalid, a prefix is repeated, neither a date nor a note is given, the date is in the
+  future or before 2000-01-01, or the note is blank: report the error without modifying or saving contacts.
 * 1b. The name matches several contacts: list them and change nothing.
 * 1c. The contact has no entry with that number: report how many entries it has, without saving.
+* 1d. The index is not in the displayed list, or no contact matches the name: report the error without saving.
 * 2a. The edit leaves the entry unchanged, or makes it the same as another entry: report it without saving.
 * 3a. Saving fails: restore the previous history, file and view, and report the failure.
 
