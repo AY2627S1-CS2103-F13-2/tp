@@ -141,6 +141,8 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
 
+<!-- @@author Cookiemunchrr -->
+
 <img src="images/ModelClassDiagram.png" width="750" />
 
 The diagram shows only the methods discussed in this guide. `ModelManager` implements every method of `Model`, so its methods are not repeated.
@@ -154,6 +156,7 @@ The `Model` component,
 * `Person#isSamePerson` compares equal names and emails that are either both absent or equal ignoring case.
   Current add/edit validation separately rejects shared normalized phone numbers and case-insensitive emails.
   Follow-ups, retired action IDs, events, interactions, and starred status do not change contact identity.
+  <!-- @@author -->
 * a `FollowUp` has an ID, a description, an optional due date and a `Status` (`PENDING` or `COMPLETED`). `FollowUp#isOverdue` is true for a pending follow-up whose due date has passed. `Model#getFollowUps` creates a `FollowUpEntry` for each follow-up, pairing it with its contact; `Model#getPendingFollowUps` retains only pending actions from that snapshot.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list (`filteredPersons`). It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (GUI settings, command aliases and the global contact field order). This is exposed to the outside as a `ReadOnlyUserPrefs` object. The field order is a `FieldOrder`, which lists each of the ten `Field` values exactly once.
@@ -289,6 +292,8 @@ clears pending state, so a stale y cannot replay the mutation. UC16 reuses the
 shared confirmation API with an "Add another?" question for duplicate pending
 actions.
 
+<!-- @@author Cookiemunchrr -->
+
 `ModelSnapshot` is the Model's restore point for one request. It copies the
 contact file and the user preferences, and keeps the active filter. Logic uses
 it in three ways:
@@ -351,6 +356,8 @@ No unsafe in-place fallback is used when atomic replacement is unavailable.
     the filter and preferences. A missed case leaves the model showing a
     change that was never saved.
 
+<!-- @@author -->
+
 ### Tag filtering (UC20)
 
 `FilterCommandParser` uses the shared prefix tokenizer with repeated `t/`
@@ -400,6 +407,8 @@ rather than the list size or last surviving element. Existing IDs and order neve
 ID exhaustion is rejected without mutation. Every copy preserves the counter, which participates
 in strong equality/hash. `appendFollowUp` rejects reused IDs; replacement preserves the action ID.
 
+<!-- @@author Cookiemunchrr -->
+
 The sequence diagram below shows how a follow-up is added inside the Model.
 It starts at `AddFollowUpCommand`, the command `FollowUpCommand` creates for
 the resolved contact. That command runs straight away, or after a `y` reply
@@ -424,6 +433,8 @@ or note that referred to the deleted follow-up 2 would then point at the new
 one.
 
 ![Follow-up IDs are never reused](images/FollowUpIdObjectDiagram.png)
+
+<!-- @@author -->
 
 Status changes are described in
 [Completing and reopening follow-ups](#completing-and-reopening-follow-ups-uc17).
@@ -461,6 +472,8 @@ Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 
 ![Recording a follow-up](images/FollowUpActivityDiagram.svg)
 
+<!-- @@author Cookiemunchrr -->
+
 #### Design considerations
 
 **Aspect: How a contact is updated**
@@ -497,6 +510,8 @@ Its editable source is `docs/diagrams/FollowUpActivityDiagram.dot`.
 * **Alternative 3:** Use random unique IDs, such as UUIDs.
   * Pros: IDs never clash, even across contacts.
   * Cons: Long IDs are slow and error-prone to type in a command-line app.
+
+<!-- @@author -->
 
 ### Completing and reopening follow-ups (UC17)
 

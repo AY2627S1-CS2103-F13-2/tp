@@ -4,6 +4,9 @@ skinparam ArrowFontStyle plain
 
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
+/'
+// @@author Cookiemunchrr
+'/
 end box
 
 box Model MODEL_COLOR_T1

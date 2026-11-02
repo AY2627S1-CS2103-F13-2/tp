@@ -1,6 +1,9 @@
 @startuml
 !include style.puml
 skinparam arrowThickness 1.1
+/'
+// @@author Cookiemunchrr
+'/
 skinparam arrowColor #9D0012
 skinparam classBackgroundColor #F97181
 skinparam classFontColor #000000
@@ -30,7 +33,13 @@ interface Model <<interface>> {
   +{abstract} getFilteredPersonList() : ObservableList<Person>
   +{abstract} updateFilteredPersonList(predicate : Predicate<Person>)
   +{abstract} getPendingFollowUps() : List<FollowUpEntry>
+/'
+// @@author
+'/
   +{abstract} getFollowUps() : List<FollowUpEntry>
+/'
+// @@author Cookiemunchrr
+'/
   +{abstract} setFieldOrder(fieldOrder : FieldOrder)
 }
 
@@ -121,8 +130,14 @@ class FollowUpEntry <<record>>
 ' Row 1: interfaces
 ReadOnlyContactFile -[hidden]right- Model
 Model -[hidden]right- ReadOnlyUserPrefs
+/'
+// @@author
+'/
 Model .left.> ReadOnlyContactFile
 Model .right.> ReadOnlyUserPrefs
+/'
+// @@author Cookiemunchrr
+'/
 
 ' Row 2: implementations
 ModelManager .up.|> Model
@@ -148,7 +163,13 @@ Person -down-> "*\nfollowUps<U+00A0><U+00A0><U+00A0>" FollowUp
 Event -[hidden]right- FollowUp
 FollowUp -right-> "1\nstatus" Status
 
+/'
+// @@author
+'/
 ' FollowUpEntry pairs a contact with one of its follow-ups, pending or completed
+/'
+// @@author Cookiemunchrr
+'/
 FollowUpEntry --> "1\ncontact" Person
 FollowUpEntry --> "1\nfollowUp" FollowUp
 
