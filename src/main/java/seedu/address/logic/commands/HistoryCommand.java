@@ -6,18 +6,19 @@ import seedu.address.logic.UndoManager;
 import seedu.address.model.Model;
 
 /**
- * Displays edit and deletion history for the current application session.
+ * Displays recorded contact changes for the current application session.
  */
 public class HistoryCommand extends Command {
     public static final String COMMAND_WORD = "history";
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Displays the edit and deletion history.";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Displays this session's additions, edits, deletions, drops, clears and introductions.";
 
     private final UndoManager undoManager;
 
     /**
      * Creates a history command.
      *
-     * @param undoManager session history to display
+     * @param undoManager Session history to display.
      */
     public HistoryCommand(UndoManager undoManager) {
         requireNonNull(undoManager);
