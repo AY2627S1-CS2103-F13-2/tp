@@ -115,6 +115,42 @@ class NumericContactSelectionWorkflowTest {
     }
 
     @Test
+    void execute_severalNamesContainTheNumber_listsEveryMatchOnce() throws Exception {
+        Session session = session(7, 0, false);
+        session.logic.execute("add n/7 Ada");
+        session.storage.saves = 0;
+        byte[] bytes = Files.readAllBytes(session.file);
+        assertTrue(session.logic.execute("view 7").getFeedbackToUser().contains("3 contacts found:"));
+        assertEquals("7 Ada", session.logic.execute("3").getPersonForDetails().orElseThrow().getName().fullName);
+        assertArrayEquals(bytes, Files.readAllBytes(session.file));
+        assertEquals(0, session.storage.saves);
+    }
+
+    @Test
+    void execute_contactChangesBeforeSelection_rejectsItWithoutSavingAnotherContact() throws Exception {
+        Session session = session(7, 0, false);
+        byte[] bytes = Files.readAllBytes(session.file);
+        session.logic.execute("delete 7");
+        session.model.deletePerson(session.model.getContactFile().getPersonList().getFirst());
+        CommandException failure = assertThrows(CommandException.class, () -> session.logic.execute("1"));
+        assertEquals("Contact changed. Start the command again.", failure.getMessage());
+        assertArrayEquals(bytes, Files.readAllBytes(session.file));
+        assertEquals(0, session.storage.saves);
+    }
+
+    @Test
+    void execute_selectedLastContactIsRemoved_remainingUpdatesKeepTheViewEmpty() throws Exception {
+        Session session = session(7, 0, false);
+        session.logic.execute("view 7");
+        Person selected = session.logic.execute("2").getPersonForDetails().orElseThrow();
+        session.model.deletePerson(selected);
+        Person remaining = session.model.getContactFile().getPersonList().getFirst();
+        session.model.setPerson(remaining, new PersonBuilder(remaining).withCompany("Changed").build());
+        assertTrue(session.model.getFilteredPersonList().isEmpty());
+        assertEquals(0, session.storage.saves);
+    }
+
+    @Test
     void execute_filteredIndexAndHiddenNumericName_useTheOriginalDisplayedIndex() throws Exception {
         Session session = session(7, 0, false);
         session.logic.execute("add n/Hector");
