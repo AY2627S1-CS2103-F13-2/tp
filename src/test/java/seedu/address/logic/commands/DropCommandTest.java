@@ -346,6 +346,7 @@ public class DropCommandTest {
                 List.of(new FieldValue(Field.TAG, new Tag("old"))), true).execute(model);
         CommandResult invalid = selection.getPendingRequest().orElseThrow().respond("3", model);
 
+        assertTrue(selection.getFeedbackToUser().endsWith(PersonSelectionRequest.MESSAGE_SELECTION));
         assertTrue(invalid.getFeedbackToUser().startsWith("Enter a number from the displayed candidates."));
         assertTrue(invalid.getPendingRequest().isPresent());
         assertEquals(twoPeople.getPersonList(), model.getContactFile().getPersonList());

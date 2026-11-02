@@ -229,7 +229,7 @@ Removes only the explicitly selected detail values from a contact, after confirm
 
 Format: `drop INDEX FIELD/VALUE…​ [--confirm]` or `drop NAME FIELD/VALUE…​ [--confirm]`
 
-* `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them and makes no changes.
+* `INDEX` refers to the contact's number in the displayed list. You can instead provide all or part of the contact's name; if several contacts match, Astra lists them with numbered indexes. Enter the index of the contact by itself, or `n`/`cancel` to stop. Astra then continues as if you had given that index.
 * Select a saved value using its field prefix, such as `p/PHONE`, `e/EMAIL`, `t/TAG`, or `i/INTRODUCER`. Values must match a value currently saved for that contact. The contact's name cannot be removed.
 * Astra first displays the proposed removal in the confirmation panel. Reply `y` to apply it,
   or `n`/`cancel` to stop. Until confirmed, the contact file is unchanged and not saved.
@@ -251,7 +251,7 @@ Records the name of the person who introduced a contact. The introducer does not
 Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`
 
 * `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
-* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
+* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them with numbered indexes. Enter the index of the contact by itself, or `n`/`cancel` to stop.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * The introducer's name must differ from the contact's name, ignoring letter case and normalized spacing.
   Renaming a contact to their saved introducer's name is also rejected.
@@ -506,7 +506,7 @@ delete /email EMAIL [EMAIL]...
 * A name can be partial and is matched without regard to letter case. Names,
   phone numbers, and emails search every stored contact, even when filtered.
 * If a name matches several contacts, Astra displays numbered candidates. Enter
-  the candidate's number by itself. Astra then previews that contact and asks
+  the index of the candidate by itself. Astra then previews that contact and asks
   for confirmation; selection alone never deletes anything.
 * Phone numbers match the complete number, ignoring spaces, hyphens, and
   parentheses. A leading plus remains significant. Emails match complete
