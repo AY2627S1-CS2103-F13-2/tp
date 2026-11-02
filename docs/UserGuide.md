@@ -251,7 +251,7 @@ Records the name of the person who introduced a contact. The introducer does not
 Format: `introduce INDEX i/INTRODUCER [--confirm]` or `introduce NAME i/INTRODUCER [--confirm]`
 
 * `INDEX` refers to the contact's number in the currently displayed list. It must be a positive integer.
-* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them and asks you to retry with the displayed index in place of the name.
+* `NAME` can be the full or partial name of the contact. Matching is case-insensitive. If multiple contacts match, Astra lists them with numbered indexes. Enter the index of the contact by itself, or `n`/`cancel` to stop.
 * Enter the introducer's full name after `i/`. A name is required and follows the same name validation as `add`.
 * The introducer's name must differ from the contact's name, ignoring letter case and normalized spacing.
   Renaming a contact to their saved introducer's name is also rejected.
