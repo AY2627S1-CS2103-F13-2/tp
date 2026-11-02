@@ -94,7 +94,9 @@ public class EditFollowUpCommand extends Command {
                 ? dueDate
                 : existing.getDueDate().orElse(null);
 
-        boolean duplicateExists = target.getFollowUps().stream()
+        boolean duplicateExists = description != null
+                && !existing.getDescription().equals(updatedDescription)
+                && target.getFollowUps().stream()
                 .anyMatch(action -> action.getId() != followUpId
                         && action.getStatus() == FollowUp.Status.PENDING
                         && existing.getStatus() == FollowUp.Status.PENDING

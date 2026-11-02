@@ -843,6 +843,25 @@ class FollowUpWorkflowTest {
     }
 
     @Test
+    void execute_editDuplicateFollowUpDateAndRemoval_preservesDescription()
+            throws Exception {
+        logic.execute("followup 1 a/Dup");
+        logic.execute("followup 1 a/Dup");
+        logic.execute("y");
+
+        logic.execute("editfollowup 1 i/2 d/2026-12-01");
+        FollowUp updated = model.getFilteredPersonList().getFirst()
+                .getFollowUps().getLast();
+        assertEquals("Dup", updated.getDescription());
+        assertEquals(LocalDate.of(2026, 12, 1), updated.getDueDate().orElseThrow());
+
+        logic.execute("editfollowup 1 i/2 d/");
+        updated = model.getFilteredPersonList().getFirst().getFollowUps().getLast();
+        assertEquals("Dup", updated.getDescription());
+        assertTrue(updated.getDueDate().isEmpty());
+    }
+
+    @Test
     void execute_editCompletedFollowUp_preservesCompletedStatus()
             throws Exception {
         Person original = new PersonBuilder(ALICE).withFollowUps(
