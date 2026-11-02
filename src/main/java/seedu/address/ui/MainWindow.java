@@ -298,6 +298,8 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void displayResult(CommandResult result) {
+        String shortcutNote = result.getFeedbackToUser().startsWith("Ran: ")
+                ? result.getFeedbackToUser().lines().findFirst().orElseThrow() + "\n" : "";
         if (result.getFollowUpListing().isPresent()) {
             personListPanel.getRoot().setVisible(false);
             personListPanel.getRoot().setManaged(false);
@@ -305,13 +307,14 @@ public class MainWindow extends UiPart<Stage> {
             followUpListPanel.getRoot().setManaged(true);
             followUpListPanel.showListing(result.getFollowUpListing().orElseThrow());
             showFollowUp(followUpListPanel.selectedEntryProperty().get());
-            resultDisplay.setFeedbackToUser(result.getFeedbackToUser().lines().findFirst().orElse(""));
+            resultDisplay.setFeedbackToUser(shortcutNote + result.getFeedbackToUser().lines()
+                    .skip(shortcutNote.isEmpty() ? 0 : 1).findFirst().orElse(""));
         } else if (result.getFollowUpForDetails().isPresent()) {
             FollowUpEntry entry = new FollowUpEntry(result.getPersonForDetails().orElseThrow(),
                     result.getFollowUpForDetails().orElseThrow());
             followUpListPanel.selectEntry(entry);
             showFollowUp(entry);
-            resultDisplay.setFeedbackToUser("Viewing follow-up #" + entry.followUp().getId()
+            resultDisplay.setFeedbackToUser(shortcutNote + "Viewing follow-up #" + entry.followUp().getId()
                     + " for " + entry.contact().getName().fullName + ".");
         } else if (result.shouldPreserveCurrentView()) {
             resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
@@ -322,10 +325,12 @@ public class MainWindow extends UiPart<Stage> {
                 showContact(person);
             });
             if (result.getPersonForDetails().isPresent()) {
-                resultDisplay.setFeedbackToUser("Viewing " + result.getPersonForDetails().orElseThrow().getName()
+                resultDisplay.setFeedbackToUser(shortcutNote + "Viewing "
+                        + result.getPersonForDetails().orElseThrow().getName()
                         + ".");
             } else if (result.getPendingRequest().orElse(null) instanceof ConfirmationRequest) {
-                resultDisplay.setFeedbackToUser("Awaiting confirmation. Review the preview before continuing.");
+                resultDisplay.setFeedbackToUser(shortcutNote
+                        + "Awaiting confirmation. Review the preview before continuing.");
             } else {
                 resultDisplay.setFeedbackToUser(result.getFeedbackToUser());
             }
