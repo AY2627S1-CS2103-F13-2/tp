@@ -18,8 +18,10 @@ public class FindCommand extends Command {
     public static final String COMMAND_WORD = "find";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Finds contacts by name, phone number, email, company, role, or the notes of their interactions.\n"
-            + "Parameters: NAME, /contact PHONE, /email EMAIL, /company COMPANY, /role ROLE, or /notes KEYWORDS\n"
+            + ": Finds contacts by name, approximate name, phone number, email, company, role, event, "
+            + "or the notes of their interactions.\n"
+            + "Parameters: NAME, /fuzzy NAME, /contact PHONE, /email EMAIL, /company COMPANY, /role ROLE, "
+            + "/event EVENT, or /notes KEYWORDS\n"
             + "Example: " + COMMAND_WORD + " Alicia Tan";
 
     public static final String MESSAGE_CONTACT_NOT_FOUND = "Contact not found.";
