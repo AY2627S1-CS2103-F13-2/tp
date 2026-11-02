@@ -98,6 +98,12 @@ If Astra cannot safely prepare a reset, **Start anew** is unavailable and the co
 * Items followed by `…`​ can appear zero or more times.<br>
   For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
+* In `view`, `edit`, `delete`, `drop`, `introduce`, `log`, `editlog`, `unlog`, `star`, and `unstar`,
+  a positive whole-number selector searches both the current displayed index and names containing that number.
+  For example, `view 7` can find the 7th displayed contact and a contact named `7 Eleven`, even if that name is hidden.
+  A contact matching both appears only once. If several contacts match, reply with a candidate number by itself,
+  or `n`/`cancel` to stop and restore the previous list. The command's usual confirmation still follows selection.
+
 * Prefixed contact fields for `add` and `edit` can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
@@ -163,8 +169,8 @@ Both `star QUERY` and `unstar QUERY` accept the same search criteria as [`find`]
 * Queries search all contacts and replace the current displayed filter with the search results.
 * One match: the contact's starred status is updated. If it already has the requested status, Astra reports this without changing contact data.
 * Multiple matches: Astra displays the results without changing any contacts and asks you to retry with `star INDEX` or `unstar INDEX`.
-* No matches: Astra displays an empty list and reports `Contact not found.`
-* Numeric input is treated as an index. As with other index commands, input beginning with an integer must be a single positive index.
+* No matches: Astra reports `Contact not found.` and keeps the current list displayed.
+* A positive whole-number selector also searches contact names. If several contacts match, reply with a candidate number by itself.
 
 Examples: `star Alex`, `star /contact 87438807`, and `unstar /email alex@example.com`.
 
@@ -419,10 +425,10 @@ Format: `view INDEX` or `view NAME`
 * A unique name match shows the contact's full details and narrows the list to that contact.
 * Several matches show a numbered list with names, companies, and emails where present, in stored order.
   Run `view INDEX` using those new numbers to choose one. There is no confirmation prompt.
-* A missing contact or invalid index shows an error and keeps the previous displayed list.
+* If neither an index nor a name matches a numeric selector, Astra shows an error and keeps the previous list.
 * Details the person does not have are omitted. Viewing never changes contacts or saves the contact file.
   Use `list` to show everyone again.
-* An argument beginning with an integer is treated as an index. `view 0`, `view -1`, and `view 1 Alice`
+* An argument beginning with an integer must use a single positive whole-number selector. `view 0`, `view -1`, and `view 1 Alice`
   are invalid. Name queries use the same allowed characters as contact names; prefixes such as `n/`
   are not supported.
 

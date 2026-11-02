@@ -3,9 +3,9 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
-import java.util.function.Function;
 
 import seedu.address.commons.util.StringUtil;
+import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -15,12 +15,18 @@ import seedu.address.model.person.Person;
 public final class PersonSelectionRequest implements PendingRequest {
 
     private final List<Person> candidates;
-    private final Function<Person, CommandResult> selectionAction;
+    private final SelectionAction selectionAction;
+
+    /** Continues a command after a contact has been chosen. */
+    @FunctionalInterface
+    public interface SelectionAction {
+        CommandResult apply(Person person) throws CommandException;
+    }
 
     /**
      * Copies candidates in display order and retains the action to perform for a selected contact.
      */
-    public PersonSelectionRequest(List<Person> candidates, Function<Person, CommandResult> selectionAction) {
+    public PersonSelectionRequest(List<Person> candidates, SelectionAction selectionAction) {
         this.candidates = List.copyOf(candidates);
         this.selectionAction = requireNonNull(selectionAction);
     }
@@ -32,7 +38,7 @@ public final class PersonSelectionRequest implements PendingRequest {
     }
 
     @Override
-    public CommandResult respond(String response, Model model) {
+    public CommandResult respond(String response, Model model) throws CommandException {
         if (StringUtil.isNonZeroUnsignedInteger(response)) {
             int index = Integer.parseInt(response) - 1;
             if (index < candidates.size()) {
