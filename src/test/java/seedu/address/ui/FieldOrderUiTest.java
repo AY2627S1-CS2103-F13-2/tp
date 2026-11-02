@@ -148,13 +148,13 @@ class FieldOrderUiTest {
             assertFalse(output.getText().contains(Messages.format(WITH_ACTION, CUSTOM)));
             Label detailName = (Label) stage.getScene().lookup("#detailName");
             assertEquals(ALICE.getName().fullName, detailName.getText());
-            assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
+            assertEquals(CUSTOM_ROWS, detailRowIds(stage));
             assertEquals(1, prefs.saveCount);
             prefs.shouldFail = true;
             execute(input, "order " + FieldOrder.DEFAULT);
             stage.getScene().getRoot().layout();
             assertEquals(CUSTOM, model.getFieldOrder());
-            assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
+            assertEquals(CUSTOM_ROWS, detailRowIds(stage));
             assertTrue(output.getText().contains("Could not save data"));
             assertFalse(output.getText().contains(Messages.format(WITH_ACTION, CUSTOM)));
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
@@ -220,7 +220,7 @@ class FieldOrderUiTest {
             ObservableList<Person> binding = model.getFilteredPersonList();
             model.setFieldOrder(CUSTOM);
             assertEquals("Viewing Alice Pauline.", output.getText());
-            assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
+            assertEquals(CUSTOM_ROWS, detailRowIds(stage));
             assertSame(binding, model.getFilteredPersonList());
             assertEquals(List.of(WITH_ACTION), binding);
         });
@@ -246,7 +246,7 @@ class FieldOrderUiTest {
             ObservableList<Person> binding = model.getFilteredPersonList();
             model.setFieldOrder(CUSTOM);
             assertEquals("Viewing Alice Pauline.", output.getText());
-            assertEquals(CUSTOM_ROWS, rowIds(stage.getScene().getRoot()));
+            assertEquals(CUSTOM_ROWS, detailRowIds(stage));
             assertSame(binding, model.getFilteredPersonList());
             assertEquals(List.of(WITH_ACTION), binding);
         });
@@ -257,6 +257,15 @@ class FieldOrderUiTest {
     private static List<String> rowIds(Node root) {
         VBox rows = (VBox) root.lookup("#fields");
         return rows.getChildren().stream().map(Node::getId).toList();
+    }
+
+    /**
+     * Returns the row ids shown in the details panel. The main window's list shows compact rows, but
+     * the lookup is still scoped to the details placeholder because contact cards also name their row
+     * container "fields".
+     */
+    private static List<String> detailRowIds(Stage stage) {
+        return rowIds(stage.getScene().lookup("#personDetailsPlaceholder"));
     }
 
     private static void execute(TextField input, String command) {

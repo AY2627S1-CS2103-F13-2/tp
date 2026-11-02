@@ -29,13 +29,13 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.FieldOrder;
 import seedu.address.model.ModelManager;
-import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.CountingStorage;
 
 class FieldOrderWorkflowTest {
     private static final FieldOrder CUSTOM = new FieldOrder(
@@ -47,7 +47,7 @@ class FieldOrderWorkflowTest {
 
     private ModelManager model;
     private LogicManager logic;
-    private CountingContacts contacts;
+    private CountingStorage contacts;
     private CountingPreferences prefs;
     private Path contactFile;
     private Path prefsFile;
@@ -63,7 +63,7 @@ class FieldOrderWorkflowTest {
         new JsonUserPrefsStorage(prefsFile).saveUserPrefs(model.getUserPrefs());
         contactBytes = Files.readAllBytes(contactFile);
         prefsBytes = Files.readAllBytes(prefsFile);
-        contacts = new CountingContacts(contactFile);
+        contacts = new CountingStorage(contactFile);
         prefs = new CountingPreferences(prefsFile);
         logic = new LogicManager(model, new StorageManager(contacts, prefs));
     }
@@ -75,7 +75,7 @@ class FieldOrderWorkflowTest {
         assertTrue(logic.execute("order").getFeedbackToUser().contains(FieldOrder.DEFAULT.toString()));
         assertTrue(logic.execute("order " + FieldOrder.DEFAULT).getFeedbackToUser().contains("unchanged"));
         assertEquals(0, prefs.saveCount);
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertTrue(changes.isEmpty());
         assertArrayEquals(prefsBytes, Files.readAllBytes(prefsFile));
         assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
@@ -85,6 +85,7 @@ class FieldOrderWorkflowTest {
     void execute_changedOrder_savesPreferencesOnceAndPreservesDataFilterAndBinding() throws Exception {
         logic.execute("find Alice");
         ObservableList<Person> binding = model.getFilteredPersonList();
+        // A non-default window setting shows that saving the order keeps the other preferences.
         model.setGuiSettings(new GuiSettings(1000, 800, 10, 20));
         logic.execute("order " + CUSTOM);
         assertEquals(CUSTOM, model.getFieldOrder());
@@ -94,7 +95,7 @@ class FieldOrderWorkflowTest {
         assertSame(binding, model.getFilteredPersonList());
         assertEquals(getTypicalContactFile(), model.getContactFile());
         assertEquals(1, prefs.saveCount);
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
         assertEquals(Messages.format(ALICE, CUSTOM), logic.execute("view 1").getFeedbackToUser());
         assertTrue(logic.execute("order " + CUSTOM).getFeedbackToUser().contains("unchanged"));
@@ -112,7 +113,7 @@ class FieldOrderWorkflowTest {
             assertEquals(List.of(ALICE), model.getFilteredPersonList());
         }
         assertEquals(0, prefs.saveCount);
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertArrayEquals(prefsBytes, Files.readAllBytes(prefsFile));
         assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
     }
@@ -134,7 +135,7 @@ class FieldOrderWorkflowTest {
         assertSame(binding, model.getFilteredPersonList());
         assertArrayEquals(saved, Files.readAllBytes(prefsFile));
         assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertEquals(2, prefs.saveCount);
         assertThrows(ParseException.class, () -> logic.execute("y"));
     }
@@ -146,7 +147,7 @@ class FieldOrderWorkflowTest {
         assertThrows(CommandException.class, () -> logic.execute("order " + CUSTOM));
         assertEquals(FieldOrder.DEFAULT, model.getFieldOrder());
         assertFalse(Files.exists(prefsFile));
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertEquals(1, prefs.saveCount);
     }
 
@@ -160,7 +161,7 @@ class FieldOrderWorkflowTest {
         assertEquals(Messages.format(ALICE, CUSTOM), restarted.execute("view 1").getFeedbackToUser());
         assertTrue(restarted.execute("order").getFeedbackToUser().contains(CUSTOM.toString()));
         assertEquals(1, prefs.saveCount);
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
     }
 
     @Test
@@ -168,11 +169,11 @@ class FieldOrderWorkflowTest {
         logic.execute("order " + CUSTOM);
         byte[] savedPrefs = Files.readAllBytes(prefsFile);
         logic.execute("followup 1 a/Send notes");
-        assertEquals(1, contacts.saveCount);
+        assertEquals(1, contacts.getSaveCount());
         assertEquals(1, prefs.saveCount);
         assertArrayEquals(savedPrefs, Files.readAllBytes(prefsFile));
         assertEquals(CUSTOM, model.getFieldOrder());
-        contacts.shouldFail = true;
+        contacts.setShouldFail(true);
         assertThrows(CommandException.class, () -> logic.execute("followup 1 a/Another action"));
         assertEquals(CUSTOM, model.getFieldOrder());
         assertEquals(1, model.getFilteredPersonList().getFirst().getFollowUps().size());
@@ -186,7 +187,7 @@ class FieldOrderWorkflowTest {
         assertEquals(FieldOrder.DEFAULT, model.getFieldOrder());
         logic.execute("cancel");
         assertEquals(0, prefs.saveCount);
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertArrayEquals(prefsBytes, Files.readAllBytes(prefsFile));
     }
 
@@ -196,12 +197,12 @@ class FieldOrderWorkflowTest {
         logic.execute("filter t/friends");
         String details = Messages.format(ALICE, CUSTOM);
         assertTrue(logic.execute("delete 1").getFeedbackToUser().contains(details));
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertTrue(logic.execute("y").getFeedbackToUser().contains(details));
         assertFalse(model.getContactFile().getPersonList().contains(ALICE));
         assertEquals(model.getContactFile().getPersonList(), model.getFilteredPersonList());
         assertEquals(CUSTOM, model.getFieldOrder());
-        assertEquals(1, contacts.saveCount);
+        assertEquals(1, contacts.getSaveCount());
         assertEquals(1, prefs.saveCount);
     }
 
@@ -213,7 +214,7 @@ class FieldOrderWorkflowTest {
         ObservableList<Person> binding = model.getFilteredPersonList();
         byte[] savedPrefs = Files.readAllBytes(prefsFile);
         logic.execute("delete 1");
-        contacts.shouldFail = true;
+        contacts.setShouldFail(true);
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(filtered, model.getFilteredPersonList());
         assertSame(binding, model.getFilteredPersonList());
@@ -221,7 +222,7 @@ class FieldOrderWorkflowTest {
         assertEquals(CUSTOM, model.getFieldOrder());
         assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
         assertArrayEquals(savedPrefs, Files.readAllBytes(prefsFile));
-        assertEquals(1, contacts.saveCount);
+        assertEquals(1, contacts.getSaveCount());
         assertEquals(1, prefs.saveCount);
         assertThrows(ParseException.class, () -> logic.execute("y"));
     }
@@ -240,7 +241,7 @@ class FieldOrderWorkflowTest {
         assertTrue(result.getFeedbackToUser().contains("#1 [PENDING] Send portfolio"));
         assertEquals(updated, result.getPersonForDetails().orElseThrow());
         assertEquals(List.of(updated), model.getFilteredPersonList());
-        assertEquals(1, contacts.saveCount);
+        assertEquals(1, contacts.getSaveCount());
         assertEquals(1, prefs.saveCount);
         assertArrayEquals(savedContacts, Files.readAllBytes(contactFile));
         assertArrayEquals(savedPrefs, Files.readAllBytes(prefsFile));
@@ -257,7 +258,7 @@ class FieldOrderWorkflowTest {
         CommandResult selected = logic.execute("view 2");
         assertEquals(Messages.format(DANIEL, CUSTOM), selected.getFeedbackToUser());
         assertEquals(DANIEL, selected.getPersonForDetails().orElseThrow());
-        assertEquals(0, contacts.saveCount);
+        assertEquals(0, contacts.getSaveCount());
         assertEquals(1, prefs.saveCount);
         assertArrayEquals(contactBytes, Files.readAllBytes(contactFile));
     }
@@ -277,24 +278,6 @@ class FieldOrderWorkflowTest {
                 throw failure;
             }
             super.saveUserPrefs(settings);
-        }
-    }
-
-    private static final class CountingContacts extends JsonContactFileStorage {
-        private int saveCount;
-        private boolean shouldFail;
-
-        private CountingContacts(Path path) {
-            super(path);
-        }
-
-        @Override
-        public void saveContactFile(ReadOnlyContactFile data) throws IOException {
-            saveCount++;
-            if (shouldFail) {
-                throw new IOException("Simulated contact save failure");
-            }
-            super.saveContactFile(data);
         }
     }
 }

@@ -76,7 +76,7 @@ public class PersonNameResolverTest {
         PersonNameResolver.Outcome.Several several =
                 assertInstanceOf(PersonNameResolver.Outcome.Several.class, editOutcome);
         assertEquals("To edit one of them, enter the command again with its index in place of the name.",
-                several.message().lines().toList().get(3));
+                several.message().lines().toList().getLast());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class PersonNameResolverTest {
     }
 
     @Test
-    public void resolve_doesNotLeakLiveListIntoOutcome() throws Exception {
+    public void resolve_displayedListChangedAfterwards_keepsResolvedPerson() throws Exception {
         // The resolved person must survive the displayed list being filtered away underneath it,
         // since callers go on to change the contact file while holding onto the outcome.
         PersonNameResolver.Outcome outcome = PersonNameResolver.resolve(model, "Alice Pauline", "delete");

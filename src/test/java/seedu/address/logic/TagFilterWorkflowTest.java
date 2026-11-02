@@ -128,6 +128,7 @@ class TagFilterWorkflowTest {
         logic.execute("filter t/friend");
         assertEquals(List.of(ZOE, MARY), model.getFilteredPersonList());
         logic.execute("filter mode/and t/missing");
+        assertTrue(model.getFilteredPersonList().isEmpty());
         logic.execute("filter mode/or t/work");
         assertEquals(List.of(ZOE, ADAM), model.getFilteredPersonList());
         logic.execute("find Mary");

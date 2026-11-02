@@ -110,7 +110,8 @@ class FieldOrderTest {
             assertThrows(IllegalArgumentException.class, () -> new FieldOrder(names));
         }
         List<String> missing = new ArrayList<>(FieldOrder.DEFAULT.getFieldNames());
-        missing.set(7, null);
+        // a null entry in place of a field leaves that field missing, so it must be rejected too
+        missing.set(missing.indexOf("followups"), null);
         assertThrows(IllegalArgumentException.class, () -> new FieldOrder(missing));
     }
 

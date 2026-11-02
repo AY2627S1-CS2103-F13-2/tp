@@ -9,7 +9,6 @@ import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalContactFile;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -23,12 +22,12 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.ModelManager;
-import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.CountingStorage;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -55,13 +54,15 @@ public class TransactionalCommandTest {
     }
 
     @Test
-    public void execute_queriesAndNoOpEdit_doNotSave() throws Exception {
+    public void execute_queriesAndRejectedCommands_doNotSave() throws Exception {
         byte[] original = Files.readAllBytes(activeFile);
         for (String command : List.of("list", "find Alice", "view 1", "help")) {
             logic.execute(command);
         }
+        assertThrows(ParseException.class, () -> logic.execute("clear 3"));
+        assertThrows(CommandException.class, () -> logic.execute("delete 99"));
         assertThrows(CommandException.class, () -> logic.execute("edit 1 n/Alice Pauline"));
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
         assertArrayEquals(original, Files.readAllBytes(activeFile));
     }
 
@@ -79,7 +80,7 @@ public class TransactionalCommandTest {
         assertEquals(getTypicalContactFile().getPersonList(), model.getFilteredPersonList());
         assertEquals(getTypicalContactFile(), model.getContactFile());
         assertSame(binding, model.getFilteredPersonList());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
         assertArrayEquals(original, Files.readAllBytes(activeFile));
     }
 
@@ -90,7 +91,7 @@ public class TransactionalCommandTest {
         assertEquals(Messages.format(ALICE), logic.execute("view pAuLiNe").getFeedbackToUser());
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
         assertEquals(getTypicalContactFile(), model.getContactFile());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
         assertArrayEquals(original, Files.readAllBytes(activeFile));
     }
 
@@ -109,7 +110,7 @@ public class TransactionalCommandTest {
         }
         assertSame(binding, model.getFilteredPersonList());
         assertEquals(getTypicalContactFile(), model.getContactFile());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
         assertArrayEquals(original, Files.readAllBytes(activeFile));
         Person anotherAlice = new PersonBuilder().withName("Alice New").build();
         model.setPerson(BENSON, anotherAlice);
@@ -122,7 +123,7 @@ public class TransactionalCommandTest {
         ContactFile original = new ContactFile(model.getContactFile());
         byte[] bytes = Files.readAllBytes(activeFile);
         ObservableList<Person> binding = model.getFilteredPersonList();
-        storage.shouldFail = true;
+        storage.setShouldFail(true);
         assertThrows(CommandException.class, () -> logic.execute("add n/New Contact"));
         assertEquals(original, model.getContactFile());
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
@@ -138,33 +139,12 @@ public class TransactionalCommandTest {
         logic.execute("find Alice");
         byte[] bytes = Files.readAllBytes(activeFile);
         ContactFile original = new ContactFile(model.getContactFile());
-        storage.shouldFail = true;
+        storage.setShouldFail(true);
         logic.execute("edit 1 p/76543210");
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(original, model.getContactFile());
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
         assertArrayEquals(bytes, Files.readAllBytes(activeFile));
-        assertEquals(1, storage.saveCount);
-    }
-
-    /**
-     * Counts save attempts and simulates a storage failure before writing.
-     */
-    private static final class CountingStorage extends JsonContactFileStorage {
-        private int saveCount;
-        private boolean shouldFail;
-
-        private CountingStorage(Path path) {
-            super(path);
-        }
-
-        @Override
-        public void saveContactFile(ReadOnlyContactFile contactFile) throws IOException {
-            saveCount++;
-            if (shouldFail) {
-                throw new IOException("Simulated save failure");
-            }
-            super.saveContactFile(contactFile);
-        }
+        assertEquals(1, storage.getSaveCount());
     }
 }

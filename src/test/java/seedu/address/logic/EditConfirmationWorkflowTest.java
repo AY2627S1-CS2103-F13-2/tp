@@ -29,11 +29,11 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ContactFile;
 import seedu.address.model.ModelManager;
-import seedu.address.model.ReadOnlyContactFile;
 import seedu.address.model.UserPrefs;
 import seedu.address.storage.JsonContactFileStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.CountingStorage;
 import seedu.address.testutil.PersonBuilder;
 
 class EditConfirmationWorkflowTest {
@@ -69,12 +69,12 @@ class EditConfirmationWorkflowTest {
             assertTrue(logic.execute(reply).getPendingRequest().isPresent());
             assertEquals(List.of(ALICE, BENSON), model.getContactFile().getPersonList());
             assertArrayEquals(bytes, Files.readAllBytes(file));
-            assertEquals(0, storage.saveCount);
+            assertEquals(0, storage.getSaveCount());
         }
         logic.execute("y");
         assertEquals(new PersonBuilder(ALICE).withCompany("New Company").withPhone("76543210").build(),
                 model.getContactFile().getPersonList().getFirst());
-        assertEquals(1, storage.saveCount);
+        assertEquals(1, storage.getSaveCount());
         assertThrows(ParseException.class, () -> logic.execute("y"));
     }
 
@@ -91,7 +91,7 @@ class EditConfirmationWorkflowTest {
             assertSame(binding, model.getFilteredPersonList());
             assertArrayEquals(bytes, Files.readAllBytes(file));
         }
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
     }
 
     @Test
@@ -108,14 +108,14 @@ class EditConfirmationWorkflowTest {
     void execute_failedSave_restoresPriorDataAndFilterAndClearsRequest() throws Exception {
         logic.execute("find Benson");
         byte[] bytes = Files.readAllBytes(file);
-        storage.shouldFail = true;
+        storage.setShouldFail(true);
         logic.execute("edit Alice c/");
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(List.of(ALICE, BENSON), model.getContactFile().getPersonList());
         assertEquals(List.of(BENSON), model.getFilteredPersonList());
         assertArrayEquals(bytes, Files.readAllBytes(file));
         assertThrows(ParseException.class, () -> logic.execute("y"));
-        assertEquals(1, storage.saveCount);
+        assertEquals(1, storage.getSaveCount());
     }
 
     @Test
@@ -125,7 +125,7 @@ class EditConfirmationWorkflowTest {
             assertThrows(CommandException.class, () -> logic.execute(command));
             assertThrows(ParseException.class, () -> logic.execute("y"));
         }
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
     }
 
     @Test
@@ -138,7 +138,7 @@ class EditConfirmationWorkflowTest {
         model.setPerson(BENSON, new PersonBuilder(BENSON).withPhone("76543210").build());
         assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(List.of(ALICE, BENSON), model.getContactFile().getPersonList());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
     }
 
     @Test
@@ -161,7 +161,7 @@ class EditConfirmationWorkflowTest {
         logger.addHandler(handler);
         logger.setLevel(Level.ALL);
         try {
-            storage.shouldFail = true;
+            storage.setShouldFail(true);
             logic.execute("edit 1 c/Private Company");
             assertThrows(CommandException.class, () -> logic.execute("y"));
             assertTrue(records.stream().anyMatch(record -> record.getLevel() == Level.WARNING
@@ -179,26 +179,9 @@ class EditConfirmationWorkflowTest {
         model.addPerson(new PersonBuilder(ALICE).withName("New Name").withPhone(null).withEmail(null).build());
         CommandException failure = assertThrows(CommandException.class, () -> logic.execute("y"));
         assertEquals(EditCommand.MESSAGE_DUPLICATE_PERSON, failure.getMessage());
+        // A failed confirmation restores the prompt-time snapshot, dropping the contact added since.
         assertEquals(List.of(ALICE, BENSON), model.getContactFile().getPersonList());
-        assertEquals(0, storage.saveCount);
+        assertEquals(0, storage.getSaveCount());
         assertThrows(ParseException.class, () -> logic.execute("y"));
-    }
-
-    private static final class CountingStorage extends JsonContactFileStorage {
-        private int saveCount;
-        private boolean shouldFail;
-
-        private CountingStorage(Path path) {
-            super(path);
-        }
-
-        @Override
-        public void saveContactFile(ReadOnlyContactFile contacts) throws IOException {
-            saveCount++;
-            if (shouldFail) {
-                throw new IOException("Simulated edit save failure");
-            }
-            super.saveContactFile(contacts);
-        }
     }
 }

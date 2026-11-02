@@ -45,7 +45,7 @@ class ConfirmationPanelUiTest {
     }
 
     @Test
-    void window_sharedPanel_handlesDeleteClearAndDuplicateFollowUps() throws Exception {
+    void window_confirmationCommands_showAndHideSharedPanel() throws Exception {
         ModelManager model = new ModelManager();
         model.addPerson(ALICE);
         model.addPerson(BENSON);
@@ -98,7 +98,15 @@ class ConfirmationPanelUiTest {
                 execute(input, "clear");
                 assertTrue(preview.getText().contains("Clear all 2"));
                 confirm.fire();
+                assertTrue(model.getContactFile().getPersonList().isEmpty());
+                assertFalse(panel.isManaged());
+
+                // A second click on the hidden button must be ignored, not sent as a stray "y" reply.
+                TextArea output = (TextArea) stage.getScene().lookup("#resultDisplay");
+                String feedback = output.getText();
                 confirm.fire();
+                assertEquals(feedback, output.getText());
+                assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
                 assertTrue(model.getContactFile().getPersonList().isEmpty());
                 assertFalse(panel.isManaged());
             } finally {
@@ -145,12 +153,17 @@ class ConfirmationPanelUiTest {
 
                 @Override
                 public void saveContactFile(ReadOnlyContactFile contacts) throws IOException {
-                    if (++attempts > 2) {
+                    attempts++;
+                    if (attempts > 2) {
+                        // Third and later saves: an unchecked failure without a message, so the window
+                        // must fall back to "Unexpected command failure." The message is left out on purpose.
                         throw new IllegalStateException();
                     }
                     if (attempts > 1) {
+                        // Second save: an unchecked failure whose message is shown to the user as-is.
                         throw new IllegalStateException("Simulated unexpected storage failure");
                     }
+                    // First save: an ordinary I/O failure, reported as "Could not save data".
                     throw new IOException("Simulated UI save failure");
                 }
             };

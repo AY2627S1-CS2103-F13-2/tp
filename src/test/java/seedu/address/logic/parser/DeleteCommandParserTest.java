@@ -55,7 +55,7 @@ public class DeleteCommandParserTest {
     }
 
     @Test
-    public void parse_nameWithSurroundingAndRepeatedWhitespace_normalisesName() {
+    public void parse_nameWithSurroundingAndRepeatedWhitespace_normalizesName() {
         assertParseSuccess(parser, "   Alice    Pauline  ", new DeleteCommand("Alice Pauline"));
     }
 
