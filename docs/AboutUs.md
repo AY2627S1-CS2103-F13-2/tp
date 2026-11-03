@@ -28,7 +28,7 @@ You can reach us through our [issue tracker](https://github.com/AY2627S1-CS2103-
 
 ### Kafka
 
-<img src="images/Kafka03.png" width="200px">
+<img src="images/kafka03.png" width="200px">
 
 [[github](http://github.com/Kafka03)]
 
