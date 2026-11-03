@@ -148,6 +148,9 @@ Examples:
 * `add n/Hans Gruber` Adds a contact with only a name, which you can complete later with `edit`.
 * `add n/Alice Tan ev/NUS Career Fair` Adds Alice Tan and records the NUS Career Fair event.
 
+![Astra after running add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair](images/ug/add.png)
+*Astra after `add n/Betsy Crowe c/Newgate e/betsycrowe@example.com t/careerfair`, using the sample contacts.*
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in the contact file.
@@ -187,6 +190,9 @@ The matching and combination rules described in the `find` section also apply.
 Examples: `star Charlotte`, `star /company Grab`, `star /company DBS /role Analyst`,
 and `unstar /email alexyeoh@example.com`.
 
+![Astra after running star 3](images/ug/star.png)
+*Astra after `star 3`, using the sample contacts.*
+
 
 ### Removing a contact's star: `unstar`
 
@@ -208,6 +214,9 @@ Format: `starred`
 
 * If none are starred, the list is empty and Astra reports `There are no starred contacts.`
 * Use `list` to return to all contacts.
+
+![Astra after running starred](images/ug/starred.png)
+*Astra after `starred`, using the sample contacts.*
 
 ### Editing a person: `edit`
 
@@ -242,6 +251,9 @@ Examples:
 *  `edit Betsy p/91234567` Edits the phone number of the person named Betsy, if she is the only person whose name contains `Betsy`.
 *  `edit 3 c/ r/` Removes the company and role of the 3rd person.
 
+![Astra after running edit 3 r/Senior Engineer](images/ug/edit.png)
+*Astra after `edit 3 r/Senior Engineer`, using the sample contacts.*
+
 ### Removing selected details: `drop`
 
 Removes only the explicitly selected detail values from a contact, after confirmation.
@@ -266,6 +278,9 @@ Examples:
   <!-- @@author -->
 * `drop Jane Doe e/jane@example.com` Proposes removing the selected email from Jane Doe.
 * `drop 1 i/Old Introducer` Proposes removing the saved introducer from the 1st contact.
+
+![Astra after running drop 1 t/engineering](images/ug/drop.png)
+*Astra after `drop 1 t/engineering`, using the sample contacts.*
 
 ### Introducing a person: `introduce`
 
@@ -301,6 +316,9 @@ Ambiguous-name example: suppose the candidates are `1. Alice Tan` and `2. Alice 
 3. Reply with `y` **only if** Astra asks to replace a different existing introducer;
    `n` or `cancel` keeps the existing introducer. With no saved introducer, Jane is recorded after step 2.
    If Jane is already recorded, Astra reports no change and does not ask for confirmation.
+
+![Astra after running introduce 3 i/Roy Balakrishnan](images/ug/introduce.png)
+*Astra after `introduce 3 i/Roy Balakrishnan`, using the sample contacts.*
 
 ### Locating persons: `find`
 
@@ -398,6 +416,9 @@ edit 1 ev/Tech Conference
 
 Use `list` to return to all contacts.
 
+![Astra after running find Yeo](images/ug/find.png)
+*Astra after `find Yeo`, using the sample contacts.*
+
 ### Filtering contacts by tags: `filter`
 
 Shows contacts matching the tags you request, in their stored order.
@@ -437,6 +458,9 @@ Examples:
 * `filter mode/or t/work t/friend` shows contacts with either or both tags.
 * `filter t/work`, then `view 1` shows the full details of the first result.
 
+![Astra after running filter mode/or t/mentor t/referral](images/ug/filter.png)
+*Astra after `filter mode/or t/mentor t/referral`, using the sample contacts.*
+
 ### Viewing a person's full details: `view`
 
 Shows everything Astra has stored about one person, including details the contact list does not show.
@@ -463,6 +487,9 @@ Examples:
 * `view an` lists Irfan Ibrahim and Roy Balakrishnan; `view 2` then shows Roy's full details.
 * `find Bernice` followed by `view Alex Yeoh` still finds Alex, because name lookup searches all contacts.
 
+![Astra after running view 2](images/ug/view.png)
+*Astra after `view 2`, using the sample contacts.*
+
 ### Logging an interaction: `log`
 
 Records a conversation or meeting with a person, so you can look back at what you discussed before you next meet.
@@ -486,6 +513,9 @@ Examples:
 * `log John Lim nt/Discussed backend internships` logs today's conversation with John Lim.
 * `log 2 d/2026-10-01 nt/Met at the career fair` logs an earlier meeting with the 2nd person in the list.
 
+![Astra after running log 2 d/2026-11-02 nt/Met again at the product meetup](images/ug/log.png)
+*Astra after `log 2 d/2026-11-02 nt/Met again at the product meetup`, using the sample contacts.*
+
 ### Removing a logged interaction: `unlog`
 
 Removes an interaction you logged by mistake, e.g. one with the wrong date or for the wrong person.
@@ -506,6 +536,9 @@ Format: `unlog INDEX i/ENTRY` or `unlog NAME i/ENTRY`
 Examples:
 * `unlog John Lim i/2` removes the 2nd interaction in John Lim's history.
 * `unlog 1 i/1` removes the earliest interaction with the 1st person in the list.
+
+![Astra after running unlog 1 i/1](images/ug/unlog.png)
+*Astra after `unlog 1 i/1`, using the sample contacts.*
 
 ### Editing a logged interaction: `editlog`
 
@@ -528,6 +561,9 @@ Format: `editlog INDEX i/ENTRY [d/DATE] [nt/NOTE]` or `editlog NAME i/ENTRY [d/D
 Examples:
 * `editlog John Lim i/2 nt/Discussed frontend internships` corrects the note of the 2nd interaction in John Lim's history.
 * `editlog 1 i/1 d/2026-09-30` moves the earliest interaction with the 1st person in the list to 30 September 2026.
+
+![Astra after running editlog 1 i/1 nt/Discussed backend internships at the careers fair](images/ug/editlog.png)
+*Astra after `editlog 1 i/1 nt/Discussed backend internships at the careers fair`, using the sample contacts.*
 
 ### Deleting a person: `delete`
 
@@ -571,6 +607,9 @@ Examples:
 * `delete /email alexyeoh@example.com berniceyu@example.com`, then `y` deletes both
   contacts in one save if every address resolves successfully.
 
+![Astra after running delete 2](images/ug/delete.png)
+*Astra after `delete 2`, using the sample contacts.*
+
 ### Undoing an edit or deletion: `undo`
 
 Reverses the most recent successful edit or deletion in the current Astra session.
@@ -594,6 +633,9 @@ Examples:
 * Enter `y` after the preview to restore the previous phone number.
 * `delete John Lim`, followed by `undo` and `y`, restores John Lim.
 
+![Astra after running delete 6, y, then undo](images/ug/undo.png)
+*Astra after `delete 6`, `y`, then `undo`, using the sample contacts.*
+
 ### Viewing data-change history: `history`
 
 Shows successful changes made with `add`, `edit`, `delete`, `drop`, `clear`, and `introduce` during the current Astra session. Edits and deletions remain in the history even if they are undone. Entries are shown newest first.
@@ -602,6 +644,9 @@ Format: `history`
 
 * The history is cleared when Astra closes.
 * Other command types, including viewing commands, are not included.
+
+![Astra after running edit 3 r/Senior Engineer, y, then history](images/ug/history.png)
+*Astra after `edit 3 r/Senior Engineer`, `y`, then `history`, using the sample contacts.*
 
 ### Recording a follow-up: `followup`
 
@@ -667,6 +712,9 @@ The second asks whether another is wanted; enter `y` to add `#5` due on
 `2026-12-01`, or `n` to keep just the new `#4` and Alex's original actions. The original
 command does not need to be repeated while answering the prompt.
 
+![Astra after running followup 3 a/Send a thank-you note d/2026-11-20](images/ug/followup.png)
+*Astra after `followup 3 a/Send a thank-you note d/2026-11-20`, using the sample contacts.*
+
 ### Reviewing follow-ups: `followups`
 
 Lists follow-ups across all contacts, including contacts hidden by
@@ -724,6 +772,9 @@ Enter a follow-up number, another command, or n/cancel to stop.
 Enter `2` to display Benson's `Send portfolio` action and full contact details.
 Enter `cancel` instead to leave the list without selecting an action.
 
+![Astra after running followups](images/ug/followups.png)
+*Astra after `followups`, using the sample contacts.*
+
 ### Editing a follow-up: `editfollowup`
 
 Edits an existing follow-up while preserving its ID and pending or completed status.
@@ -753,6 +804,9 @@ editfollowup 1 i/5 d/2026-12-05
 editfollowup 1 i/5 a/Call client d/2026-12-05
 editfollowup 1 i/5 d/
 ```
+
+![Astra after running editfollowup 1 i/2 d/2026-11-10](images/ug/editfollowup.png)
+*Astra after `editfollowup 1 i/2 d/2026-11-10`, using the sample contacts.*
 
 ### Completing or reopening a follow-up: `completefollowup`, `reopenfollowup`
 
@@ -791,6 +845,9 @@ reopenfollowup 1 i/5
 The completion command changes `#5 [PENDING] Call client | Due: 2026-12-05` to
 `#5 [COMPLETED] Call client | Due: 2026-12-05`. The reopening command reverts it to pending.
 
+![Astra after running completefollowup 1 i/2](images/ug/completefollowup.png)
+*Astra after `completefollowup 1 i/2`, using the sample contacts.*
+
 ### Deleting a follow-up: `deletefollowup`
 
 Previews one pending or completed action before permanently removing it.
@@ -811,6 +868,9 @@ Format: `deletefollowup CONTACT_INDEX i/FOLLOW_UP_ID`
 
 Example: after the examples above, `deletefollowup 1 i/5`, then `y`, removes
 action `#5` from Alex. His remaining action IDs are unchanged.
+
+![Astra after running deletefollowup 1 i/2](images/ug/deletefollowup.png)
+*Astra after `deletefollowup 1 i/2`, using the sample contacts.*
 
 ### Using the confirmation panel
 
@@ -848,6 +908,9 @@ Examples:
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Confirmed clearing cannot be undone. Check the count before entering `y`.
 </div>
+
+![Astra after running clear](images/ug/clear.png)
+*Astra after `clear`, using the sample contacts.*
 
 ### Reordering contact fields: `order`
 
@@ -897,6 +960,9 @@ Examples:
 
 <!-- @@author Yx0905 -->
 
+![Astra after running order name company role phone email linkedin tags followups introducer interactions, then view 1](images/ug/order.png)
+*Astra after `order name company role phone email linkedin tags followups introducer interactions`, then `view 1`, using the sample contacts.*
+
 ### Creating command shortcuts: `alias`
 
 Saves a short word that stands for a command you type often. Entering the shortcut then runs that command, followed by anything you type after the shortcut.
@@ -920,6 +986,9 @@ Examples:
 * `alias list find` is rejected, because `list` is already a command.
 
 <!-- @@author -->
+
+![Astra after running alias fe find /email, then fe berniceyu@example.com](images/ug/alias.png)
+*Astra after `alias fe find /email`, then `fe berniceyu@example.com`, using the sample contacts.*
 
 ### Exiting the program: `exit`
 
