@@ -1890,3 +1890,38 @@ Sample follow-up and interaction dates are counted from the day the samples are 
       `add n/Save Test`.<br>
       Expected: an error that the contact file could not be saved, and Save Test is not in the list. Restore
       the permission with `chmod u+w data`.
+
+--------------------------------------------------------------------------------------------------------------------
+
+<!-- @@author Cookiemunchrr -->
+
+## **Appendix: Planned enhancements**
+
+Team size: 5
+
+1. **Let follow-up descriptions contain words that end in `/`.**
+   `followup` treats every word ending in `/` as a parameter prefix, so `followup 1 a/Email HR and/or call`
+   and `followup 1 a/Send to Jane c/o HR` are rejected with only "Invalid command format!".
+   We plan to treat only `a/` and `d/` as prefixes, so that such words stay part of the description.
+   A mistyped prefix at the start of a word, such as `followup 1 x/Call back`, will still be rejected,
+   with the message `Unknown prefix x/. followup accepts only a/DESCRIPTION and d/DATE.`
+
+2. **Let users pick from the matches when a name is ambiguous in every command.**
+   When a name matches several contacts, `delete`, `drop` and `introduce` list the matches and accept a
+   candidate number, but `edit`, `view`, `log`, `editlog` and `unlog` only list them and ask the user to
+   enter the whole command again with an index. We plan to make these five commands use the same numbered
+   selection, e.g. `view an` will show `2 contacts found. Enter the number of the contact to view, or n to
+   cancel.`, and replying `2` will show the second match, without retyping the command.
+
+3. **Accept names that contain a slash.**
+   Names such as `Ravi s/o Kumar` and `Siti d/o Ahmad` are common in Singapore, but `add n/Ravi s/o Kumar`
+   is rejected because a name may contain only letters, numbers, spaces, hyphens, apostrophes and full stops.
+   We plan to also allow `/` inside a name, after its first character, so that such names are accepted as
+   typed. Prefixes in the rest of the command will still be recognised only when they start a new word.
+
+4. **Let `order` place events like the other fields.**
+   `order` arranges ten fields, but events are not one of them, so they always appear last in a contact's
+   details, even when the user wants them near the top. We plan to add `events` as an eleventh field,
+   accepted by `order` like the others, with older saved orders that lack it keeping events last.
+
+<!-- @@author -->
