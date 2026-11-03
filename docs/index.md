@@ -8,7 +8,7 @@ title: Astra
 
 ![Ui](images/Ui.png)
 
-**Astra is a desktop application for managing your contact details.** While it has a GUI, most of the user interactions happen using a CLI (Command Line Interface).
+**Astra is a contact book for people who network a lot.** Record the people you meet, what you talked about and what you promised to do next, then find them again before you next meet. You work by typing commands, and Astra shows the results beside each contact's details.
 
 * If you are interested in using Astra, head over to the [_Quick Start_ section of the **User Guide**](UserGuide.html#quick-start).
 * If you are interested in developing Astra, the [**Developer Guide**](DeveloperGuide.html) is a good place to start.
